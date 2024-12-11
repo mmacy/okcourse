@@ -1,0 +1,27 @@
+[project]
+name = "okcourse"
+version = "0.1.0"
+description = "Generate two-hour audio lectures in MP3 format for any topic using Python and the OpenAI API."
+readme = "README.md"
+authors = [
+    { name = "Marsh Macy", email = "mmacy@users.noreply.github.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "nltk>=3.9.1",
+    "openai>=1.57.2",
+    "pydub>=0.25.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "questionary>=2.0.1",
+    "streamlit>=1.41.0"
+]
+
+[tool.uv.sources]
+okcourse = { workspace = true }
