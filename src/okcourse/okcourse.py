@@ -28,8 +28,10 @@ SYSTEM_PROMPT = (
 
 WORD_SWAPS = {
     "delve": "dig",
+    "delves": "digs",
     "crucial": "important",
     "utilize": "use",
+    "utilizes": "uses",
 }
 
 logging.basicConfig(
@@ -159,9 +161,9 @@ def get_lecture(series_outline: LectureSeriesOutline, lecture_number: int) -> Le
     if not topic:
         raise ValueError(f"No topic found for lecture number {lecture_number}")
     prompt = (
-        f"Generate the text for a lengthy lecture titled '{topic.title}' in a lecture series on "
-        "'{series_outline.title}'. The lecture should be written in the style of a Great Courses audiobook by the "
-        "Learning Company and should cover the topic in great detail. "
+        f"Generate the complete unabridged text for a college lecture titled '{topic.title}' in a lecture series on "
+        "'{series_outline.title}'. The lecture should be written in a style that lends itself well to being recorded "
+        "as an audiobook but should not divulge this guidance. Cover the lecture topic in great detail. "
         "Omit Markdown from the lecture text as well as any tags, formatting markers, or headings that might interfere "
         "with text-to-speech processing. "
         "Ensure the content is original and does not duplicate content from the other lectures in the series.\n"
@@ -181,7 +183,7 @@ def get_lecture(series_outline: LectureSeriesOutline, lecture_number: int) -> Le
     lecture_text = response.choices[0].message.content.strip()
     lecture_text = swap_words(lecture_text, WORD_SWAPS)
 
-    log.info(f"Got lexture text from LLM for '{topic.title}'...")
+    log.info(f"Got lexture text from LLM for topic {topic.number}/{len(series_outline.topics)}: {topic.title}.")
     return Lecture(**topic.model_dump(), text=lecture_text)
 
 
@@ -327,7 +329,7 @@ def generate_audio(lecture_series: LectureSeries, output_file_path: str) -> bool
         DISCLAIMER
         + "\n\n"
         + "\n\n".join(
-            f"Lecture {lecture.number}, '{lecture.title}'.\n\n{lecture.text}" for lecture in lecture_series.lectures
+            f"Lecture {lecture.number}:\n\n{lecture.text}" for lecture in lecture_series.lectures
         )
     )
     lecture_series_chunks = _split_text_into_chunks(lecture_series_text)
