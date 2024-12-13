@@ -37,8 +37,7 @@ def main():
     results = run_generation(topic, num_lectures, do_generate_audio)
 
     print("Lecture series generation complete.")
-    print(f"Lecture series text: {results['aggregate_path']}")
-    print(f"Lecture series outline: {results['outline_path']}")
+    print(f"Lecture series text: {results['series_text_path']}")
     if do_generate_audio:
         print(f"Lecture series audio: {results['audio_path']}")
     print(f"Total generation time: {format_time(results['total_time'])}")
