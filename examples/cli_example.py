@@ -1,7 +1,17 @@
 # cli_app.py
 import sys
+
 import questionary
-from okcourse import NUM_LECTURES, run_generation, format_time
+
+from okcourse import (
+    get_duration_string_from_seconds,
+    generate_complete_lecture_series,
+    generate_lecture_series_outline,
+    generate_text_for_lectures_in_series,
+    generate_audio_for_lectures_in_series,
+)
+
+num_lectures_default = 20
 
 
 def main():
@@ -15,10 +25,12 @@ def main():
         sys.exit(0)
 
     while True:
-        num_lectures = questionary.text(f"How many lectures should be in the series (default: {NUM_LECTURES})?").ask()
+        num_lectures = questionary.text(
+            f"How many lectures should be in the series (default: {num_lectures_default})?"
+        ).ask()
 
         if not num_lectures:
-            num_lectures = NUM_LECTURES
+            num_lectures = num_lectures_default
 
         try:
             num_lectures = int(num_lectures)
@@ -34,13 +46,13 @@ def main():
         do_generate_audio = True
 
     print("Generating lecture series...")
-    results = run_generation(topic, num_lectures, do_generate_audio)
+    results = generate_complete_lecture_series(topic, num_lectures, do_generate_audio)
 
     print("Lecture series generation complete.")
     print(f"Lecture series text: {results['series_text_path']}")
     if do_generate_audio:
         print(f"Lecture series audio: {results['audio_path']}")
-    print(f"Total generation time: {format_time(results['total_time'])}")
+    print(f"Total generation time: {get_duration_string_from_seconds(results['total_time'])}")
 
 
 if __name__ == "__main__":
