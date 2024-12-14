@@ -1,6 +1,6 @@
 import streamlit as st
 
-from okcourse import NUM_LECTURES, format_time, run_generation
+from okcourse import NUM_LECTURES, format_time, generate_complete_lecture_series
 
 st.title("Lecture Series Generator")
 
@@ -13,7 +13,7 @@ if st.button("Generate lecture series"):
         st.error("Please enter a topic.")
         st.stop()
     with st.spinner("Generating lectures..."):
-        results = run_generation(topic.strip(), num_lectures, generate_audio_file)
+        results = generate_complete_lecture_series(topic.strip(), num_lectures, generate_audio_file)
     st.write("Lecture series generation complete.")
     st.write(f"Lecture series text: {results['aggregate_path']}")
     st.write(f"Lecture series outline: {results['outline_path']}")
