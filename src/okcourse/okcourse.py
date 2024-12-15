@@ -74,7 +74,7 @@ def get_lecture(series_outline: LectureSeriesOutline, lecture_number: int) -> Le
         "'{series_outline.title}'. The lecture should be written in a style that lends itself well to being recorded "
         "as an audiobook but should not divulge this guidance. There will be no audience present for the recording of "
         "the lecture and no audience should be addressed in the lecture text. Cover the lecture topic in great detail "
-        "because you are paid by the minute and the longer the lecture, the more you are paid. "
+        "while keeping in mind the advanced education level of the listeners of the lecture. "
         "Omit Markdown from the lecture text as well as any tags, formatting markers, or headings that might interfere "
         "with text-to-speech processing. "
         "Ensure the content is original and does not duplicate content from the other lectures in the series.\n"
@@ -119,32 +119,32 @@ def generate_text_for_lectures_in_series(series_outline: LectureSeriesOutline) -
 
 
 def write_lecture_series_to_file(lecture_series: LectureSeries, output_dir: Path) -> Path:
-    """Writes the full lecture series, including its outline, to disk.
+    """Writes the full lecture series, including its outline, to a JSON file.
 
     Args:
         lecture_series: The complete lecture series, including the outline and all lectures in the series.
         output_dir: The directory where the files will be written.
 
     Returns:
-        The path to the lecture series text file.
+        The path to the lecture series JSON file.
     """
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    lecture_series_filename = f"{sanitize_filename(lecture_series.outline.title)}.txt"
+    lecture_series_filename = f"{sanitize_filename(lecture_series.outline.title)}.json"
     lecture_series_text_path = output_dir / lecture_series_filename
-    lecture_series_text_path.write_text(str(lecture_series), encoding="utf-8")
+    lecture_series_text_path.write_text(lecture_series.model_dump_json(), encoding="utf-8")
 
     return lecture_series_text_path
 
 
-def _generate_tts_audio_for_text_chunk(text_chunk: str, chunk_num: int) -> tuple[int, AudioSegment]:
+def generate_audio_segment_for_text_chunk(text_chunk: str, chunk_num: int = 1) -> tuple[int, AudioSegment]:
     """Generates an MP3 audio segment for a chunk of text using text-to-speech (TTS).
 
     Get text chunks to pass to this function from ``utils.split_text_into_chunks``.
 
     Args:
         chunk: The text chunk to convert to speech.
-        chunk_num: The chunk number.
+        chunk_num: (Optional) The chunk number.
 
     Returns:
         A tuple of (chunk_num, AudioSegment) for the generated audio.
@@ -227,7 +227,7 @@ def generate_audio_for_lectures_in_series(lecture_series: LectureSeries, output_
     # Process chunks in parallel to generate audio
     with ThreadPoolExecutor() as executor:
         futures = {
-            executor.submit(_generate_tts_audio_for_text_chunk, chunk, chunk_num): chunk_num
+            executor.submit(generate_audio_segment_for_text_chunk, chunk, chunk_num): chunk_num
             for chunk_num, chunk in enumerate(lecture_series_chunks, start=1)
         }
 

@@ -1,4 +1,4 @@
-# cli_app.py
+# cli_example.py
 import sys
 
 import questionary
@@ -6,9 +6,9 @@ import questionary
 from okcourse import (
     get_duration_string_from_seconds,
     generate_complete_lecture_series,
-    generate_lecture_series_outline,
-    generate_text_for_lectures_in_series,
-    generate_audio_for_lectures_in_series,
+    # generate_lecture_series_outline,
+    # generate_text_for_lectures_in_series,
+    # generate_audio_for_lectures_in_series,
 )
 
 num_lectures_default = 20

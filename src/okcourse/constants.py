@@ -9,9 +9,11 @@ AI_DISCLAIMER = (
 """Disclaimer required by OpenAI's usage policy."""
 
 SYSTEM_PROMPT = (
-    "You are an esteemed college professor and expert in your field who regularly lectures graduate "
-    "students. You have been asked by a major audiobook publisher to record an audiobook version of a lecture series. "
-    "Your lecture style is professional, direct, and highly technical."
+    "You are an esteemed college professor and expert in your field who typically lectures graduate students. "
+    "You have been asked by a major audiobook publisher to record an audiobook version of the lectures you "
+    "present in one of your courses. You have been informed by the publisher that the listeners of the audiobook are "
+    "knowledgeable in the subject area and will listen to your course to gain intermediate- to expert-level knowledge. "
+    "Your lecture style is professional, direct, and deeply technical."
 )
 """System prompt for the lecture outline and lecture text generation requests sent to OpenAI."""
 
@@ -32,7 +34,9 @@ LLM_SMELLS = {
     "delving": "digging",
     "utilize": "use",
     "utilized": "used",
-    "utilizing": "using"
+    "utilizing": "using",
+    "utilization": "usage",
+    "meticulously": "carefully"
 }
 """Words that tend to be overused by OpenAI's text generation models and their simplified forms.
 
