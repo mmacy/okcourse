@@ -70,9 +70,11 @@ def get_lecture(series_outline: LectureSeriesOutline, lecture_number: int) -> Le
     if not topic:
         raise ValueError(f"No topic found for lecture number {lecture_number}")
     prompt = (
-        f"Generate the complete unabridged text for a college lecture titled '{topic.title}' in a lecture series on "
+        f"Generate the complete unabridged text for a lecture titled '{topic.title}' in a graduate-level course on "
         "'{series_outline.title}'. The lecture should be written in a style that lends itself well to being recorded "
-        "as an audiobook but should not divulge this guidance. Cover the lecture topic in great detail. "
+        "as an audiobook but should not divulge this guidance. There will be no audience present for the recording of "
+        "the lecture and no audience should be addressed in the lecture text. Cover the lecture topic in great detail "
+        "because you are paid by the minute and the longer the lecture, the more you are paid. "
         "Omit Markdown from the lecture text as well as any tags, formatting markers, or headings that might interfere "
         "with text-to-speech processing. "
         "Ensure the content is original and does not duplicate content from the other lectures in the series.\n"
@@ -192,7 +194,6 @@ def generate_cover_image(lecture_outline: LectureSeriesOutline, image_file_path:
 
     if image_response.data:
         image = image_response.data[0]
-        LOG.info("Got cover image.")
         image_bytes = base64.b64decode(image.b64_json)
         image_file_path.write_bytes(image_bytes)
         return image_file_path
@@ -254,7 +255,7 @@ def generate_audio_for_lectures_in_series(lecture_series: LectureSeries, output_
         cover=str(cover_image_file) if cover_image_file else None,
         tags={
             "title": lecture_series.outline.title,
-            "artist": f"AI: {TEXT_MODEL} & {SPEECH_MODEL}",
+            "artist": f"{TEXT_MODEL} & {SPEECH_MODEL} (AI)",
             "album": "OK Courses",
             "comment": "https://github.com/mmacy/okcourse",
         }
