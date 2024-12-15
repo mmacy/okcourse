@@ -163,3 +163,4 @@ cython_debug/
 
 ## Project ignores
 lectures/
+.DS_Store

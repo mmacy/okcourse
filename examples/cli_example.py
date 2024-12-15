@@ -15,9 +15,9 @@ num_lectures_default = 20
 
 
 def main():
-    print("===================")
-    print("==  Courserator  ==")
-    print("===================")
+    print("=======================")
+    print("==  OK Course Maker  ==")
+    print("=======================")
 
     topic = questionary.text("Enter a lecture series topic:").ask()
     if not topic:

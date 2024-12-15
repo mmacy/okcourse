@@ -1,11 +1,22 @@
+import base64
 import io
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+from openai import OpenAIError
 from pydub import AudioSegment
 
-from .constants import AI_DISCLAIMER, LLM_SMELLS, SPEECH_MODEL, SPEECH_VOICE, SYSTEM_PROMPT, TEXT_MODEL
+from .constants import (
+    AI_DISCLAIMER,
+    IMAGE_MODEL,
+    IMAGE_PROMPT,
+    LLM_SMELLS,
+    SPEECH_MODEL,
+    SPEECH_VOICE,
+    SYSTEM_PROMPT,
+    TEXT_MODEL,
+)
 from .models import Lecture, LectureSeries, LectureSeriesOutline
 from .utils import LLM_CLIENT, LOG, download_punkt, sanitize_filename, split_text_into_chunks, swap_words
 
@@ -37,9 +48,10 @@ def generate_lecture_series_outline(topic: str, num_lectures: int) -> LectureSer
     )
     series_outline = series_completion.choices[0].message.parsed
 
-    # Reset the topic to exactly what was passed in since the LLM tends to add its own subtitle.
-    LOG.info(f"Resetting lecture series topic to '{topic}' from LLM-provided '{series_outline.title}'")
-    series_outline.title = topic
+    # Reset the topic to exactly what was passed if the LLM modified the original (it sometimes adds its own subtitle)
+    if series_outline.title != topic:
+        LOG.info(f"Resetting lecture series topic to '{topic}' from LLM-provided '{series_outline.title}'")
+        series_outline.title = topic
 
     return series_outline
 
@@ -150,6 +162,45 @@ def _generate_tts_audio_for_text_chunk(text_chunk: str, chunk_num: int) -> tuple
         return chunk_num, AudioSegment.from_file(audio_bytes, format="mp3")
 
 
+def generate_cover_image(lecture_outline: LectureSeriesOutline, image_file_path: Path) -> Path | None:
+    """Generates cover art for the lecture with the given outline.
+
+    The image is appropriate for use as the cover or album art for the lecture series text or audio.
+
+    Arguments:
+        lecture_outline: The lecture series outline to pass to the AI model to help guide its image generation.
+        image_file_path: Where to save the generated cover image.
+
+    Returns:
+        Path to the generated cover image, or None if no cover image was generated.
+    """
+    try:
+        image_response = LLM_CLIENT.images.generate(
+            model=IMAGE_MODEL,
+            prompt=IMAGE_PROMPT + lecture_outline.title,
+            n=1,
+            size="1024x1024",
+            response_format="b64_json",
+            quality="standard",
+            style="vivid",
+        )
+    except OpenAIError as e:
+        LOG.error("Failed to get image from the OpenAI API.")
+        LOG.error(e.http_status)
+        LOG.error(e.error)
+        return None
+
+    if image_response.data:
+        image = image_response.data[0]
+        LOG.info("Got cover image.")
+        image_bytes = base64.b64decode(image.b64_json)
+        image_file_path.write_bytes(image_bytes)
+        return image_file_path
+    else:
+        # Got response, but no response data (somehow)
+        return None
+
+
 def generate_audio_for_lectures_in_series(lecture_series: LectureSeries, output_file_path: str) -> bool:
     """Generates an audio file from the combined text of the lectures in the given lecture series.
 
@@ -191,7 +242,23 @@ def generate_audio_for_lectures_in_series(lecture_series: LectureSeries, output_
         (audio_chunk for _, audio_chunk in audio_chunks),
         AudioSegment.silent(duration=0),  # Start with silence
     )
-    lecture_series_audio.export(output_file_path, format="mp3")
+    LOG.info("Getting cover image for the audio file...")
+    cover_image_file = generate_cover_image(
+        lecture_outline=lecture_series.outline,
+        image_file_path=Path(output_file_path).expanduser().resolve().with_suffix(".png"),
+    )
+    LOG.info("Exporting audio file...")
+    lecture_series_audio.export(
+        output_file_path,
+        format="mp3",
+        cover=str(cover_image_file) if cover_image_file else None,
+        tags={
+            "title": lecture_series.outline.title,
+            "artist": f"AI: {TEXT_MODEL} & {SPEECH_MODEL}",
+            "album": "OK Courses",
+            "comment": "https://github.com/mmacy/okcourse",
+        }
+    )
 
     return True
 
