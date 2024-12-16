@@ -45,14 +45,20 @@ def main():
     if questionary.confirm("Generate MP3 audio file for lecture series?").ask():
         do_generate_audio = True
 
-    print("Generating lecture series...")
-    results = generate_complete_lecture_series(topic, num_lectures, do_generate_audio)
-
-    print("Lecture series generation complete.")
-    print(f"Lecture series text: {results['series_text_path']}")
+    do_generate_cover_art = False
     if do_generate_audio:
-        print(f"Lecture series audio: {results['audio_path']}")
-    print(f"Total generation time: {get_duration_string_from_seconds(results['total_time'])}")
+        if questionary.confirm("Generate image for audio file album art").ask():
+            do_generate_cover_art = True
+
+    print("Generating lecture series...")
+    results = generate_complete_lecture_series(topic, num_lectures, do_generate_audio, do_generate_cover_art)
+
+    print(f"Done! Series generated in {get_duration_string_from_seconds(results['total_seconds_elapsed'])}")
+    print(f"  Text:  {results['series_text_path']}")
+    if do_generate_audio:
+        print(f"  Audio: {results['series_audio_path']}")
+    if do_generate_cover_art:
+        print(f"  Cover: {results['series_cover_path']}")
 
 
 if __name__ == "__main__":

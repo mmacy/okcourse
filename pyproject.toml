@@ -1,7 +1,7 @@
 [project]
 name = "okcourse"
-version = "0.1.0"
-description = "Generate two-hour audio lectures in MP3 format for any topic using Python and the OpenAI API."
+version = "0.1.1"
+description = "Generate audiobook-style courses in MP3 format with lectures on any topic using Python and the OpenAI API."
 readme = "README.md"
 authors = [
     { name = "Marsh Macy", email = "mmacy@users.noreply.github.com" }

@@ -1,6 +1,8 @@
+"""Global defaults."""
+
 TEXT_MODEL = "gpt-4o"
 SPEECH_MODEL = "tts-1"
-SPEECH_VOICE = "nova"
+SPEECH_MODEL_VOICE = "nova"
 IMAGE_MODEL = "dall-e-3"
 
 AI_DISCLAIMER = (
