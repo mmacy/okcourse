@@ -1,24 +1,24 @@
 from importlib.metadata import PackageNotFoundError, version
 
-from .models import Lecture, LectureSeries, LectureSeriesOutline, LectureTopic
+from .models import Lecture, Course, CourseOutline, LectureTopic
 from .okcourse import (
-    generate_audio_for_lectures_in_series,
-    generate_complete_lecture_series,
-    generate_lecture_series_outline,
-    generate_text_for_lectures_in_series,
+    generate_course_audio,
+    generate_course,
+    generate_course_outline,
+    generate_course_text,
 )
 from .utils import get_duration_string_from_seconds
 
 __all__ = [
-    "generate_audio_for_lectures_in_series",
-    "generate_lecture_series_outline",
-    "generate_text_for_lectures_in_series",
+    "generate_course_audio",
+    "generate_course_outline",
+    "generate_course_text",
     "get_duration_string_from_seconds",
     "Lecture",
-    "LectureSeries",
-    "LectureSeriesOutline",
+    "Course",
+    "CourseOutline",
     "LectureTopic",
-    "generate_complete_lecture_series",
+    "generate_course",
     "sanitize_filename",
 ]
 

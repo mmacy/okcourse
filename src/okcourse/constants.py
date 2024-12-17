@@ -26,7 +26,7 @@ IMAGE_PROMPT = (
     "Its style should reflect the academic nature of the course material and be indicative of the course content. "
     "The title of the course is:\n\n"
 )
-"""Prompt passed to OpenAI's `/image` endpoint. The lecture series title is appended to this prompt before sending the
+"""Prompt passed to OpenAI's `/image` endpoint. The course title is appended to this prompt before sending the
 image generation request."""
 
 LLM_SMELLS = {
