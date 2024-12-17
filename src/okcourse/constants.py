@@ -26,7 +26,7 @@ IMAGE_PROMPT = (
     "Its style should reflect the academic nature of the course material and be indicative of the course content. "
     "The title of the course is:\n\n"
 )
-"""Prompt passed to OpenAI's `/image` endpoint. The lecture series title is appended to this prompt before sending the
+"""Prompt passed to OpenAI's `/image` endpoint. The course title is appended to this prompt before sending the
 image generation request."""
 
 LLM_SMELLS = {
@@ -39,8 +39,9 @@ LLM_SMELLS = {
     "utilized": "used",
     "utilizing": "using",
     "utilization": "usage",
-    "meticulously": "carefully"
+    "meticulous": "careful",
+    "meticulously": "carefully",
 }
 """Words that tend to be overused by OpenAI's text generation models and their simplified forms.
 
-By default, the overused words are replaced by their simplified forms in lecture text to help reduce \"LLM smell.\""""
+By default, overused keys are replaced by their simplified values in lecture text to help reduce \"LLM smell.\""""
