@@ -20,10 +20,11 @@ SYSTEM_PROMPT = (
 """System prompt for the lecture outline and lecture text generation requests sent to OpenAI."""
 
 IMAGE_PROMPT = (
-    "Create an image in the style typical of digitial cover art for downloadable podcasts in MP3 format. The cover "
-    "image should clearly indicate the content of the podcast to customers browsing the podcast vendor's site. "
-    "The image should be appropriate to accompany the digital distribution of an audio-only recording of the "
-    "following college lecture series:\n\n"
+    "Create an image in the style of cover art for an audio recording of a college lecture series shown in an online "
+    "academic catalog. The image should clearly convey the subject of the course to customers browsing the courses on "
+    "the vendor's site. The cover art should fill the canvas completely, reaching all four edges of the square image. "
+    "Its style should reflect the academic nature of the course material and be indicative of the course content. "
+    "The title of the course is:\n\n"
 )
 """Prompt passed to OpenAI's `/image` endpoint. The lecture series title is appended to this prompt before sending the
 image generation request."""

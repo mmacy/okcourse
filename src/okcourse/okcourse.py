@@ -73,15 +73,14 @@ def get_lecture(series_outline: LectureSeriesOutline, lecture_number: int) -> Le
     if not topic:
         raise ValueError(f"No topic found for lecture number {lecture_number}")
     prompt = (
-        f"Generate the complete unabridged text for a lecture titled '{topic.title}' in a graduate-level course on "
-        "'{series_outline.title}'. The lecture should be written in a style that lends itself well to being recorded "
+        f"Generate the complete unabridged text for a lecture titled '{topic.title}' in a graduate-level course named "
+        f"'{series_outline.title}'. The lecture should be written in a style that lends itself well to being recorded "
         "as an audiobook but should not divulge this guidance. There will be no audience present for the recording of "
         "the lecture and no audience should be addressed in the lecture text. Cover the lecture topic in great detail "
         "while keeping in mind the advanced education level of the listeners of the lecture. "
         "Omit Markdown from the lecture text as well as any tags, formatting markers, or headings that might interfere "
-        "with text-to-speech processing. "
-        "Ensure the content is original and does not duplicate content from the other lectures in the series.\n"
-        f"Lecture Series Outline:\n{series_outline}"
+        "with text-to-speech processing. Ensure the content is original and does not duplicate content from the other "
+        f"lectures in the series:\n{str(series_outline)}"
     )
 
     LOG.info(f"Requesting lecture text for topic {topic.number}/{len(series_outline.topics)}: {topic.title}...")
@@ -91,11 +90,15 @@ def get_lecture(series_outline: LectureSeriesOutline, lecture_number: int) -> Le
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ],
+        max_completion_tokens=15000,
     )
     lecture_text = response.choices[0].message.content.strip()
     lecture_text = swap_words(lecture_text, LLM_SMELLS)
 
-    LOG.info(f"Got lexture text for topic {topic.number}/{len(series_outline.topics)}: {topic.title}.")
+    LOG.info(
+        f"Got lexture text for topic {topic.number}/{len(series_outline.topics)} "
+        f"@ {len(lecture_text)} chars: {topic.title}."
+    )
     return Lecture(**topic.model_dump(), text=lecture_text)
 
 
@@ -259,9 +262,7 @@ def generate_audio_for_lectures_in_series(
         )
     LOG.info("Exporting audio file...")
     composer_tag = (
-        f"{TEXT_MODEL} & {SPEECH_MODEL} & {IMAGE_MODEL}"
-        if cover_image_file
-        else f"{TEXT_MODEL} & {SPEECH_MODEL}"
+        f"{TEXT_MODEL} & {SPEECH_MODEL} & {IMAGE_MODEL}" if cover_image_file else f"{TEXT_MODEL} & {SPEECH_MODEL}"
     )
     cover_tag = str(cover_image_file) if cover_image_file else None
 

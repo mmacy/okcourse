@@ -47,7 +47,7 @@ def main():
 
     do_generate_cover_art = False
     if do_generate_audio:
-        if questionary.confirm("Generate image for audio file album art").ask():
+        if questionary.confirm("Generate image for audio file album art?").ask():
             do_generate_cover_art = True
 
     print("Generating lecture series...")
