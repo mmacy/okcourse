@@ -34,3 +34,7 @@ class Course(BaseModel):
     def __str__(self) -> str:
         lectures_str = "\n\n".join(str(lecture) for lecture in self.lectures)
         return f"{self.outline}\n\n{lectures_str}"
+
+    @property
+    def title(self) -> str:
+        return self.outline.title

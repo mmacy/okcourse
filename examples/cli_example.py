@@ -26,7 +26,7 @@ def main():
 
     while True:
         num_lectures = questionary.text(
-            f"How many lectures should be in the series (default: {num_lectures_default})?"
+            f"How many lectures should be in the course (default: {num_lectures_default})?"
         ).ask()
 
         if not num_lectures:
@@ -37,14 +37,9 @@ def main():
             if num_lectures > 0:
                 break
             else:
-                print("Number of lectures must be greater than 0.")
+                print("There must be at least one (1) lecture in the series.")
         except ValueError:
             print("Enter a number greater than 0.")
-
-    # outline = generate_course_outline(topic, num_lectures)
-    # if not questionary.confirm(f"Continue generating lectures for this course outline?\n\n{str(outline)}").ask():
-    #     print("Canceled - exiting.")
-    #     exit(0)
 
     do_generate_audio = False
     if questionary.confirm("Generate MP3 audio file for course?").ask():

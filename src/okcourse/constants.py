@@ -39,8 +39,9 @@ LLM_SMELLS = {
     "utilized": "used",
     "utilizing": "using",
     "utilization": "usage",
-    "meticulously": "carefully"
+    "meticulous": "careful",
+    "meticulously": "carefully",
 }
 """Words that tend to be overused by OpenAI's text generation models and their simplified forms.
 
-By default, the overused words are replaced by their simplified forms in lecture text to help reduce \"LLM smell.\""""
+By default, overused keys are replaced by their simplified values in lecture text to help reduce \"LLM smell.\""""
