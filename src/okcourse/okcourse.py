@@ -14,7 +14,6 @@ from .constants import (
     IMAGE_PROMPT,
     LLM_SMELLS,
     SPEECH_MODEL,
-    SPEECH_MODEL_VOICE,
     SYSTEM_PROMPT,
     TEXT_MODEL,
 )
@@ -35,8 +34,8 @@ def generate_course_outline(topic: str, num_lectures: int) -> CourseOutline:
         A detailed course outline in a Pydantic model instance.
     """
     outline_prompt = (
-        f"Provide a detailed outline for a {num_lectures}-part course for a graduate-level course on "
-        f"'{topic}'. List each lecture title numbered. Each lecture should have four subtopics listed after the "
+        f"Provide a detailed outline for {num_lectures} lectures in a graduate-level course on '{topic}'. "
+        f"List each lecture title numbered. Each lecture should have four subtopics listed after the "
         "lecture title. Respond only with the outline, omitting any other commentary."
     )
 
@@ -59,7 +58,7 @@ def generate_course_outline(topic: str, num_lectures: int) -> CourseOutline:
     return course_outline
 
 
-def get_lecture(course_outline: CourseOutline, lecture_number: int) -> Lecture:
+def generate_lecture(course_outline: CourseOutline, lecture_number: int) -> Lecture:
     """Generates a lecture for the topic with the specified number in the given outline.
 
     Args:
@@ -102,8 +101,10 @@ def get_lecture(course_outline: CourseOutline, lecture_number: int) -> Lecture:
     return Lecture(**topic.model_dump(), text=lecture_text)
 
 
-def generate_course_text(course_outline: CourseOutline) -> Course:
+def generate_course_lectures(course_outline: CourseOutline) -> Course:
     """Generates the text for the lectures in the given course outline.
+
+    To generate an audio file for the Course returned by this function, call `generate_course_audio()`.
 
     Args:
         course_outline: The outline of the course for which to generate lectures.
@@ -115,7 +116,7 @@ def generate_course_text(course_outline: CourseOutline) -> Course:
         lectures = list(
             executor.map(
                 # Use a lambda here to provide both the outline and lecture number
-                lambda topic: get_lecture(course_outline, topic.number),
+                lambda topic: generate_lecture(course_outline, topic.number),
                 course_outline.topics,
             )
         )
@@ -143,7 +144,9 @@ def write_course_to_file(course: Course, output_dir: Path) -> Path:
     return course_text_path
 
 
-def generate_speech_for_text_chunk(text_chunk: str, chunk_num: int = 1) -> tuple[int, AudioSegment]:
+def generate_speech_for_text_chunk(
+    text_chunk: str, voice: str = "nova", chunk_num: int = 1
+) -> tuple[int, AudioSegment]:
     """Generates an MP3 audio segment for a chunk of text using text-to-speech (TTS).
 
     Get text chunks to pass to this function from ``utils.split_text_into_chunks``.
@@ -155,18 +158,18 @@ def generate_speech_for_text_chunk(text_chunk: str, chunk_num: int = 1) -> tuple
     Returns:
         A tuple of (chunk_num, AudioSegment) for the generated audio.
     """
-    LOG.info(f"Requesting TTS audio for text chunk {chunk_num}...")
+    LOG.info(f"Requesting TTS audio in voice '{voice}' for text chunk {chunk_num}...")
     with LLM_CLIENT.audio.speech.with_streaming_response.create(
         # TODO: Allow runtime specification of the model and voice (and later, the service).
         model=SPEECH_MODEL,
-        voice=SPEECH_MODEL_VOICE,
+        voice=voice,
         input=text_chunk,
     ) as response:
         audio_bytes = io.BytesIO()
         for data in response.iter_bytes():
             audio_bytes.write(data)
         audio_bytes.seek(0)
-        LOG.info(f"Got TTS audio for text chunk {chunk_num}.")
+        LOG.info(f"Got TTS audio for text chunk {chunk_num} in voice '{voice}'.")
         return chunk_num, AudioSegment.from_file(audio_bytes, format="mp3")
 
 
@@ -199,6 +202,11 @@ def generate_course_image(course_outline: CourseOutline, image_file_path: Path) 
         return None
 
     if image_response.data:
+        output_dir = image_file_path.parent
+        if not output_dir.exists():
+            LOG.info(f"Creating directory for cover image: {output_dir}")
+            output_dir.mkdir(parents=True, exist_ok=True)
+
         image = image_response.data[0]
         image_bytes = base64.b64decode(image.b64_json)
         image_file_path.write_bytes(image_bytes)
@@ -209,13 +217,14 @@ def generate_course_image(course_outline: CourseOutline, image_file_path: Path) 
 
 
 def generate_course_audio(
-    course: Course, output_file_path: str, do_generate_cover_image: bool = False
+    course: Course, output_file_path: str, voice: str = "nova", do_generate_cover_image: bool = False
 ) -> Path:
     """Generates an audio file from the combined text of the lectures in the given course using a TTS AI model.
 
     Args:
         course: The course containing the lectures for which to generate audio.
         output_file_path: The location to write the audio file.
+        voice: The name of the voice to be used the course lecturer. Check `consants.VOICES` list for available names.
         do_generate_cover_image: Whether to request an AI-generated cover image for the audio file.
 
     Returns:
@@ -236,7 +245,7 @@ def generate_course_audio(
     # Process chunks in parallel to generate audio
     with ThreadPoolExecutor() as executor:
         futures = {
-            executor.submit(generate_speech_for_text_chunk, chunk, chunk_num): chunk_num
+            executor.submit(generate_speech_for_text_chunk, chunk, voice, chunk_num): chunk_num
             for chunk_num, chunk in enumerate(course_chunks, start=1)
         }
 
@@ -260,20 +269,25 @@ def generate_course_audio(
             course_outline=course.outline,
             image_file_path=Path(output_file_path).expanduser().resolve().with_suffix(".png"),
         )
-    LOG.info("Exporting audio file...")
     composer_tag = (
         f"{TEXT_MODEL} & {SPEECH_MODEL} & {IMAGE_MODEL}" if cover_image_file else f"{TEXT_MODEL} & {SPEECH_MODEL}"
     )
     cover_tag = str(cover_image_file) if cover_image_file else None
 
     # Tag the MP3 and save it to a file
+    output_dir = Path(output_file_path).parent
+    if not output_dir.exists():
+        LOG.info(f"Creating directory {output_dir}")
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+    LOG.info("Exporting audio file...")
     course_audio.export(
         output_file_path,
         format="mp3",
         cover=cover_tag,
         tags={
             "title": course.outline.title,
-            "artist": f"{SPEECH_MODEL_VOICE.capitalize()} @ OpenAI",
+            "artist": f"{voice.capitalize()} @ OpenAI",
             "composer": composer_tag,
             "album": "OK Courses",
             "genre": "Books & Spoken",
@@ -310,7 +324,7 @@ def generate_course(
     outline_elapsed = outline_end_time - outline_start_time
 
     course_generation_start_time = time.perf_counter()
-    course = generate_course_text(couse_outline)
+    course = generate_course_lectures(couse_outline)
     course_generation_end_time = time.perf_counter()
     course_generation_elapsed = course_generation_end_time - course_generation_start_time
 

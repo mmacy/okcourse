@@ -2,7 +2,7 @@
 
 TEXT_MODEL = "gpt-4o"
 SPEECH_MODEL = "tts-1"
-SPEECH_MODEL_VOICE = "nova"
+TTS_VOICES = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
 IMAGE_MODEL = "dall-e-3"
 
 AI_DISCLAIMER = (
