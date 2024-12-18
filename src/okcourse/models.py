@@ -17,7 +17,7 @@ class CourseOutline(BaseModel):
 
     def __str__(self) -> str:
         topics_str = "\n\n".join(str(topic) for topic in self.topics)
-        return f"Lecture Series: {self.title}\n\n{topics_str}"
+        return f"Course title: {self.title}\n\n{topics_str}"
 
 
 class Lecture(LectureTopic):

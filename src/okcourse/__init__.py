@@ -1,18 +1,19 @@
 from importlib.metadata import PackageNotFoundError, version
 
-from .models import Lecture, Course, CourseOutline, LectureTopic
+from .constants import TTS_VOICES
+from .models import Course, CourseOutline, Lecture, LectureTopic
 from .okcourse import (
-    generate_course_audio,
     generate_course,
+    generate_course_audio,
+    generate_course_lectures,
     generate_course_outline,
-    generate_course_text,
 )
-from .utils import get_duration_string_from_seconds
+from .utils import get_duration_string_from_seconds, sanitize_filename
 
 __all__ = [
     "generate_course_audio",
     "generate_course_outline",
-    "generate_course_text",
+    "generate_course_lectures",
     "get_duration_string_from_seconds",
     "Lecture",
     "Course",
@@ -20,6 +21,7 @@ __all__ = [
     "LectureTopic",
     "generate_course",
     "sanitize_filename",
+    "TTS_VOICES",
 ]
 
 try:
