@@ -3,7 +3,7 @@ from datetime import timedelta
 
 import nltk
 import re
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 logging.basicConfig(
     level=logging.INFO,
@@ -13,7 +13,7 @@ logging.basicConfig(
 LOG = logging.getLogger()
 
 
-LLM_CLIENT = OpenAI()
+LLM_CLIENT = AsyncOpenAI()
 
 
 def download_punkt() -> bool:

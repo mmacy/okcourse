@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import io
 import time
@@ -23,7 +24,7 @@ from .utils import LLM_CLIENT, LOG, download_punkt, sanitize_filename, split_tex
 __version__ = version("okcourse")
 
 
-def generate_course_outline(topic: str, num_lectures: int) -> CourseOutline:
+async def generate_course_outline(topic: str, num_lectures: int) -> CourseOutline:
     """Given the topic for a series of lectures in a course, generates a course outline using OpenAI.
 
     Args:
@@ -40,7 +41,7 @@ def generate_course_outline(topic: str, num_lectures: int) -> CourseOutline:
     )
 
     LOG.info("Requesting course outline from LLM...")
-    course_completion = LLM_CLIENT.beta.chat.completions.parse(
+    course_completion = await LLM_CLIENT.beta.chat.completions.parse(
         model=TEXT_MODEL,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -58,7 +59,7 @@ def generate_course_outline(topic: str, num_lectures: int) -> CourseOutline:
     return course_outline
 
 
-def generate_lecture(course_outline: CourseOutline, lecture_number: int) -> Lecture:
+async def generate_lecture(course_outline: CourseOutline, lecture_number: int) -> Lecture:
     """Generates a lecture for the topic with the specified number in the given outline.
 
     Args:
@@ -83,7 +84,7 @@ def generate_lecture(course_outline: CourseOutline, lecture_number: int) -> Lect
     )
 
     LOG.info(f"Requesting lecture text for topic {topic.number}/{len(course_outline.topics)}: {topic.title}...")
-    response = LLM_CLIENT.chat.completions.create(
+    response = await LLM_CLIENT.chat.completions.create(
         model=TEXT_MODEL,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -101,7 +102,7 @@ def generate_lecture(course_outline: CourseOutline, lecture_number: int) -> Lect
     return Lecture(**topic.model_dump(), text=lecture_text)
 
 
-def generate_course_lectures(course_outline: CourseOutline) -> Course:
+async def generate_course_lectures(course_outline: CourseOutline) -> Course:
     """Generates the text for the lectures in the given course outline.
 
     To generate an audio file for the Course returned by this function, call `generate_course_audio()`.
@@ -112,17 +113,13 @@ def generate_course_lectures(course_outline: CourseOutline) -> Course:
     Returns:
         The complete course containing all the lectures.
     """
-    with ThreadPoolExecutor() as executor:
-        lectures = list(
-            executor.map(
-                # Use a lambda here to provide both the outline and lecture number
-                lambda topic: generate_lecture(course_outline, topic.number),
-                course_outline.topics,
-            )
-        )
-    lectures.sort(key=lambda lecture: lecture.number)
 
-    return Course(outline=course_outline, lectures=lectures)
+    async def generate_course_lectures(course_outline: CourseOutline) -> Course:
+        tasks = [generate_lecture(course_outline, topic.number) for topic in course_outline.topics]
+        lectures = await asyncio.gather(*tasks)
+        lectures.sort(key=lambda lecture: lecture.number)
+
+        return Course(outline=course_outline, lectures=lectures)
 
 
 def write_course_to_file(course: Course, output_dir: Path) -> Path:
@@ -144,7 +141,7 @@ def write_course_to_file(course: Course, output_dir: Path) -> Path:
     return course_text_path
 
 
-def generate_speech_for_text_chunk(
+async def generate_speech_for_text_chunk(
     text_chunk: str, voice: str = "nova", chunk_num: int = 1
 ) -> tuple[int, AudioSegment]:
     """Generates an MP3 audio segment for a chunk of text using text-to-speech (TTS).
@@ -159,21 +156,21 @@ def generate_speech_for_text_chunk(
         A tuple of (chunk_num, AudioSegment) for the generated audio.
     """
     LOG.info(f"Requesting TTS audio in voice '{voice}' for text chunk {chunk_num}...")
-    with LLM_CLIENT.audio.speech.with_streaming_response.create(
-        # TODO: Allow runtime specification of the model and voice (and later, the service).
+    async with LLM_CLIENT.audio.speech.with_streaming_response.create(
+        # TODO: Allow runtime specification of the model (and later, the service).
         model=SPEECH_MODEL,
         voice=voice,
         input=text_chunk,
     ) as response:
         audio_bytes = io.BytesIO()
-        for data in response.iter_bytes():
+        async for data in response.iter_bytes():
             audio_bytes.write(data)
         audio_bytes.seek(0)
         LOG.info(f"Got TTS audio for text chunk {chunk_num} in voice '{voice}'.")
         return chunk_num, AudioSegment.from_file(audio_bytes, format="mp3")
 
 
-def generate_course_image(course_outline: CourseOutline, image_file_path: Path) -> Path | None:
+async def generate_course_image(course_outline: CourseOutline, image_file_path: Path) -> Path | None:
     """Generates cover art for the course with the given outline.
 
     The image is appropriate for use as cover art for the course text or audio.
@@ -186,7 +183,7 @@ def generate_course_image(course_outline: CourseOutline, image_file_path: Path) 
         Path to the generated cover image, or None if no cover image was generated.
     """
     try:
-        image_response = LLM_CLIENT.images.generate(
+        image_response = await LLM_CLIENT.images.generate(
             model=IMAGE_MODEL,
             prompt=IMAGE_PROMPT + course_outline.title,
             n=1,
@@ -216,7 +213,7 @@ def generate_course_image(course_outline: CourseOutline, image_file_path: Path) 
         return None
 
 
-def generate_course_audio(
+async def generate_course_audio(
     course: Course, output_file_path: str, voice: str = "nova", do_generate_cover_image: bool = False
 ) -> Path:
     """Generates an audio file from the combined text of the lectures in the given course using a TTS AI model.
@@ -243,17 +240,12 @@ def generate_course_audio(
     course_chunks = split_text_into_chunks(course_text)
 
     # Process chunks in parallel to generate audio
-    with ThreadPoolExecutor() as executor:
-        futures = {
-            executor.submit(generate_speech_for_text_chunk, chunk, voice, chunk_num): chunk_num
-            for chunk_num, chunk in enumerate(course_chunks, start=1)
-        }
-
-        # Collect results as they complete
-        audio_chunks = sorted(
-            (future.result() for future in as_completed(futures)),
-            key=lambda x: x[0],  # Sort by chunk number
-        )
+    tasks = [
+        generate_speech_for_text_chunk(chunk, voice, chunk_num)
+        for chunk_num, chunk in enumerate(course_chunks, start=1)
+    ]
+    audio_chunks = await asyncio.gather(*tasks)
+    audio_chunks.sort(key=lambda x: x[0])
 
     # Combine all audio chunks into one audio segment
     LOG.info(f"Joining {len(audio_chunks)} audio chunks into one file...")
@@ -299,7 +291,7 @@ def generate_course_audio(
     return Path(output_file_path).expanduser()
 
 
-def generate_course(
+async def generate_course(
     topic: str, num_lectures: int, do_generate_audio_file: bool = False, do_generate_cover_art: bool = False
 ) -> dict:
     """Generates a complete course including its outline, text for its lectures, and optionally lecture audio.

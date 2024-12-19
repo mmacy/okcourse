@@ -6,8 +6,6 @@ from pathlib import Path
 import questionary
 
 from okcourse import (
-    get_duration_string_from_seconds,
-    generate_course,
     generate_course_outline,
     generate_course_lectures,
     generate_course_audio,
@@ -15,7 +13,9 @@ from okcourse import (
     TTS_VOICES,
 )
 
-num_lectures_default = 20
+num_lectures_default = 10
+# 20 lectures yields approx. 1:40:00 MP3
+# 10 lectures yields approx. 0:45:00 MP3
 
 
 def main():
@@ -63,9 +63,7 @@ def main():
     tts_voice = "nova"
     if questionary.confirm("Generate MP3 audio file for course?").ask():
         tts_voice = questionary.select(
-            "Choose a voice for the course lecturer",
-            choices=TTS_VOICES,
-            default=tts_voice
+            "Choose a voice for the course lecturer", choices=TTS_VOICES, default=tts_voice
         ).ask()
         do_generate_audio = True
 
@@ -89,6 +87,7 @@ def main():
 
     output_file_json.write_text(course.model_dump_json(indent=2))
     print(f"Course JSON:  {str(output_file_json)}")
+
 
 if __name__ == "__main__":
     main()
