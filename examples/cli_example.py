@@ -1,81 +1,97 @@
 # cli_example.py
+import asyncio
 import os
 import sys
 from pathlib import Path
 
+import aiofiles
 import questionary
 
 from okcourse import (
-    get_duration_string_from_seconds,
-    generate_course,
-    generate_course_outline,
-    generate_course_lectures,
-    generate_course_audio,
-    sanitize_filename,
     TTS_VOICES,
+    generate_course_audio,
+    generate_course_lectures,
+    generate_course_outline,
+    sanitize_filename,
 )
 
-num_lectures_default = 20
+num_lectures_default = 10
+# 20 lectures yields approx. 1:40:00 MP3
+# 10 lectures yields approx. 0:45:00 MP3
 
 
-def main():
+async def async_prompt(prompt_func, *args, **kwargs):
+    """Runs a synchronous questionary prompt in a separate thread and returns the result asynchronously.
+
+    Args:
+        prompt_func: The questionary prompt function (e.g., questionary.text).
+        *args: Positional arguments for the prompt function.
+        **kwargs: Keyword arguments for the prompt function.
+
+    Returns:
+        The result of the prompt.
+    """
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, lambda: prompt_func(*args, **kwargs).ask())
+
+
+async def main():
     print("=======================")
     print("==  OK Course Maker  ==")
     print("=======================")
 
-    topic = questionary.text("Enter a course topic:").ask()
+    topic = await async_prompt(questionary.text, "Enter a course topic:")
     if not topic:
         print("No topic entered - exiting.")
         sys.exit(0)
 
     while True:
-        num_lectures = questionary.text(
-            f"How many lectures should be in the course (default: {num_lectures_default})?"
-        ).ask()
+        num_lectures_input = await async_prompt(
+            questionary.text, f"How many lectures should be in the course (default: {num_lectures_default})?"
+        )
 
-        if not num_lectures:
+        if not num_lectures_input:
             num_lectures = num_lectures_default
+        else:
+            try:
+                num_lectures = int(num_lectures_input)
+                if num_lectures <= 0:
+                    print("There must be at least one (1) lecture in the series.")
+                    continue
+            except ValueError:
+                print("Enter a valid number greater than 0.")
+                continue
 
-        try:
-            num_lectures = int(num_lectures)
-            if num_lectures > 0:
-                break
-            else:
-                print("There must be at least one (1) lecture in the series.")
-        except ValueError:
-            print("Enter a number greater than 0.")
-
-    while True:
         print(f"Generating course outline with {num_lectures} lectures...")
-        outline = generate_course_outline(topic, num_lectures)
+        outline = await generate_course_outline(topic, num_lectures)
         print(os.linesep)
         print(str(outline))
         print(os.linesep)
 
-        if questionary.confirm("Proceed with this outline?").ask():
+        proceed = await async_prompt(questionary.confirm, "Proceed with this outline?")
+        if proceed:
             break
 
-        if not questionary.confirm("Generate a new outline?").ask():
+        regenerate = await async_prompt(questionary.confirm, "Generate a new outline?")
+        if not regenerate:
             print("Cannot generate lecture without outline - exiting.")
-            exit(0)
+            sys.exit(0)
 
     do_generate_audio = False
     tts_voice = "nova"
-    if questionary.confirm("Generate MP3 audio file for course?").ask():
-        tts_voice = questionary.select(
-            "Choose a voice for the course lecturer",
-            choices=TTS_VOICES,
-            default=tts_voice
-        ).ask()
+    if await async_prompt(questionary.confirm, "Generate MP3 audio file for course?"):
+        tts_voice = await async_prompt(
+            questionary.select, "Choose a voice for the course lecturer", choices=TTS_VOICES, default=tts_voice
+        )
         do_generate_audio = True
 
     do_generate_cover_art = False
     if do_generate_audio:
-        if questionary.confirm("Generate cover image for audio file?").ask():
+        if await async_prompt(questionary.confirm, "Generate cover image for audio file?"):
             do_generate_cover_art = True
 
     print("Generating course text...")
-    course = generate_course_lectures(outline)
+    course = await generate_course_lectures(outline)
 
     output_dir = Path.cwd() / "generated_okcourses"
     output_file_base = output_dir / sanitize_filename(course.title)
@@ -84,11 +100,23 @@ def main():
 
     if do_generate_audio:
         print("Generating course audio...")
-        course_audio_path = generate_course_audio(course, str(output_file_mp3), tts_voice, do_generate_cover_art)
+        course_audio_path = await generate_course_audio(course, str(output_file_mp3), tts_voice, do_generate_cover_art)
         print(f"Course audio: {str(course_audio_path)}")
 
-    output_file_json.write_text(course.model_dump_json(indent=2))
+    # Asynchronous file writing using aiofiles
+    async with aiofiles.open(output_file_json, "w", encoding="utf-8") as f:
+        await f.write(course.model_dump_json(indent=2))
     print(f"Course JSON:  {str(output_file_json)}")
 
+
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except RuntimeError as e:
+        if str(e) == "This event loop is already running":
+            # Handle cases where the event loop is already running, like debuggers or interactive environments
+            loop = asyncio.get_event_loop()
+            task = loop.create_task(main())
+            loop.run_until_complete(task)
+        else:
+            raise
