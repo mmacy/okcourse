@@ -3,10 +3,10 @@ from importlib.metadata import PackageNotFoundError, version
 from .constants import TTS_VOICES
 from .models import Course, CourseOutline, Lecture, LectureTopic
 from .okcourse import (
-    generate_course,
-    generate_course_async,
     generate_course_audio,
     generate_course_audio_async,
+    generate_course_image,
+    generate_course_image_async,
     generate_course_lectures,
     generate_course_lectures_async,
     generate_course_outline,
@@ -23,6 +23,8 @@ __all__ = [
     "generate_course_async",
     "generate_course_audio_async",
     "generate_course_audio",
+    "generate_course_image",
+    "generate_course_image_async",
     "generate_course_lectures_async",
     "generate_course_lectures",
     "generate_course_outline_async",

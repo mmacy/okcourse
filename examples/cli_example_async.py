@@ -6,6 +6,7 @@ optionally generate an MP3 audio file for the course.
 This script uses the asynchronous versions of the okcourse module functions. For an example that uses the synchronous
 versions, see examples/cli_example.py.
 """
+
 import asyncio
 import os
 import sys
@@ -19,6 +20,7 @@ from okcourse import (
     generate_course_audio_async,
     generate_course_lectures_async,
     generate_course_outline_async,
+    generate_course_image_async,
     sanitize_filename,
 )
 
@@ -92,25 +94,33 @@ async def main():
         )
         do_generate_audio = True
 
-    do_generate_cover_art = False
-    if do_generate_audio:
-        if await async_prompt(questionary.confirm, "Generate cover image for audio file?"):
-            do_generate_cover_art = True
-
     print("Generating course text...")
     course = await generate_course_lectures_async(outline)
 
     output_dir = Path.cwd() / "generated_okcourses"
     output_file_base = output_dir / sanitize_filename(course.title)
-    output_file_mp3 = output_file_base.with_suffix(".mp3")
     output_file_json = output_file_base.with_suffix(".json")
+    output_file_mp3 = output_file_base.with_suffix(".mp3")
+    output_file_png = output_file_base.with_suffix(".png")
 
     if do_generate_audio:
+        if await async_prompt(questionary.confirm, "Generate cover image for audio file?"):
+            await generate_course_image_async(
+                course_outline=course.outline,
+                image_file_path=output_file_png,
+            )
+            if output_file_png.exists():
+                print(f"Cover image: {str(output_file_png)}")
+
         print("Generating course audio...")
-        course_audio_path = await generate_course_audio_async(course, str(output_file_mp3), tts_voice, do_generate_cover_art)
+        course_audio_path = await generate_course_audio_async(
+            course,
+            output_file_mp3,
+            tts_voice,
+            cover_image_path=output_file_png if output_file_png.exists() else None,
+        )
         print(f"Course audio: {str(course_audio_path)}")
 
-    # Asynchronous file writing using aiofiles
     async with aiofiles.open(output_file_json, "w", encoding="utf-8") as f:
         await f.write(course.model_dump_json(indent=2))
     print(f"Course JSON:  {str(output_file_json)}")
@@ -121,7 +131,7 @@ if __name__ == "__main__":
         asyncio.run(main())
     except RuntimeError as e:
         if str(e) == "This event loop is already running":
-            # Handle cases where the event loop is already running, like debuggers or interactive environments
+            # Handle cases where the event loop is already running, like in debuggers or interactive environments
             loop = asyncio.get_event_loop()
             task = loop.create_task(main())
             loop.run_until_complete(task)

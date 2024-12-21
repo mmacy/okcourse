@@ -6,6 +6,7 @@ optionally generate an MP3 audio file for the course.
 This script uses the synchronous versions of the okcourse module functions. For an example that uses the asynchronous
 versions, see examples/cli_example_async.py.
 """
+
 import os
 import sys
 from pathlib import Path
@@ -15,6 +16,7 @@ import questionary
 from okcourse import (
     TTS_VOICES,
     generate_course_audio,
+    generate_course_image,
     generate_course_lectures,
     generate_course_outline,
     sanitize_filename,
@@ -67,6 +69,12 @@ def main():
             print("Cannot generate lecture without outline - exiting.")
             sys.exit(0)
 
+    output_dir = Path.cwd() / "generated_okcourses"
+    output_file_base = output_dir / sanitize_filename(outline.title)
+    output_file_mp3 = output_file_base.with_suffix(".mp3")
+    output_file_json = output_file_base.with_suffix(".json")
+    output_file_png = output_file_base.with_suffix(".png")
+
     do_generate_audio = False
     tts_voice = "nova"
     if questionary.confirm("Generate MP3 audio file for course?").ask():
@@ -74,23 +82,17 @@ def main():
             "Choose a voice for the course lecturer", choices=TTS_VOICES, default=tts_voice
         ).ask()
         do_generate_audio = True
-
-    do_generate_cover_art = False
-    if do_generate_audio:
         if questionary.confirm("Generate cover image for audio file?").ask():
-            do_generate_cover_art = True
+            generate_course_image(outline, output_file_png)
 
     print("Generating course text...")
     course = generate_course_lectures(outline)
 
-    output_dir = Path.cwd() / "generated_okcourses"
-    output_file_base = output_dir / sanitize_filename(course.title)
-    output_file_mp3 = output_file_base.with_suffix(".mp3")
-    output_file_json = output_file_base.with_suffix(".json")
-
     if do_generate_audio:
         print("Generating course audio...")
-        course_audio_path = generate_course_audio(course, str(output_file_mp3), tts_voice, do_generate_cover_art)
+        course_audio_path = generate_course_audio(
+            course, output_file_mp3, tts_voice, output_file_png if output_file_png.exists() else None
+        )
         print(f"Course audio: {str(course_audio_path)}")
 
     # Writing JSON output synchronously
