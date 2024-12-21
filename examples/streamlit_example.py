@@ -6,14 +6,18 @@ import streamlit as st
 from okcourse import (
     TTS_VOICES,
     generate_course_audio_async,
+    generate_course_image_async,
     generate_course_lectures_async,
     generate_course_outline_async,
     sanitize_filename,
+    CourseOutline,
 )
 
 
-async def generate_course(topic, num_lectures, do_generate_audio, tts_voice, do_generate_cover_art):
-    outline = await generate_course_outline_async(topic, num_lectures)
+async def generate_course(
+    outline: CourseOutline, do_generate_audio: bool = False, tts_voice: str = "nova", cover_art_path: Path = None
+):
+    st.write(f"Generating course text for {outline.title}...")
     course = await generate_course_lectures_async(outline)
 
     output_dir = Path.cwd() / "generated_okcourses"
@@ -22,9 +26,8 @@ async def generate_course(topic, num_lectures, do_generate_audio, tts_voice, do_
     output_file_json = output_file_base.with_suffix(".json")
 
     if do_generate_audio:
-        course_audio_path = await generate_course_audio_async(
-            course, str(output_file_mp3), tts_voice, do_generate_cover_art
-        )
+        st.write("Generating course audio...")
+        course_audio_path = await generate_course_audio_async(course, output_file_mp3, tts_voice, cover_art_path)
         st.write(f"Course audio: {str(course_audio_path)}")
 
     async with aiofiles.open(output_file_json, "w", encoding="utf-8") as f:
@@ -40,15 +43,16 @@ async def generate_course_outline(topic, num_lectures):
 def main():
     st.title("OK Course Maker")
 
-    topic = st.text_input("Enter a course topic:")
+    topic = st.text_input(
+        "Course topic:",
+        placeholder="Artificial Super Intelligence: Gray Goo, Paperclips, and Other Doomsday Scenarios",
+    )
     num_lectures = st.number_input("Number of lectures in the course:", min_value=1, value=10, max_value=100)
 
     do_generate_audio = st.checkbox("Generate course audio in MP3 format?")
     tts_voice = "nova"
     if do_generate_audio:
-        tts_voice = st.selectbox(
-            "Choose a voice for the lecturer", TTS_VOICES, index=TTS_VOICES.index(tts_voice)
-        )
+        tts_voice = st.selectbox("Choose a voice for the lecturer", TTS_VOICES, index=TTS_VOICES.index(tts_voice))
         do_generate_cover_art = st.checkbox("Generate cover image for audio file?")
 
     if st.button("Generate outline"):
@@ -62,11 +66,16 @@ def main():
     if "outline" in st.session_state:
         outline = st.session_state["outline"]
         if st.button("Accept outline"):
-            asyncio.run(generate_course(topic, num_lectures, do_generate_audio, tts_voice, do_generate_cover_art))
-        if st.button("Regenerate outline"):
-            outline = asyncio.run(generate_course_outline(topic, num_lectures))
-            st.session_state["outline"] = outline
-            st.write(outline)
+            cover_art_path = (Path.cwd() / "generated_okcourses" / sanitize_filename(outline.title)).with_suffix(".png")
+            st.write(f"Cover art path set to {cover_art_path}")
+            if do_generate_cover_art:
+                st.write("Generating cover image for course audio...")
+                cover_image = asyncio.run(generate_course_image_async(outline, cover_art_path))
+                st.image(cover_image, caption="Cover image for course audio")
+
+            asyncio.run(generate_course(outline, do_generate_audio, tts_voice, cover_art_path))
+            if do_generate_audio:
+                st.audio(cover_art_path.with_suffix(".mp3"))
 
 
 if __name__ == "__main__":

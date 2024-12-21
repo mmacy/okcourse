@@ -4,6 +4,8 @@ TEXT_MODEL = "gpt-4o"
 SPEECH_MODEL = "tts-1"
 TTS_VOICES = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
 IMAGE_MODEL = "dall-e-3"
+MAX_LECTURES = 100
+MAX_CONCURRENT_TASKS = 32
 
 AI_DISCLAIMER = (
     "This is an AI-generated voice, not a human, presenting AI-generated content that might be biased or inaccurate."
