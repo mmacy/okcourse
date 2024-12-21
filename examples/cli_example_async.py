@@ -8,6 +8,7 @@ versions, see examples/cli_example.py.
 """
 
 import asyncio
+import logging
 import os
 import sys
 from pathlib import Path
@@ -21,8 +22,11 @@ from okcourse import (
     generate_course_lectures_async,
     generate_course_outline_async,
     generate_course_image_async,
+    configure_logging,
     sanitize_filename,
 )
+
+configure_logging(logging.INFO)
 
 num_lectures_default = 10
 # 20 lectures yields approx. 1:40:00 MP3

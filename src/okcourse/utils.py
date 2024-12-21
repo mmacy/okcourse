@@ -1,3 +1,4 @@
+import os
 import logging
 from datetime import timedelta
 
@@ -5,15 +6,39 @@ import nltk
 import re
 from openai import AsyncOpenAI
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-LOG = logging.getLogger()
-
 
 LLM_CLIENT = AsyncOpenAI()
+
+log = logging.getLogger(__name__)
+
+
+def configure_logging(level: int | None = None):
+    """Configure logging for the okcourse library.
+
+    Args:
+        level: Optional log level to override the default or environment variable.
+               If not provided, uses the environment variable `OKCOURSE_LOG_LEVEL`
+               or defaults to `INFO`.
+    """
+    if level is None:  # Use environment variable if no level is explicitly provided
+        env_level = os.getenv("OKCOURSE_LOG_LEVEL", "INFO").upper()
+        level = getattr(logging, env_level, logging.INFO)
+
+    formatter = logging.Formatter(
+        "%(asctime)s [%(levelname)s][%(name)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(level)
+    console_handler.setFormatter(formatter)
+
+    # Configure loggers for the okcourse library
+    for logger_name in ["okcourse", "okcourse.utils", "okcourse.models"]:
+        logger = logging.getLogger(logger_name)
+        logger.setLevel(level)
+        logger.addHandler(console_handler)
+        logger.propagate = False  # Prevents messages from propagating to the root logger
 
 
 def download_punkt() -> bool:
@@ -23,14 +48,14 @@ def download_punkt() -> bool:
         True if the tokenizer is available after the function call.
     """
     try:
-        LOG.info("Checking for NLTK 'punkt' tokenizer...")
+        log.info("Checking for NLTK 'punkt' tokenizer...")
         nltk.data.find("tokenizers/punkt")
-        LOG.info("Found NLTK 'punkt' tokenizer.")
+        log.info("Found NLTK 'punkt' tokenizer.")
         return True
     except LookupError:
-        LOG.info("Downloading NLTK 'punkt' tokenizer...")
+        log.info("Downloading NLTK 'punkt' tokenizer...")
         nltk.download("punkt")
-        LOG.info("Downloaded NLTK 'punkt' tokenizer.")
+        log.info("Downloaded NLTK 'punkt' tokenizer.")
         return True
 
 
@@ -68,7 +93,7 @@ def split_text_into_chunks(text: str, max_chunk_size: int = 4096) -> list[str]:
     if current_chunk:
         chunks.append(" ".join(current_chunk))
 
-    LOG.info(f"Split text into {len(chunks)} chunks of ~{max_chunk_size} characters from {len(sentences)} sentences.")
+    log.info(f"Split text into {len(chunks)} chunks of ~{max_chunk_size} characters from {len(sentences)} sentences.")
     return chunks
 
 
