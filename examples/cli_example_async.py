@@ -8,6 +8,7 @@ versions, see examples/cli_example.py.
 """
 
 import asyncio
+import logging
 import os
 import sys
 from pathlib import Path
@@ -17,12 +18,15 @@ import questionary
 
 from okcourse import (
     TTS_VOICES,
+    configure_logging,
     generate_course_audio_async,
+    generate_course_image_async,
     generate_course_lectures_async,
     generate_course_outline_async,
-    generate_course_image_async,
     sanitize_filename,
 )
+
+configure_logging(logging.INFO)
 
 num_lectures_default = 10
 # 20 lectures yields approx. 1:40:00 MP3
@@ -105,12 +109,13 @@ async def main():
 
     if do_generate_audio:
         if await async_prompt(questionary.confirm, "Generate cover image for audio file?"):
+            print("Generating course cover image...")
             await generate_course_image_async(
                 course_outline=course.outline,
                 image_file_path=output_file_png,
             )
             if output_file_png.exists():
-                print(f"Cover image: {str(output_file_png)}")
+                print(f"Cover image generated: {str(output_file_png)}")
 
         print("Generating course audio...")
         course_audio_path = await generate_course_audio_async(
