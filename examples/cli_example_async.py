@@ -18,11 +18,11 @@ import questionary
 
 from okcourse import (
     TTS_VOICES,
+    configure_logging,
     generate_course_audio_async,
+    generate_course_image_async,
     generate_course_lectures_async,
     generate_course_outline_async,
-    generate_course_image_async,
-    configure_logging,
     sanitize_filename,
 )
 
@@ -109,12 +109,13 @@ async def main():
 
     if do_generate_audio:
         if await async_prompt(questionary.confirm, "Generate cover image for audio file?"):
+            print("Generating course cover image...")
             await generate_course_image_async(
                 course_outline=course.outline,
                 image_file_path=output_file_png,
             )
             if output_file_png.exists():
-                print(f"Cover image: {str(output_file_png)}")
+                print(f"Cover image generated: {str(output_file_png)}")
 
         print("Generating course audio...")
         course_audio_path = await generate_course_audio_async(

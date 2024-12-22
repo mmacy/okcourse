@@ -36,6 +36,7 @@ async def generate_course(
 
 
 async def generate_course_outline(topic, num_lectures):
+    st.write(f"Generating course outline with {num_lectures} lectures...")
     outline = await generate_course_outline_async(topic, num_lectures)
     return outline
 
@@ -70,10 +71,10 @@ def main():
             st.write(f"Cover art path set to {cover_art_path}")
             if do_generate_cover_art:
                 st.write("Generating cover image for course audio...")
-                cover_image = asyncio.run(generate_course_image_async(outline, cover_art_path))
-                st.image(cover_image, caption="Cover image for course audio")
+                cover_image, cover_image_path = asyncio.run(generate_course_image_async(outline, cover_art_path))
+                st.image(cover_image, caption=f"Cover image for '{outline.title}'", width=400)
 
-            asyncio.run(generate_course(outline, do_generate_audio, tts_voice, cover_art_path))
+            asyncio.run(generate_course(outline, do_generate_audio, tts_voice, cover_image_path))
             if do_generate_audio:
                 st.audio(cover_art_path.with_suffix(".mp3"))
 
