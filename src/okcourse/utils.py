@@ -4,10 +4,7 @@ from datetime import timedelta
 
 import nltk
 import re
-from openai import AsyncOpenAI
 
-
-LLM_CLIENT = AsyncOpenAI()
 
 log = logging.getLogger(__name__)
 
