@@ -242,7 +242,6 @@ async def generate_course_audio_async(
     )
     course_chunks = split_text_into_chunks(course_text)
 
-    # Process chunks asynchronously to generate audio
     speech_tasks = []
     async with asyncio.TaskGroup() as task_group:
         for chunk_num, chunk in enumerate(course_chunks, start=1):
@@ -254,7 +253,6 @@ async def generate_course_audio_async(
 
     audio_chunks = [speech_task.result() for speech_task in speech_tasks]
 
-    # Combine all audio chunks into one audio segment
     log.info(f"Joining {len(audio_chunks)} audio chunks into one file...")
     course_audio = sum(
         (audio_chunk for _, audio_chunk in audio_chunks),
@@ -266,7 +264,7 @@ async def generate_course_audio_async(
         cover_tag = str(cover_image_path)
     else:
         composer_tag = f"{TEXT_MODEL} & {SPEECH_MODEL}"
-    # Tag the MP3 and save it to a file
+
     output_dir = output_file_path.parent
     if not output_dir.exists():
         log.info(f"Creating directory {output_dir}")
