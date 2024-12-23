@@ -6,7 +6,9 @@ import time
 from importlib.metadata import version
 from pathlib import Path
 
-from openai import OpenAIError
+from openai import AsyncOpenAI, OpenAIError
+
+
 from pydub import AudioSegment
 
 from .constants import (
@@ -20,7 +22,7 @@ from .constants import (
     MAX_LECTURES,
 )
 from .models import Course, CourseOutline, Lecture
-from .utils import LLM_CLIENT, download_punkt, split_text_into_chunks, swap_words
+from .utils import download_punkt, split_text_into_chunks, swap_words
 
 __version__ = version("okcourse")
 
@@ -29,6 +31,7 @@ log = logging.getLogger(__name__)
 #############
 # ASYNC
 #############
+client = AsyncOpenAI()
 
 
 async def generate_course_outline_async(topic: str, num_lectures: int) -> CourseOutline:
@@ -51,7 +54,7 @@ async def generate_course_outline_async(topic: str, num_lectures: int) -> Course
     )
 
     log.info("Requesting course outline from LLM...")
-    course_completion = await LLM_CLIENT.beta.chat.completions.parse(
+    course_completion = await client.beta.chat.completions.parse(
         model=TEXT_MODEL,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -94,7 +97,7 @@ async def generate_lecture_async(course_outline: CourseOutline, lecture_number: 
     )
 
     log.info(f"Requesting lecture text for topic {topic.number}/{len(course_outline.topics)}: {topic.title}...")
-    response = await LLM_CLIENT.chat.completions.create(
+    response = await client.chat.completions.create(
         model=TEXT_MODEL,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -123,9 +126,17 @@ async def generate_course_lectures_async(course_outline: CourseOutline) -> Cours
     Returns:
         The complete course containing all the lectures.
     """
-    tasks = [generate_lecture_async(course_outline, topic.number) for topic in course_outline.topics]
-    lectures = await asyncio.gather(*tasks)
-    lectures.sort(key=lambda lecture: lecture.number)
+    lecture_tasks = []
+
+    async with asyncio.TaskGroup() as task_group:
+        for topic in course_outline.topics:
+            task = task_group.create_task(
+                generate_lecture_async(course_outline, topic.number),
+                name=f"Lecture-{topic.number}",
+            )
+            lecture_tasks.append(task)
+
+    lectures = [lecture_task.result() for lecture_task in lecture_tasks]
 
     return Course(outline=course_outline, lectures=lectures)
 
@@ -145,7 +156,7 @@ async def generate_speech_for_text_chunk_async(
         A tuple of (chunk_num, AudioSegment) for the generated audio.
     """
     log.info(f"Requesting TTS audio in voice '{voice}' for text chunk {chunk_num}...")
-    async with LLM_CLIENT.audio.speech.with_streaming_response.create(
+    async with client.audio.speech.with_streaming_response.create(
         # TODO: Allow runtime specification of the model (and later, the service).
         model=SPEECH_MODEL,
         voice=voice,
@@ -175,7 +186,7 @@ async def generate_course_image_async(
         fails, returns (None, None).
     """
     try:
-        image_response = await LLM_CLIENT.images.generate(
+        image_response = await client.images.generate(
             model=IMAGE_MODEL,
             prompt=IMAGE_PROMPT + course_outline.title,
             n=1,
@@ -231,15 +242,17 @@ async def generate_course_audio_async(
     )
     course_chunks = split_text_into_chunks(course_text)
 
-    # Process chunks asynchronously to generate audio
-    tasks = [
-        generate_speech_for_text_chunk_async(chunk, voice, chunk_num)
-        for chunk_num, chunk in enumerate(course_chunks, start=1)
-    ]
-    audio_chunks = await asyncio.gather(*tasks)
-    audio_chunks.sort(key=lambda x: x[0])  # Sort by chunk number
+    speech_tasks = []
+    async with asyncio.TaskGroup() as task_group:
+        for chunk_num, chunk in enumerate(course_chunks, start=1):
+            task = task_group.create_task(
+                generate_speech_for_text_chunk_async(chunk, voice, chunk_num),
+                name=f"Speech-{chunk_num}",
+            )
+            speech_tasks.append(task)
 
-    # Combine all audio chunks into one audio segment
+    audio_chunks = [speech_task.result() for speech_task in speech_tasks]
+
     log.info(f"Joining {len(audio_chunks)} audio chunks into one file...")
     course_audio = sum(
         (audio_chunk for _, audio_chunk in audio_chunks),
@@ -251,7 +264,7 @@ async def generate_course_audio_async(
         cover_tag = str(cover_image_path)
     else:
         composer_tag = f"{TEXT_MODEL} & {SPEECH_MODEL}"
-    # Tag the MP3 and save it to a file
+
     output_dir = output_file_path.parent
     if not output_dir.exists():
         log.info(f"Creating directory {output_dir}")
