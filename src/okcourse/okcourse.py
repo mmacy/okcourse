@@ -243,12 +243,16 @@ async def generate_course_audio_async(
     course_chunks = split_text_into_chunks(course_text)
 
     # Process chunks asynchronously to generate audio
-    tasks = [
-        generate_speech_for_text_chunk_async(chunk, voice, chunk_num)
-        for chunk_num, chunk in enumerate(course_chunks, start=1)
-    ]
-    audio_chunks = await asyncio.gather(*tasks)
-    audio_chunks.sort(key=lambda x: x[0])  # Sort by chunk number
+    speech_tasks = []
+    async with asyncio.TaskGroup() as task_group:
+        for chunk_num, chunk in enumerate(course_chunks, start=1):
+            task = task_group.create_task(
+                generate_speech_for_text_chunk_async(chunk, voice, chunk_num),
+                name=f"Speech-{chunk_num}",
+            )
+            speech_tasks.append(task)
+
+    audio_chunks = [speech_task.result() for speech_task in speech_tasks]
 
     # Combine all audio chunks into one audio segment
     log.info(f"Joining {len(audio_chunks)} audio chunks into one file...")
