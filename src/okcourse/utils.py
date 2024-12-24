@@ -38,26 +38,43 @@ def configure_logging(level: int | None = None):
         logger.propagate = False  # Prevents messages from propagating to the root logger
 
 
-def download_punkt() -> bool:
-    """Downloads the NLTK 'punkt' tokenizer if not already downloaded.
+def tokenizer_available() -> bool:
+    """Checks if the NLTK 'punkt_tab' tokenizer is available on the system.
 
     Returns:
-        True if the tokenizer is available after the function call.
+        True if the tokenizer is available.
     """
     try:
-        log.info("Checking for NLTK 'punkt' tokenizer...")
-        nltk.data.find("tokenizers/punkt")
-        log.info("Found NLTK 'punkt' tokenizer.")
+        log.info("Checking for NLTK 'punkt_tab' tokenizer...")
+        nltk.data.find("tokenizers/punkt_tab")
+        log.info("Found NLTK 'punkt_tab' tokenizer.")
         return True
     except LookupError:
-        log.info("Downloading NLTK 'punkt' tokenizer...")
-        nltk.download("punkt")
-        log.info("Downloaded NLTK 'punkt' tokenizer.")
+        log.warning("NLTK 'punkt_tab' tokenizer NOT found. Download it with ``download_tokenizer()``.")
+        return False
+
+
+def download_tokenizer() -> bool:
+    """Downloads the NLTK 'punkt_tab' tokenizer.
+
+    Returns:
+        True if the tokenizer was downloaded.
+    """
+    try:
+        log.info("Downloading NLTK 'punkt_tab' tokenizer...")
+        nltk.download("punkt_tab", raise_on_error=True)
+        log.info("Downloaded NLTK 'punkt_tab' tokenizer.")
         return True
+    except Exception as e:
+        log.error(f"Error downloading NLTK 'punkt_tab' tokenizer: {e}")
+        return False
 
 
 def split_text_into_chunks(text: str, max_chunk_size: int = 4096) -> list[str]:
     """Splits text into chunks of approximately `max_chunk_size` characters.
+
+    The first time you call this function, it will check the default download location for the NLTK 'punkt_tab' tokenizer.
+    If the tokenizer is not found, it will attempt to download it. Subsequent calls will not re-download the tokenizer.
 
     Args:
         text: The text to split.
@@ -73,6 +90,7 @@ def split_text_into_chunks(text: str, max_chunk_size: int = 4096) -> list[str]:
         raise ValueError("max_chunk_size must be greater than 0")
 
     sentences = nltk.sent_tokenize(text)
+
     chunks = []
     current_chunk = []
     current_length = 0

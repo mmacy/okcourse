@@ -22,7 +22,7 @@ from .constants import (
     MAX_LECTURES,
 )
 from .models import Course, CourseOutline, Lecture
-from .utils import download_punkt, split_text_into_chunks, swap_words
+from .utils import tokenizer_available, download_tokenizer, split_text_into_chunks, swap_words
 
 __version__ = version("okcourse")
 
@@ -230,9 +230,8 @@ async def generate_course_audio_async(
     Returns:
         The path to the TTS-generated audio file.
     """
-    if not download_punkt():
-        # If we don't have NLTK's 'punkt', we can't chunk the text to feed to the LLM for TTS.
-        return False
+    if not tokenizer_available():
+        download_tokenizer()
 
     # Combine all lecture texts, including titles, preceded by the disclosure that it's all AI-generated
     course_text = (
@@ -274,7 +273,7 @@ async def generate_course_audio_async(
     course_audio.export(
         str(output_file_path),
         format="mp3",
-        cover=cover_tag,
+        cover=cover_tag if cover_image_path else None,
         tags={
             "title": course.outline.title,
             "artist": f"{voice.capitalize()} @ OpenAI",

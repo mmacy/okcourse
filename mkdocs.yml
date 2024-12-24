@@ -1,0 +1,11 @@
+site_name: OK Courses
+site_url: https://mmacy.github.io/okcourse
+theme:
+  name: material
+
+plugins:
+- search
+- mkdocstrings:
+    handlers:
+      python:
+        paths: [src]

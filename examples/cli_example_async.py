@@ -77,7 +77,6 @@ async def main():
 
         print(f"Generating course outline with {num_lectures} lectures...")
         outline = await generate_course_outline_async(topic, num_lectures)
-        print(os.linesep)
         print(str(outline))
         print(os.linesep)
 
@@ -90,26 +89,30 @@ async def main():
             print("Cannot generate lecture without outline - exiting.")
             sys.exit(0)
 
-    do_generate_audio = False
-    tts_voice = "nova"
-    if await async_prompt(questionary.confirm, "Generate MP3 audio file for course?"):
-        tts_voice = await async_prompt(
-            questionary.select, "Choose a voice for the course lecturer", choices=TTS_VOICES, default=tts_voice
-        )
-        do_generate_audio = True
-
     print("Generating course text...")
     course = await generate_course_lectures_async(outline)
 
+    # Set up some default paths
     output_dir = Path.cwd() / "generated_okcourses"
     output_file_base = output_dir / sanitize_filename(course.title)
     output_file_json = output_file_base.with_suffix(".json")
     output_file_mp3 = output_file_base.with_suffix(".mp3")
     output_file_png = output_file_base.with_suffix(".png")
 
-    if do_generate_audio:
+    async with aiofiles.open(output_file_json, "w", encoding="utf-8") as f:
+        await f.write(course.model_dump_json(indent=2))
+        print(f"Saved course JSON to {str(output_file_json)}")
+
+    if await async_prompt(questionary.confirm, "Generate MP3 audio file for course?"):
+        tts_voice = await async_prompt(
+            questionary.select, "Choose a voice for the course lecturer", choices=TTS_VOICES, default=TTS_VOICES[0]
+        )
+
+        # YES they want AUDIO - do they also want a COVER IMAGE?
         if await async_prompt(questionary.confirm, "Generate cover image for audio file?"):
-            print("Generating course cover image...")
+            print("Generating cover image...")
+
+            # YES they want a COVER IMAGE - get the PNG
             await generate_course_image_async(
                 course_outline=course.outline,
                 image_file_path=output_file_png,
@@ -125,10 +128,6 @@ async def main():
             cover_image_path=output_file_png if output_file_png.exists() else None,
         )
         print(f"Course audio: {str(course_audio_path)}")
-
-    async with aiofiles.open(output_file_json, "w", encoding="utf-8") as f:
-        await f.write(course.model_dump_json(indent=2))
-    print(f"Course JSON:  {str(output_file_json)}")
 
 
 if __name__ == "__main__":
