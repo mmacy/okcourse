@@ -7,6 +7,7 @@ This script uses the synchronous versions of the okcourse module functions. For 
 versions, see examples/cli_example_async.py.
 """
 
+import logging
 import os
 import sys
 from pathlib import Path
@@ -20,7 +21,10 @@ from okcourse import (
     generate_course_lectures,
     generate_course_outline,
     sanitize_filename,
+    configure_logging,
 )
+
+configure_logging(logging.INFO)
 
 num_lectures_default = 10
 # 20 lectures yields approx. 1:40:00 MP3
@@ -95,7 +99,6 @@ def main():
         )
         print(f"Course audio: {str(course_audio_path)}")
 
-    # Writing JSON output synchronously
     output_dir.mkdir(parents=True, exist_ok=True)
     with open(output_file_json, "w", encoding="utf-8") as f:
         f.write(course.model_dump_json(indent=2))

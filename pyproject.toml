@@ -8,7 +8,6 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "aiofiles>=24.1.0",
     "nltk>=3.9.1",
     "openai>=1.57.2",
     "pydub>=0.25.1",
@@ -20,8 +19,14 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "aiofiles>=24.1.0",
     "questionary>=2.0.1",
-    "streamlit>=1.41.0"
+    "streamlit>=1.41.0",
+]
+docs = [
+    "mkdocs-literate-nav>=0.6.1",
+    "mkdocs-material>=9.5.49",
+    "mkdocstrings-python>=1.12.2",
 ]
 
 [tool.uv.sources]
