@@ -82,7 +82,8 @@ plugins:
         load_external_modules: false # 'true' picks up __all__ from __init__.py files
         import:
           - https://docs.python.org/3/objects.inv
-          - https://docs.pydantic.dev/2.4/objects.inv
+          - https://docs.pydantic.dev/2.10/objects.inv
+          - https://mmacy.github.io/openai-python/latest/objects.inv
         options:
           docstring_options:
             ignore_init_summary: true
@@ -115,17 +116,7 @@ nav:
   - Welcome:
     - index.md
     - Get started: get-started.md
+    - Examples: examples/index.md
     - API reference: reference/index.md
-  #  - Examples: examples/index.md
-  #   - Changelog: changelog.md
-  # - Get started:
-  #     - get_started.md
-  #     - connect.md
-  #     - request-response.md
-  #     - error-handling.md
-  #     - debugging.md
-  #     - advanced.md
-  #     - helpers.md
+  - Examples: examples/
   - API reference: reference/
-#  - Example code: examples/
-#  - Changelog: changelog.md

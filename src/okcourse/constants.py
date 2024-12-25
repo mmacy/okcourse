@@ -1,11 +1,22 @@
-"""Global defaults."""
+"""Globally accessible configuration and library default values."""
 
 TEXT_MODEL = "gpt-4o"
-SPEECH_MODEL = "tts-1"
+"""Name of the AI model to use for generating the course outline and lecture text."""
+
+TTS_MODEL = "tts-1"
+"""Name of the AI model to use for generating the course audio file."""
+
 TTS_VOICES = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+"""List of voices available for the text-to-speech model. Determines the voice of the lecturer in the course audio file.
+Voice samples are available on
+[platform.openai.com/.../text-to-speech](https://platform.openai.com/docs/guides/text-to-speech)."""
+
 IMAGE_MODEL = "dall-e-3"
+"""Name of the AI model to use for generating the cover image for the course audio file."""
+
 MAX_LECTURES = 100
-MAX_CONCURRENT_TASKS = 32
+"""Maximum number of lectures that may be generated for a course. This limit is imposed to help avoid accidental
+excessive API usage and its associated cost rather than being a technical limitation."""
 
 AI_DISCLAIMER = (
     "This is an AI-generated voice, not a human, presenting AI-generated content that might be biased or inaccurate."
@@ -28,8 +39,9 @@ IMAGE_PROMPT = (
     "Its style should reflect the academic nature of the course material and be indicative of the course content. "
     "The title of the course is:\n\n"
 )
-"""Prompt passed to OpenAI's `/image` endpoint. The course title is appended to this prompt before sending the
-image generation request."""
+"""The prompt sent to the [`IMAGE_MODEL`][okcourse.constants.IMAGE_MODEL] when requesting a cover image for the course.
+The user-specified course title is appended to this prompt before sending the request to the OpenAI API with
+[`Completions.create()`][src.openai.resources.Completions.create]."""
 
 LLM_SMELLS = {
     "crucial": "important",

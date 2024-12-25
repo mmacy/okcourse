@@ -16,7 +16,7 @@ from .constants import (
     IMAGE_MODEL,
     IMAGE_PROMPT,
     LLM_SMELLS,
-    SPEECH_MODEL,
+    TTS_MODEL,
     SYSTEM_PROMPT,
     TEXT_MODEL,
     MAX_LECTURES,
@@ -76,8 +76,8 @@ async def generate_lecture_async(course_outline: CourseOutline, lecture_number: 
     """Generates a lecture for the topic with the specified number in the given outline.
 
     Args:
-        outline: The outline of the course containing lecture topics and their subtopics.
-        number: The position number of the lecture to generate.
+        course_outline: The outline of the course containing lecture topics and their subtopics.
+        lecture_number: The position number of the lecture to generate.
 
     Returns:
         A Lecture object representing the lecture for the given number.
@@ -149,7 +149,8 @@ async def generate_speech_for_text_chunk_async(
     Get text chunks to pass to this function from ``utils.split_text_into_chunks``.
 
     Args:
-        chunk: The text chunk to convert to speech.
+        text_chunk: The text chunk to convert to speech.
+        voice: (Optional) The name of the voice to use for the TTS.
         chunk_num: (Optional) The chunk number.
 
     Returns:
@@ -158,7 +159,7 @@ async def generate_speech_for_text_chunk_async(
     log.info(f"Requesting TTS audio in voice '{voice}' for text chunk {chunk_num}...")
     async with client.audio.speech.with_streaming_response.create(
         # TODO: Allow runtime specification of the model (and later, the service).
-        model=SPEECH_MODEL,
+        model=TTS_MODEL,
         voice=voice,
         input=text_chunk,
     ) as response:
@@ -259,10 +260,10 @@ async def generate_course_audio_async(
     )
 
     if cover_image_path:
-        composer_tag = f"{TEXT_MODEL} & {SPEECH_MODEL} & {IMAGE_MODEL}"
+        composer_tag = f"{TEXT_MODEL} & {TTS_MODEL} & {IMAGE_MODEL}"
         cover_tag = str(cover_image_path)
     else:
-        composer_tag = f"{TEXT_MODEL} & {SPEECH_MODEL}"
+        composer_tag = f"{TEXT_MODEL} & {TTS_MODEL}"
 
     output_dir = output_file_path.parent
     if not output_dir.exists():
