@@ -1,16 +1,35 @@
-"""Global defaults."""
+"""Globally accessible configuration and library defaults."""
 
 TEXT_MODEL = "gpt-4o"
-SPEECH_MODEL = "tts-1"
+"""Name of the AI model to use for generating the course outline and lecture text."""
+
+TTS_MODEL = "tts-1"
+"""Name of the AI model to use for generating the course audio file."""
+
 TTS_VOICES = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+"""List of voices available for the text-to-speech model. Determines the voice of the lecturer in the course audio file.
+
+Voice samples are available on
+[platform.openai.com/.../text-to-speech](https://platform.openai.com/docs/guides/text-to-speech).
+"""
+
 IMAGE_MODEL = "dall-e-3"
+"""Name of the AI model to use for generating the cover image for the course audio file."""
+
 MAX_LECTURES = 100
-MAX_CONCURRENT_TASKS = 32
+"""Maximum number of lectures that may be generated for a course.
+
+This limit is imposed to help avoid accidental excessive API usage and its associated cost rather than being a technical
+limitation.
+"""
 
 AI_DISCLAIMER = (
     "This is an AI-generated voice, not a human, presenting AI-generated content that might be biased or inaccurate."
 )
-"""Disclaimer required by OpenAI's usage policy."""
+"""Disclaimer required by the [OpenAI usage policy](https://openai.com/policies/usage-policies/).
+
+This disclaimer is inserted as the first line in the course audio.
+"""
 
 SYSTEM_PROMPT = (
     "You are an esteemed college professor and expert in your field who typically lectures graduate students. "
@@ -28,11 +47,14 @@ IMAGE_PROMPT = (
     "Its style should reflect the academic nature of the course material and be indicative of the course content. "
     "The title of the course is:\n\n"
 )
-"""Prompt passed to OpenAI's `/image` endpoint. The course title is appended to this prompt before sending the
-image generation request."""
+"""The prompt sent to the [`IMAGE_MODEL`][okcourse.constants.IMAGE_MODEL] when requesting a cover image for the course.
 
-LLM_SMELLS = {
-    "crucial": "important",
+The user-specified course title is appended to this prompt before sending the request to the OpenAI API with
+[`Completions.create()`][src.openai.resources.Completions.create].
+"""
+
+LLM_SMELLS = {  # TODO: Add support for phrases like "such as" (like) and "in order to" (to).
+    # "crucial": "important",  # TODO: Uncomment when we can handle phrases (breaks right now due to a/an mismatch).
     "delve": "dig",
     "delved": "dug",
     "delves": "digs",
@@ -44,6 +66,7 @@ LLM_SMELLS = {
     "meticulous": "careful",
     "meticulously": "carefully",
 }
-"""Words that tend to be overused by OpenAI's text generation models and their simplified forms.
+"""Dictionary with key/value pairs of words overused by OpenAI's language models and their simplified forms.
 
-By default, overused keys are replaced by their simplified values in lecture text to help reduce \"LLM smell.\""""
+Words in the keys are replaced by their simplified forms in generated lecture text to help reduce \"LLM smell.\"
+"""

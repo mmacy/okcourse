@@ -18,7 +18,7 @@ import questionary
 
 from okcourse import (
     TTS_VOICES,
-    configure_logging,
+    enable_logging,
     generate_course_audio_async,
     generate_course_image_async,
     generate_course_lectures_async,
@@ -26,7 +26,7 @@ from okcourse import (
     sanitize_filename,
 )
 
-configure_logging(logging.INFO)
+enable_logging(logging.INFO)
 
 num_lectures_default = 10
 # 20 lectures yields approx. 1:40:00 MP3

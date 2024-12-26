@@ -1,11 +1,122 @@
 site_name: OK Courses
-site_url: https://mmacy.github.io/okcourse
+site_author: Marsh Macy
+site_description: A library that generates courses containing lectures on any topic by using AI. They're not great, but they're OK.
+site_url: https://mmacy.github.io/okcourse/
+repo_name: okcourse
+repo_url: https://github.com/mmacy/okcourse
+watch: [README.md, src/okcourse]
+
 theme:
   name: material
+  icon:
+    repo: fontawesome/brands/git-alt
+
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: grey
+      accent: orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: grey
+      accent: orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+  font:
+    text: Inter
+    code: Chivo Mono
+
+  features:
+    - content.code.annotate
+    - header.autohide
+    - search.share
+    - search.suggest
+    - toc.follow
+
+    - navigation.footer
+    - navigation.indexes
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.prune
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - navigation.tracking
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
 
 plugins:
 - search
+- gen-files:
+      scripts:
+        - scripts/gen_ref_docs.py
+- literate-nav:
+    nav_file: SUMMARY.md
+
 - mkdocstrings:
     handlers:
       python:
         paths: [src]
+        load_external_modules: false # 'true' picks up __all__ from __init__.py files
+        import:
+          - https://docs.python.org/3/objects.inv
+          - https://docs.pydantic.dev/2.10/objects.inv
+          - https://mmacy.github.io/openai-python/latest/objects.inv
+        options:
+          docstring_options:
+            ignore_init_summary: true
+            summary: true
+          docstring_section_style: table
+          docstring_style: google
+          filters: ["!^_"]
+          heading_level: 3
+          inherited_members: false
+          merge_init_into_class: true
+          separate_signature: true
+          show_bases: false
+          show_if_no_docstring: true
+          show_root_full_path: false
+          show_root_heading: false
+          show_signature_annotations: true
+          show_source: false
+          show_symbol_type_heading: true
+          show_symbol_type_toc: true
+          signature_crossrefs: true
+          summary: true
+          unwrap_annotated: true
+
+extra:
+  social:
+  - icon: fontawesome/brands/github
+    link: https://github.com/mmacy
+
+nav:
+  - Welcome:
+    - index.md
+    - Get started: get-started.md
+    - Examples: examples/index.md
+    - API reference: reference/index.md
+  - Examples: examples/
+  - API reference: reference/

@@ -13,7 +13,7 @@ from .okcourse import (
     generate_course_outline,
     generate_course_outline_async,
 )
-from .utils import configure_logging, get_duration_string_from_seconds, sanitize_filename
+from .utils import enable_logging, get_duration_string_from_seconds, sanitize_filename
 
 __all__ = [
     "Course",
@@ -31,7 +31,7 @@ __all__ = [
     "generate_course_outline_async",
     "generate_course_outline",
     "generate_course",
-    "configure_logging",
+    "enable_logging",
     "get_duration_string_from_seconds",
     "sanitize_filename",
 ]
