@@ -1,3 +1,5 @@
+"""Utility functions that support operations performed by other modules in the okcourse library."""
+
 import os
 import logging
 from datetime import timedelta
@@ -9,7 +11,7 @@ import re
 log = logging.getLogger(__name__)
 
 
-def configure_logging(level: int | None = None):
+def enable_logging(level: int | None = None):
     """Configure logging for the okcourse library.
 
     Args:

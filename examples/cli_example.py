@@ -21,10 +21,10 @@ from okcourse import (
     generate_course_lectures,
     generate_course_outline,
     sanitize_filename,
-    configure_logging,
+    enable_logging,
 )
 
-configure_logging(logging.INFO)
+enable_logging(logging.INFO)
 
 num_lectures_default = 10
 # 20 lectures yields approx. 1:40:00 MP3

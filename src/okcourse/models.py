@@ -1,3 +1,5 @@
+"""Pydantic model classes representing a course and its components like the outline, lecture topics, and lectures."""
+
 from pydantic import BaseModel, Field
 
 

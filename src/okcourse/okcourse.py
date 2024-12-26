@@ -1,3 +1,5 @@
+"""Main module for the okcourse package. Primary interface for generating course outlines, lectures, and audio files."""
+
 import asyncio
 import base64
 import io
