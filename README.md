@@ -1,28 +1,56 @@
 # okcourse
 
-<!-- ---8<--- [start:get-started] -->
+The `okcourse` module generates audio lectures in MP3 format for any topic using Python and the OpenAI API. You supply a topic for the course, the number of lectures in the series, and the LLM generates the series outline, lecture text, and audio for the entire series.
 
-The `okcourse` Python library generates content and audio for lectures on any topic.(1) You specify the course title and number of lectures and OpenAI's models generate the course outline, lecture text, cover image, and audio file.
-{ .annotate }
+A real README will replace this one (for realsies), but for now, here's output from a run of the CLI example app generating a four-lecture "course" with logging enabled:
 
-1. Any topic that doesn't run afoul of [OpenAI's usage policy](https://openai.com/policies/usage-policies/).
-
-## Prerequisites
-
-- [Python](https://www.python.org/) 3.12+
-- [ffmpeg](https://www.ffmpeg.org/)
-- [OpenAI API key](https://platform.openai.com/account/api-keys)
-
-## Install
-
-The `okcourse` package is not yet on PyPi due to its rapidly changing API surface.
-
-Until the API surface solidifies, you can install it directly from GitHub:
-
-```sh
-# TODO: pip install git+blahblah
+```console
+$ uv run examples/cli_example.py
+===================
+==  Courserator  ==
+===================
+? Enter a lecture series topic: Neutron star formation in depth
+? How many lectures should be in the series (default: 20)? 4
+? Generate MP3 audio file for lecture series? Yes
+Generating lecture series...
+2024-12-12 22:28:47 [INFO] Requesting lecture series outline from LLM...
+2024-12-12 22:28:52 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-12-12 22:28:52 [INFO] Resetting lecture series topic to 'Neutron star formation in depth' from LLM-provided 'Neutron Star Formation in Depth'
+2024-12-12 22:28:52 [INFO] Requesting lecture text from LLM for topic 1/4: Stellar Evolution and Supernova Mechanisms...
+2024-12-12 22:28:52 [INFO] Requesting lecture text from LLM for topic 2/4: Degenerate Matter and Neutronization...
+2024-12-12 22:28:52 [INFO] Requesting lecture text from LLM for topic 3/4: Structure and Properties of Neutron Stars...
+2024-12-12 22:28:52 [INFO] Requesting lecture text from LLM for topic 4/4: Binary Systems and Neutron Star Mergers...
+2024-12-12 22:28:58 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-12-12 22:28:58 [INFO] Got lexture text from LLM for 'Degenerate Matter and Neutronization'...
+2024-12-12 22:29:01 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-12-12 22:29:01 [INFO] Got lexture text from LLM for 'Structure and Properties of Neutron Stars'...
+2024-12-12 22:29:05 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-12-12 22:29:05 [INFO] Got lexture text from LLM for 'Stellar Evolution and Supernova Mechanisms'...
+2024-12-12 22:29:09 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-12-12 22:29:09 [INFO] Got lexture text from LLM for 'Binary Systems and Neutron Star Mergers'...
+2024-12-12 22:29:09 [INFO] Checking for NLTK 'punkt' tokenizer...
+2024-12-12 22:29:09 [INFO] Found NLTK 'punkt' tokenizer.
+2024-12-12 22:29:09 [INFO] Split text into 5 chunks of ~4096 characters from 121 sentences.
+2024-12-12 22:29:09 [INFO] Requesting TTS-generated audio for text chunk 1...
+2024-12-12 22:29:09 [INFO] Requesting TTS-generated audio for text chunk 2...
+2024-12-12 22:29:09 [INFO] Requesting TTS-generated audio for text chunk 3...
+2024-12-12 22:29:09 [INFO] Requesting TTS-generated audio for text chunk 4...
+2024-12-12 22:29:09 [INFO] Requesting TTS-generated audio for text chunk 5...
+2024-12-12 22:29:10 [INFO] HTTP Request: POST https://api.openai.com/v1/audio/speech "HTTP/1.1 200 OK"
+2024-12-12 22:29:10 [INFO] HTTP Request: POST https://api.openai.com/v1/audio/speech "HTTP/1.1 200 OK"
+2024-12-12 22:29:11 [INFO] HTTP Request: POST https://api.openai.com/v1/audio/speech "HTTP/1.1 200 OK"
+2024-12-12 22:29:11 [INFO] HTTP Request: POST https://api.openai.com/v1/audio/speech "HTTP/1.1 200 OK"
+2024-12-12 22:29:11 [INFO] HTTP Request: POST https://api.openai.com/v1/audio/speech "HTTP/1.1 200 OK"
+2024-12-12 22:29:21 [INFO] Got TTS-generated audio for text chunk 5.
+2024-12-12 22:29:37 [INFO] Got TTS-generated audio for text chunk 2.
+2024-12-12 22:29:40 [INFO] Got TTS-generated audio for text chunk 1.
+2024-12-12 22:29:46 [INFO] Got TTS-generated audio for text chunk 4.
+2024-12-12 22:29:50 [INFO] Got TTS-generated audio for text chunk 3.
+2024-12-12 22:29:50 [INFO] Joining 5 audio chunks into one file...
+Lecture series generation complete.
+Lecture series text: /Users/mmacy/repos/okcourse/lectures/neutron_star_formation_in_depth.txt
+Lecture series audio: /Users/mmacy/repos/okcourse/lectures/neutron_star_formation_in_depth.mp3
+Total generation time: 1:06
 ```
 
-## Try an example
-
-TODO
+The duration of the MP3 generated by this example run was **17m38s** and the file size was **~4 MB**.
