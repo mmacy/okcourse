@@ -7,6 +7,7 @@ This script uses the synchronous versions of the okcourse module functions. For 
 versions, see examples/cli_example_async.py.
 """
 
+import asyncio
 import logging
 import os
 import sys
@@ -16,12 +17,13 @@ import questionary
 
 from okcourse import (
     TTS_VOICES,
+    CourseGenerator,
+    enable_logging,
     generate_course_audio,
     generate_course_image,
     generate_course_lectures,
     generate_course_outline,
     sanitize_filename,
-    enable_logging,
 )
 
 enable_logging(logging.INFO)
@@ -35,6 +37,13 @@ def main():
     print("=======================")
     print("==  OK Course Maker  ==")
     print("=======================")
+
+    print("Initializing course generator...")
+    cg = CourseGenerator("Create a sync API interface for async functions in Python 3.12", 2, "fable", "~/.okcourse")
+    asyncio.run(cg.generate_course_outline())
+    asyncio.run(cg.generate_course_lectures())
+    asyncio.run(cg.generate_course_image())
+    asyncio.run(cg.generate_course_audio())
 
     topic = questionary.text("Enter a course topic:").ask()
     if not topic:

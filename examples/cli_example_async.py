@@ -18,6 +18,7 @@ import questionary
 
 from okcourse import (
     TTS_VOICES,
+    CourseGenerator,
     enable_logging,
     generate_course_audio_async,
     generate_course_image_async,
@@ -52,6 +53,10 @@ async def main():
     print("=======================")
     print("==  OK Course Maker  ==")
     print("=======================")
+
+    print("Initializing course generator...")
+    course_generator = CourseGenerator("Create a sync API interface for async functions", 4, "fable", "~/.okcourse")
+    cg_outline = await course_generator.generate_course_outline()
 
     topic = await async_prompt(questionary.text, "Enter a course topic:")
     if not topic:

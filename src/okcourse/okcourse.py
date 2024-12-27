@@ -5,35 +5,100 @@ import base64
 import io
 import logging
 import time
+from abc import ABC, abstractmethod
 from importlib.metadata import version
 from pathlib import Path
 
-from openai import AsyncOpenAI, OpenAIError
-
-
+from openai import APIError, APIStatusError, AsyncOpenAI, OpenAIError
 from pydub import AudioSegment
 
 from .constants import (
     AI_DISCLAIMER,
-    IMAGE_MODEL,
-    IMAGE_PROMPT,
     LLM_SMELLS,
-    TTS_MODEL,
-    SYSTEM_PROMPT,
-    TEXT_MODEL,
-    MAX_LECTURES,
+    DEFAULT_SYSTEM_PROMPT,
+    DEFAULT_IMAGE_PROMPT,
 )
-from .models import Course, CourseOutline, Lecture
-from .utils import tokenizer_available, download_tokenizer, split_text_into_chunks, swap_words
+from .models import Course, CourseOutline, Lecture, CourseGeneratorSettings, CourseGenerationResult
+from .utils import download_tokenizer, sanitize_filename, split_text_into_chunks, swap_words, tokenizer_available
 
 __version__ = version("okcourse")
 
 log = logging.getLogger(__name__)
 
-#############
-# ASYNC
-#############
 client = AsyncOpenAI()
+
+default_generator_settings = CourseGeneratorSettings(
+    course_title=None,
+    num_lectures=2,
+    output_directory=Path("~/.okcourse").expanduser(),
+    generate_image=True,
+    generate_audio=True,
+    log_level=logging.INFO,
+    text_model="gpt-4o",
+    text_model_system_prompt=DEFAULT_SYSTEM_PROMPT,
+    text_model_outline_prompt=None,  # Set during course generation
+    text_model_lecture_prompt=None,  # Set during lecture generation
+    image_model="dall-e-3",
+    image_model_prompt=DEFAULT_IMAGE_PROMPT,
+    tts_model="tts-1",
+    tts_voice="nova",
+    max_concurrent_requests=32,
+)
+
+
+class CourseGenerator(ABC):
+    """
+    Abstract base class for generating a course outline, its lectures, a cover image, and audio for the course.
+
+    Attributes:
+        settings: The settings used for course generation.
+
+    Subclasses must implement the abstract methods to generate the course outline, lectures, image, and audio.
+    """
+
+    def __init__(self, generation_settings: CourseGeneratorSettings = default_generator_settings):
+        self._settings: CourseGeneratorSettings = generation_settings
+        self._result: CourseGenerationResult = CourseGenerationResult(settings=self._settings)
+
+    @abstractmethod
+    def generate_course_outline(self, course_title: str | None = None) -> CourseGenerationResult:
+        """Generates an outline for a course with the specified title.
+
+        Args:
+            course_title: The title of the course. If not provided, the title from the settings is used.
+
+        Returns:
+            CourseGenerationResult: The result of the generation process with its `course.outline` attribute set.
+        """
+        pass
+
+    @abstractmethod
+    def generate_course_lectures(self) -> CourseGenerationResult:
+        """Generates lectures for the course and saves the course and its outline to the path specified in the settings.
+
+        Returns:
+            CourseGenerationResult: The result of the generation process with its `course.lectures` and `course_file`
+            attributes set.
+        """
+        pass
+
+    @abstractmethod
+    def generate_cover_image(self) -> CourseGenerationResult:
+        """Generates a cover image for the course and saves it to the path specified in the settings.
+
+        Returns:
+            CourseGenerationResult: The result of the generation process with its `image_file` attribute set.
+        """
+        pass
+
+    @abstractmethod
+    def generate_audio(self) -> CourseGenerationResult:
+        """Generates audio for the course and saves it to the path specified in the settings.
+
+        Args:
+            output_path: The path where the audio file will be saved.
+        """
+        pass
 
 
 async def generate_course_outline_async(topic: str, num_lectures: int) -> CourseOutline:
@@ -59,7 +124,7 @@ async def generate_course_outline_async(topic: str, num_lectures: int) -> Course
     course_completion = await client.beta.chat.completions.parse(
         model=TEXT_MODEL,
         messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": DEFAULT_SYSTEM_PROMPT},
             {"role": "user", "content": outline_prompt},
         ],
         response_format=CourseOutline,
@@ -102,7 +167,7 @@ async def generate_lecture_async(course_outline: CourseOutline, lecture_number: 
     response = await client.chat.completions.create(
         model=TEXT_MODEL,
         messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": DEFAULT_SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ],
         max_completion_tokens=15000,
@@ -191,7 +256,7 @@ async def generate_course_image_async(
     try:
         image_response = await client.images.generate(
             model=IMAGE_MODEL,
-            prompt=IMAGE_PROMPT + course_outline.title,
+            prompt=DEFAULT_IMAGE_PROMPT + course_outline.title,
             n=1,
             size="1024x1024",
             response_format="b64_json",
@@ -215,8 +280,16 @@ async def generate_course_image_async(
         return image_bytes, None
 
     except OpenAIError as e:
-        log.error(f"Failed to generate image for course '{course_outline.title}': {e}")
-        return None, None
+        log.error("Encountered error generating image with OpenAI:")
+        if e is APIError:
+            log.error(f"  Message: {e.message}")
+            log.error(f"      URL: {e.request.url}")  # e.request is an httpx.Request
+            if e is APIStatusError:
+                log.error(
+                    # Guaranteed to have a complete response as this is bubbled up from httpx
+                    f"   Status: {e.response.status_code} - {e.response.reason_phrase}"
+                )
+        raise e
 
 
 async def generate_course_audio_async(
