@@ -1,9 +1,10 @@
 """Pydantic model classes representing a course and its components like the outline, lecture topics, and lectures."""
 
 from pathlib import Path
-from string import Template
 
 from pydantic import BaseModel, Field
+
+from .utils import sanitize_filename
 
 
 class LectureTopic(BaseModel):
@@ -34,9 +35,11 @@ class Lecture(LectureTopic):
 
 class Course(BaseModel):
     outline: CourseOutline = Field(..., description="The detailed outline of the course.")
-    lectures: list[Lecture] = Field(..., description="The lectures that comprise the complete course.")
+    lectures: list[Lecture] | None = Field(None, description="The lectures that comprise the complete course.")
 
     def __str__(self) -> str:
+        if not self.lectures:
+            return str(self.outline)
         lectures_str = "\n\n".join(str(lecture) for lecture in self.lectures)
         return f"{self.outline}\n\n{lectures_str}"
 
@@ -54,8 +57,8 @@ class CourseGeneratorSettings(BaseModel):
     log_level: int | None = Field(..., description="The log message level to use during the course generation process, or `None` to disable logging.")
     text_model: str = Field(..., description="The ID of the text generation model to use for generating the lecture content.")
     text_model_system_prompt: str = Field(..., description="The `system` prompt to send to the text model when generating the course outline and lecture content.")
-    text_model_outline_prompt: str = Field(..., description="The `user` prompt to send to the text model for generating the course outline.")
-    text_model_lecture_prompt: str = Field(..., description="The `user` prompt to send to the text model for generating the lecture content.")
+    text_model_outline_prompt: str | None = Field(..., description="The `user` prompt to send to the text model for generating the course outline.")
+    text_model_lecture_prompt: str | None = Field(..., description="The `user` prompt to send to the text model for generating the lecture content.")
     image_model: str = Field(..., description="The ID of the image generation model to use for generating course cover art.")
     image_model_prompt: str = Field(..., description="The `user` prompt to send to the image model for image generation.")
     tts_model: str = Field(..., description="The ID of the text-to-speech model to use for audio generation.")
@@ -64,8 +67,18 @@ class CourseGeneratorSettings(BaseModel):
 
 
 class CourseGenerationResult(BaseModel):
-    course: Course | None = Field(..., description="The generated course model or `None` if the course has yet to be generated.")
+    course: Course | None = Field(None, description="The generated course model or `None` if the course has yet to be generated.")
     settings: CourseGeneratorSettings = Field(..., description="The settings used to generate the course.")
-    course_file: Path = Field(..., description="The path to the JSON file containing the course outline and lecture content. The JSON file contains the output of `course.model_dump_json()`).")
-    audio_file: Path | None = Field(None, description="The path to the generated audio file if audio generation was enabled.")
-    image_file: Path | None = Field(None, description="The path to the generated cover image file if image generation was enabled.")
+
+    _file_path_base: Path = Path.cwd() / Path("temporary_course_title")
+
+    course_file_path: Path = _file_path_base.with_suffix(".json")
+    """The path to the JSON file containing the course outline and lecture content. The JSON file contains the output of `course.model_dump_json()`."""
+
+    audio_file_path: Path = _file_path_base.with_suffix(".mp3")
+    """The path to the generated audio file if audio generation was enabled."""
+
+    image_file_path: Path = _file_path_base.with_suffix(".png")
+    """The path to the generated cover image file if image generation was enabled."""
+
+    image_bytes: bytes | None = Field(None, description="The raw bytes of the generated cover image if image generation was enabled.")
