@@ -23,7 +23,8 @@ from .constants import (
     MAX_LECTURES,
     TTS_VOICES,
 )
-from .models import Course, CourseOutline, Lecture, CourseGeneratorSettings, CourseGenerationResult
+from .models import Course, CourseOutline, Lecture, CourseGenerationResult
+from .settings import CourseGeneratorSettings
 from .utils import download_tokenizer, split_text_into_chunks, swap_words, tokenizer_available
 
 __version__ = version("okcourse")
@@ -62,8 +63,8 @@ class CourseGenerator(ABC):
     """
 
     def __init__(self, generation_settings: CourseGeneratorSettings = default_generator_settings):
-        self._settings: CourseGeneratorSettings = generation_settings
-        self._result: CourseGenerationResult = CourseGenerationResult(settings=self._settings)
+        self.settings: CourseGeneratorSettings = generation_settings
+        self.result: CourseGenerationResult = CourseGenerationResult(settings=self.settings)
 
     @abstractmethod
     def generate_outline(self, course_title: str | None = None) -> CourseGenerationResult:
@@ -107,10 +108,12 @@ class CourseGenerator(ABC):
 
 
 class AsyncOpenAICourseGenerator(CourseGenerator):
-    """CourseGenerator subclass that uses the OpenAI API asynchronously to generate course content."""
+    """Uses the OpenAI API asynchronously to generate course content."""
 
-    async def generate_outline(self, topic: str) -> CourseGenerationResult:
-        """Given the topic for a series of lectures in a course, generates a course outline using OpenAI.
+    async def generate_outline(self) -> CourseGenerationResult:
+        """Generates a course outline for the course topic and the number of lectures specified in the settings.
+
+        Set the course title in the generator's `settings` attribute before calling this method.
 
         Args:
             topic: The course topic.
@@ -118,8 +121,12 @@ class AsyncOpenAICourseGenerator(CourseGenerator):
         Returns:
             CourseGenerationResult: The result of the generation process with its `course.outline` attribute set.
         """
-        self._settings.course_title = topic
-        if self._settings.num_lectures > MAX_LECTURES:
+        if not self.settings.course_title or self.settings.course_title.strip() == "":
+            raise ValueError(
+                "No course title in generator settings. Set the course title in the generator's settings before "
+                "calling this method."
+            )
+        if self.settings.num_lectures > MAX_LECTURES:
             raise ValueError(f"Number of lectures exceeds the maximum allowed ({MAX_LECTURES}).")
 
         outline_prompt_template = Template(
@@ -127,16 +134,16 @@ class AsyncOpenAICourseGenerator(CourseGenerator):
             "List each lecture title numbered. Each lecture should have four subtopics listed after the "
             "lecture title. Respond only with the outline, omitting any other commentary."
         )
-        self._settings.text_model_outline_prompt = outline_prompt_template.substitute(
-            num_lectures=self._settings.num_lectures, topic=self._settings.course_title
+        self.settings.text_model_outline_prompt = outline_prompt_template.substitute(
+            num_lectures=self.settings.num_lectures, topic=self.settings.course_title
         )
 
         log.info("Requesting course outline from LLM...")
         course_completion = await client.beta.chat.completions.parse(
-            model=self._settings.text_model,
+            model=self.settings.text_model,
             messages=[
-                {"role": "system", "content": self._settings.text_model_system_prompt},
-                {"role": "user", "content": self._settings.text_model_outline_prompt},
+                {"role": "system", "content": self.settings.text_model_system_prompt},
+                {"role": "user", "content": self.settings.text_model_outline_prompt},
             ],
             response_format=CourseOutline,
         )
@@ -147,8 +154,8 @@ class AsyncOpenAICourseGenerator(CourseGenerator):
             log.info(f"Resetting course topic to '{topic}' (LLM returned '{course_outline.title}'")
             course_outline.title = topic
 
-        self._result.course = Course(outline=course_outline)
-        return self._result
+        self.result.course = Course(outline=course_outline)
+        return self.result
 
     async def _generate_lecture(self, course_outline: CourseOutline, lecture_number: int) -> Lecture:
         """Generates a lecture for the topic with the specified number in the given outline.
@@ -164,23 +171,23 @@ class AsyncOpenAICourseGenerator(CourseGenerator):
         if not topic:
             raise ValueError(f"No topic found for lecture number {lecture_number}")
         lecture_prompt = (
-            f"Generate the complete unabridged text for a lecture titled '{topic.title}' in a graduate-level course named "  # noqa: E501
-            f"'{course_outline.title}'. The lecture should be written in a style that lends itself well to being recorded "  # noqa: E501
+            "Generate the complete unabridged text for a lecture titled '${lecture_title}' in a graduate-level course named "  # noqa: E501
+            "'${course_title}'. The lecture should be written in a style that lends itself well to being recorded "  # noqa: E501
             "as an audiobook but should not divulge this guidance. There will be no audience present for the recording of "  # noqa: E501
             "the lecture and no audience should be addressed in the lecture text. Cover the lecture topic in great detail "  # noqa: E501
             "while keeping in mind the advanced education level of the listeners of the lecture. "
             "Omit Markdown from the lecture text as well as any tags, formatting markers, or headings that might interfere "  # noqa: E501
             "with text-to-speech processing. Ensure the content is original and does not duplicate content from the other "  # noqa: E501
-            f"lectures in the series:\n{str(course_outline)}"
+            "lectures in the series:\n${course_outline}"
         )
-        self._settings.text_model_lecture_prompt = lecture_prompt
+        self.settings.text_model_lecture_prompt = lecture_prompt
 
         log.info(f"Requesting lecture text for topic {topic.number}/{len(course_outline.topics)}: {topic.title}...")
         response = await client.chat.completions.create(
-            model=self._settings.text_model,
+            model=self.settings.text_model,
             messages=[
-                {"role": "system", "content": self._settings.text_model_system_prompt},
-                {"role": "user", "content": self._settings.text_model_lecture_prompt},
+                {"role": "system", "content": self.settings.text_model_system_prompt},
+                {"role": "user", "content": self.settings.text_model_lecture_prompt},
             ],
             max_completion_tokens=15000,
         )
@@ -201,7 +208,7 @@ class AsyncOpenAICourseGenerator(CourseGenerator):
         Returns:
             The results of the generation process with the `course.lectures` attribute set.
         """
-        course_outline = self._result.course.outline
+        course_outline = self.result.course.outline
         lecture_tasks = []
 
         async with asyncio.TaskGroup() as task_group:
@@ -213,8 +220,8 @@ class AsyncOpenAICourseGenerator(CourseGenerator):
 
         lectures = [lecture_task.result() for lecture_task in lecture_tasks]
 
-        self._result.course.lectures = lectures
-        return self._result
+        self.result.course.lectures = lectures
+        return self.result
 
     async def _generate_speech_for_text_chunk(
         self, text_chunk: str, voice: str = "nova", chunk_num: int = 1
@@ -233,7 +240,7 @@ class AsyncOpenAICourseGenerator(CourseGenerator):
         """
         log.info(f"Requesting TTS audio in voice '{voice}' for text chunk {chunk_num}...")
         async with client.audio.speech.with_streaming_response.create(
-            model=self._settings.tts_model,
+            model=self.settings.tts_model,
             voice=voice,
             input=text_chunk,
         ) as response:
@@ -253,10 +260,10 @@ class AsyncOpenAICourseGenerator(CourseGenerator):
         Returns:
             The results of the generation process with the `image_bytes` attribute set.
         """
-        course_outline = self._result.course.outline
+        course_outline = self.result.course.outline
         try:
             image_response = await client.images.generate(
-                model=self._settings.image_model,
+                model=self.settings.image_model,
                 prompt=DEFAULT_IMAGE_PROMPT + course_outline.title,
                 n=1,
                 size="1024x1024",
@@ -271,13 +278,13 @@ class AsyncOpenAICourseGenerator(CourseGenerator):
             image = image_response.data[0]
             image_bytes = base64.b64decode(image.b64_json)
 
-            image_file_path = self._result.image_file_path
+            image_file_path = self.result.image_file_path
             image_file_path.parent.mkdir(parents=True, exist_ok=True)
             log.info(f"Saving image to {image_file_path}")
             image_file_path.write_bytes(image_bytes)
 
-            self._result.image_bytes = image_bytes
-            return self._result
+            self.result.image_bytes = image_bytes
+            return self.result
 
         except OpenAIError as e:
             log.error("Encountered error generating image with OpenAI:")
@@ -304,8 +311,8 @@ class AsyncOpenAICourseGenerator(CourseGenerator):
         course_text = (
             AI_DISCLAIMER
             + "\n\n"
-            + self._result.course.title
-            + "\n\n".join(f"Lecture {lecture.number}:\n\n{lecture.text}" for lecture in self._result.course.lectures)
+            + self.result.course.title
+            + "\n\n".join(f"Lecture {lecture.number}:\n\n{lecture.text}" for lecture in self.result.course.lectures)
         )
         course_chunks = split_text_into_chunks(course_text)
 
@@ -313,7 +320,7 @@ class AsyncOpenAICourseGenerator(CourseGenerator):
         async with asyncio.TaskGroup() as task_group:
             for chunk_num, chunk in enumerate(course_chunks, start=1):
                 task = task_group.create_task(
-                    self._generate_speech_for_text_chunk(chunk, self._settings.tts_voice, chunk_num),
+                    self._generate_speech_for_text_chunk(chunk, self.settings.tts_voice, chunk_num),
                 )
                 speech_tasks.append(task)
 
@@ -325,24 +332,24 @@ class AsyncOpenAICourseGenerator(CourseGenerator):
             AudioSegment.silent(duration=0),  # Start with silence
         )
 
-        if self._settings.generate_image:
-            composer_tag = f"{self._settings.text_model} & {self._settings.tts_model} & {self._settings.image_model}"
-            cover_tag = str(self._result.image_file_path)
+        if self.settings.generate_image:
+            composer_tag = f"{self.settings.text_model} & {self.settings.tts_model} & {self.settings.image_model}"
+            cover_tag = str(self.result.image_file_path)
         else:
-            composer_tag = f"{self._settings.text_model} & {self._settings.tts_model}"
+            composer_tag = f"{self.settings.text_model} & {self.settings.tts_model}"
 
-        if not self._settings.output_directory.exists():
-            log.info(f"Creating directory {self._settings.output_directory}")
-            self._settings.output_directory.mkdir(parents=True, exist_ok=True)
+        if not self.settings.output_directory.exists():
+            log.info(f"Creating directory {self.settings.output_directory}")
+            self.settings.output_directory.mkdir(parents=True, exist_ok=True)
 
         log.info("Exporting audio file...")
         course_audio.export(
-            str(self._result.audio_file_path),
+            str(self.result.audio_file_path),
             format="mp3",
-            cover=cover_tag if self._settings.generate_image else None,
+            cover=cover_tag if self.settings.generate_image else None,
             tags={
-                "title": self._result.course.title,
-                "artist": f"{self._settings.tts_voice.capitalize()} @ OpenAI",
+                "title": self.result.course.title,
+                "artist": f"{self.settings.tts_voice.capitalize()} @ OpenAI",
                 "composer": composer_tag,
                 "album": "OK Courses",
                 "genre": "Books & Spoken",
@@ -351,7 +358,7 @@ class AsyncOpenAICourseGenerator(CourseGenerator):
             },
         )
 
-        return self._result
+        return self.result
 
 
 # def generate_course_outline(topic: str, num_lectures: int) -> CourseOutline:

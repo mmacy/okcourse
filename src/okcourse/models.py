@@ -67,18 +67,8 @@ class CourseGeneratorSettings(BaseModel):
 
 
 class CourseGenerationResult(BaseModel):
+    settings: CourseGeneratorSettings = Field(..., description="The settings used to generate the course assets.")
     course: Course | None = Field(None, description="The generated course model or `None` if the course has yet to be generated.")
-    settings: CourseGeneratorSettings = Field(..., description="The settings used to generate the course.")
-
-    _file_path_base: Path = Path.cwd() / Path("temporary_course_title")
-
-    course_file_path: Path = _file_path_base.with_suffix(".json")
-    """The path to the JSON file containing the course outline and lecture content. The JSON file contains the output of `course.model_dump_json()`."""
-
-    audio_file_path: Path = _file_path_base.with_suffix(".mp3")
-    """The path to the generated audio file if audio generation was enabled."""
-
-    image_file_path: Path = _file_path_base.with_suffix(".png")
-    """The path to the generated cover image file if image generation was enabled."""
-
-    image_bytes: bytes | None = Field(None, description="The raw bytes of the generated cover image if image generation was enabled.")
+    course_file_path: Path | None = Field(None, description="The path to the JSON file containing the course content.")
+    audio_file_path: Path | None = Field(None, description="The path to the audio file generated from the course content.")
+    image_file_path: Path | None = Field(None, description="The path to the cover image generated for the course.")

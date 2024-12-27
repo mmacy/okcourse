@@ -20,7 +20,8 @@ from okcourse import (
     TTS_VOICES,
     enable_logging,
     sanitize_filename,
-    AsyncOpenAICourseGenerator
+    AsyncOpenAICourseGenerator,
+    CourseGenerationResult,
 )
 
 enable_logging(logging.INFO)
@@ -52,10 +53,12 @@ async def main():
 
     print("Initializing course generator...")
     course_generator = AsyncOpenAICourseGenerator()
-    gen_result = await course_generator.generate_outline("Refactoring Python code for fun and profit")
-    gen_result = await course_generator.generate_lectures()
-    gen_result = await course_generator.generate_image()
-    gen_result = await course_generator.generate_audio()
+
+    await course_generator.generate_lectures()
+    await course_generator.generate_image()
+    await course_generator.generate_audio()
+    print(course_generator.result)
+    print(course_generator.settings)
 
     topic = await async_prompt(questionary.text, "Enter a course topic:")
     if not topic:
@@ -80,8 +83,10 @@ async def main():
                 continue
 
         print(f"Generating course outline with {num_lectures} lectures...")
-        outline = await generate_course_outline_async(topic, num_lectures)
-        print(str(outline))
+        course_generator.settings.num_lectures = num_lectures
+        course_generator.settings.course_title = topic
+        gen_result = await course_generator.generate_outline()
+        print(str(gen_result.course.outline))
         print(os.linesep)
 
         proceed = await async_prompt(questionary.confirm, "Proceed with this outline?")
@@ -93,8 +98,8 @@ async def main():
             print("Cannot generate lecture without outline - exiting.")
             sys.exit(0)
 
-    print("Generating course text...")
-    course = await generate_course_lectures_async(outline)
+    print(f"Generating content for {course_generator.settings.num_lectures} course lectures...")
+    gen_result = await course_generator.generate_lectures()
 
     # Set up some default paths
     output_dir = Path.cwd() / "generated_okcourses"
