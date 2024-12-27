@@ -52,7 +52,10 @@ async def main():
 
     print("Initializing course generator...")
     course_generator = AsyncOpenAICourseGenerator()
-    gen_result = await course_generator.generate_course_outline("Refactoring Python code for fun and profit")
+    gen_result = await course_generator.generate_outline("Refactoring Python code for fun and profit")
+    gen_result = await course_generator.generate_lectures()
+    gen_result = await course_generator.generate_image()
+    gen_result = await course_generator.generate_audio()
 
     topic = await async_prompt(questionary.text, "Enter a course topic:")
     if not topic:
