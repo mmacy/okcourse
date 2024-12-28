@@ -17,6 +17,7 @@ from ...constants import (
     MAX_LECTURES,
 )
 from ...models import Course, CourseGenerationResult, CourseOutline, Lecture
+from ...settings import CourseGeneratorSettings, default_generator_settings
 from ...utils import (
     LLM_SMELLS,
     download_tokenizer,
@@ -37,14 +38,13 @@ _okcourse_version = "0.1.7"  # HACK: Avoid circular import
 class AsyncOpenAICourseGenerator(CourseGenerator):
     """Uses the OpenAI API asynchronously to generate course content."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, generation_settings: CourseGeneratorSettings = default_generator_settings):
         """Initializes the asynchronous OpenAI course generator.
 
         Args:
-            *args: Additional positional arguments for the generator.
-            **kwargs: Additional keyword arguments for the generator.
+            generation_settings (CourseGeneratorSettings): Settings for course generation.
         """
-        super().__init__(*args, **kwargs)
+        super().__init__(generation_settings)
 
         if self.settings.log_level:
             log_file = self.settings.output_directory / Path(__name__).with_suffix(".log")
