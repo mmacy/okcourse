@@ -1,32 +1,26 @@
 import logging
 from importlib.metadata import PackageNotFoundError, version
 
-from .constants import *
-from .models import Course, CourseOutline, Lecture, LectureTopic, CourseGeneratorSettings, CourseGenerationResult
-from .okcourse import (
-    AsyncOpenAICourseGenerator,
-)
-from .utils import enable_logging, get_duration_string_from_seconds, sanitize_filename
+from .constants import AI_DISCLAIMER, MAX_LECTURES
+from .course_generators import AsyncOpenAICourseGenerator, CourseGenerator
+from .models import Course, CourseGenerationResult, CourseGeneratorSettings, CourseOutline, Lecture, LectureTopic
+from .utils import get_logger, get_duration_string_from_seconds, sanitize_filename, LLM_SMELLS
 
 __all__ = [
     "AI_DISCLAIMER",
+    "MAX_LECTURES",
+    "AsyncOpenAICourseGenerator",
+    "CourseGenerator",
     "Course",
-    "CourseGeneratorSettings",
     "CourseGenerationResult",
+    "CourseGeneratorSettings",
     "CourseOutline",
-    "DEFAULT_IMAGE_MODEL",
-    "DEFAULT_IMAGE_PROMPT",
-    "DEFAULT_SYSTEM_PROMPT",
-    "DEFAULT_TEXT_MODEL",
-    "DEFAULT_TTS_MODEL",
-    "LLM_SMELLS",
     "Lecture",
     "LectureTopic",
-    "MAX_LECTURES",
-    "TTS_VOICES",
-    "enable_logging",
+    "get_logger",
     "get_duration_string_from_seconds",
     "sanitize_filename",
+    "LLM_SMELLS",
 ]
 
 try:

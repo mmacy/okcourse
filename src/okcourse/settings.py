@@ -26,10 +26,6 @@ class CourseGeneratorSettings(BaseModel):
             will be saved.
         generate_image (bool): Whether to generate cover images for the course.
         generate_audio (bool): Whether to generate audio files for the course.
-        log_level (int | None): Log level for course generation operations. Specify a
-            [Python logging level](https://docs.python.org/3/library/logging.html#logging-levels)
-            like `INFO`, `DEBUG`, `WARNING`, `ERROR`, or `CRITICAL`.
-            To disable logging, specify `None`."
         text_model (str): The ID of the text generation model to use.
         text_model_system_prompt (str): The `system` prompt to send to the text
             model when generating the course content.
@@ -44,14 +40,20 @@ class CourseGeneratorSettings(BaseModel):
         tts_voice (str): The voice to use for text-to-speech audio generation.
         max_concurrent_requests (int): The maximum number of concurrent
             asynchronous requests during generation.
+        log_level (int | None): Log level for course generation operations. Specify a
+            [Python logging level](https://docs.python.org/3/library/logging.html#logging-levels)
+            like `INFO`, `DEBUG`, `WARNING`, `ERROR`, or `CRITICAL`.
+            To disable logging, specify `None`."
+        log_to_file (bool): Whether to log to a file in the output directory.
     """
 
     course_title: str = Field(
         "Artificial Super Intelligence: Paperclips All The Way Down",
-        description="The title of the course guides generation of the course outline and the content of its lectures.")
-    num_lectures: int = Field(4, description="The number of lectures that should included in course.")
+        description="The title of the course guides generation of the course outline and the content of its lectures.",
+    )
+    num_lectures: int = Field(2, description="The number of lectures that should generated for for the course.")
     output_directory: Path = Field(
-        Path("~/.okcourse").expanduser(),
+        Path("~/.okcourse").expanduser(),  # TODO: Make this cross-platform-friendly
         description="Directory for saving generated course content.",
     )
     generate_image: bool = Field(
@@ -63,14 +65,6 @@ class CourseGeneratorSettings(BaseModel):
         False,
         description="Whether to generate an audio file containing the course lectures. "
         "If `True`, the audio file is saved to disk in the [`output_directory`][output_directory].",
-    )
-    log_level: int | None = Field(
-        INFO,
-        description=(
-            "Log level for course generation operations. Specify a "
-            "[Python logging level](https://docs.python.org/3/library/logging.html#logging-levels) like `INFO`, "
-            "`DEBUG`, `WARNING`, `ERROR`, or `CRITICAL`. To disable logging, set this to `None`."
-        ),
     )
     text_model: str = Field(
         "gpt-4o",
@@ -86,7 +80,7 @@ class CourseGeneratorSettings(BaseModel):
         "and lecture text.",
     )
     text_model_outline_prompt: str = Field(
-        "Provide a detailed outline for ${num_lectures} lectures in a graduate-level course on '${topic}'. "
+        "Provide a detailed outline for ${num_lectures} lectures in a graduate-level course on '${course_title}'. "
         "List each lecture title numbered. Each lecture should have four subtopics listed after the "
         "lecture title. Respond only with the outline, omitting any other commentary.",
         description="The `user` prompt containing the course outline generation instructions for the language model.",
@@ -112,7 +106,7 @@ class CourseGeneratorSettings(BaseModel):
         "the vendor's site. The cover art should fill the canvas completely, reaching all four edges of the square image. "
         "Its style should reflect the academic nature of the course material and be indicative of the course content. "
         "The title of the course is '${course_title}'",
-        description="The `user` prompt to send to the image model for generating course cover art.",
+        description="The `user` prompt to send to the image model to guide its generation of course cover art.",
     )
     tts_model: str = Field(
         "tts-1",
@@ -125,6 +119,21 @@ class CourseGeneratorSettings(BaseModel):
     max_concurrent_requests: int = Field(
         32,
         description="The maximum number of concurrent asynchronous requests during generation.",
+    )
+    log_level: int | None = Field(
+        INFO,
+        description=(
+            "Enables logging and sets log level for course generation operations. Specify a "
+            "[Python logging level](https://docs.python.org/3/library/logging.html#logging-levels) like `INFO`, "
+            "`DEBUG`, `WARNING`, `ERROR`, or `CRITICAL`. To disable logging, set this to `None`."
+        ),
+    )
+    log_to_file: bool = Field(
+        False,
+        description=(
+            "If logging is enabled (`log_level` is not `None`), write log messages to a file in the "
+            "``output_directory``."
+        ),
     )
 
 

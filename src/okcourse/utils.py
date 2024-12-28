@@ -1,43 +1,45 @@
 """Utility functions that support operations performed by other modules in the okcourse library."""
 
-import os
 import logging
 from datetime import timedelta
+from pathlib import Path
 
 import nltk
 import re
 
 
-log = logging.getLogger(__name__)
+def get_logger(
+    source_name: str = "okcourse", level: int = logging.INFO, file_path: Path | None = None
+) -> logging.Logger:
+    """Enable logging to the console and optionally to a file for the specified source.
 
-
-def enable_logging(level: int | None = None):
-    """Configure logging for the okcourse library.
+    You typically will get the name of the source module or function by calling `__name__` in the source.
 
     Args:
-        level: Optional log level to override the default or environment variable.
-               If not provided, uses the environment variable `OKCOURSE_LOG_LEVEL`
-               or defaults to `INFO`.
+        source_name: The source (module, method, etc.) that will pass log event messages to this logger.
+        level: The logging level to set for the logger.
+        file_path: The path to a file where logs will be written. If not provided, logs are written only to the console.
     """
-    if level is None:  # Use environment variable if no level is explicitly provided
-        env_level = os.getenv("OKCOURSE_LOG_LEVEL", "INFO").upper()
-        level = getattr(logging, env_level, logging.INFO)
-
     formatter = logging.Formatter(
         "%(asctime)s [%(levelname)s][%(name)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
+    # The first call to getLogger() with a new source name creates a new logger instance for that source
+    logger = logging.getLogger(source_name)
+    logger.setLevel(level)
+    # logger.propagate = False  # Prevents messages from propagating to the root logger
+
     console_handler = logging.StreamHandler()
     console_handler.setLevel(level)
     console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
 
-    # Configure loggers for the okcourse library
-    for logger_name in ["okcourse", "okcourse.utils", "okcourse.models"]:
-        logger = logging.getLogger(logger_name)
-        logger.setLevel(level)
-        logger.addHandler(console_handler)
-        logger.propagate = False  # Prevents messages from propagating to the root logger
+    if file_path:
+        file_handler = logging.FileHandler(str(file_path))
+        file_handler.setLevel(level)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
 
 def tokenizer_available() -> bool:
@@ -147,6 +149,27 @@ def get_duration_string_from_seconds(seconds: float) -> str:
     if h > 0:
         return f"{h}:{m:02}:{s:02}"
     return f"{m}:{s:02}"
+
+
+LLM_SMELLS = dict[str, str] = {
+    # "crucial": "important",  # TODO: Uncomment when we can handle phrases (currently breaks due to a/an mismatch).
+    "delve": "dig",
+    "delved": "dug",
+    "delves": "digs",
+    "delving": "digging",
+    "utilize": "use",
+    "utilized": "used",
+    "utilizing": "using",
+    "utilization": "usage",
+    "meticulous": "careful",
+    "meticulously": "carefully",
+}
+"""Dictionary mapping words overused by some large language models to their simplified 'everyday' forms.
+
+Words in the keys may be replaced by their simplified forms in generated lecture text to help reduce \"LLM smell.\"
+
+This dictionary is appropriate for use as the `replacements` parameter in the `swap_words` function.
+"""
 
 
 def swap_words(text: str, replacements: dict[str, str]) -> str:

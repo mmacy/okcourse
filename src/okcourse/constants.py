@@ -5,6 +5,10 @@ by policy or practical considerations rather than technical limitations.
 
 For example, `MAX_LECTURES` is intended to prevent accidental excessive API usage and the potentially excessive cost
 incurred by it.
+
+Attributes:
+    AI_DISCLAIMER (str): Disclaimer required by the OpenAI usage policy and likely other AI service providers.
+    MAX_LECTURES (int): Maximum number of lectures that may be generated for a course.
 """
 
 MAX_LECTURES = 100
@@ -20,22 +24,4 @@ AI_DISCLAIMER = (
 """Disclaimer required by the [OpenAI usage policy](https://openai.com/policies/usage-policies/) and likely others.
 
 This disclaimer is inserted as the first line in the course audio.
-"""
-
-LLM_SMELLS = dict[str, str] = {
-    # "crucial": "important",  # TODO: Uncomment when we can handle phrases (currently breaks due to a/an mismatch).
-    "delve": "dig",
-    "delved": "dug",
-    "delves": "digs",
-    "delving": "digging",
-    "utilize": "use",
-    "utilized": "used",
-    "utilizing": "using",
-    "utilization": "usage",
-    "meticulous": "careful",
-    "meticulously": "carefully",
-}
-"""Dictionary mapping words overused by some large language models to their simplified 'everyday' forms.
-
-Words in the keys may be replaced by their simplified forms in generated lecture text to help reduce \"LLM smell.\"
 """

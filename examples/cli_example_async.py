@@ -8,7 +8,6 @@ versions, see examples/cli_example.py.
 """
 
 import asyncio
-import logging
 import os
 import sys
 from pathlib import Path
@@ -17,14 +16,9 @@ import aiofiles
 import questionary
 
 from okcourse import (
-    TTS_VOICES,
-    enable_logging,
     sanitize_filename,
     AsyncOpenAICourseGenerator,
-    CourseGenerationResult,
 )
-
-enable_logging(logging.INFO)
 
 num_lectures_default = 10
 # 20 lectures yields approx. 1:40:00 MP3
