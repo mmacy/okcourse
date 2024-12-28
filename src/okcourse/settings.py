@@ -73,9 +73,9 @@ class CourseGeneratorSettings(BaseModel):
     text_model_system_prompt: str = Field(
         "You are an esteemed college professor and expert in your field who typically lectures graduate students. "
         "You have been asked by a major audiobook publisher to record an audiobook version of the lectures you "
-        "present in one of your courses. You have been informed by the publisher that the listeners of the audiobook are "  # noqa: E501
-        "knowledgeable in the subject area and will listen to your course to gain intermediate- to expert-level knowledge. "  # noqa: E501
-        "Your lecture style is professional, direct, and deeply technical.",
+        "present in one of your courses. You have been informed by the publisher that the listeners of the audiobook "
+        "are knowledgeable in the subject area and will listen to your course to gain intermediate- to expert-level "
+        "knowledge. Your lecture style is professional, direct, and deeply technical.",
         description="The `system` prompt guides the language model's style and tone when generating the course outline "
         "and lecture text.",
     )
@@ -86,8 +86,8 @@ class CourseGeneratorSettings(BaseModel):
         description="The `user` prompt containing the course outline generation instructions for the language model.",
     )
     text_model_lecture_prompt: str | None = Field(
-        "Generate the complete unabridged text for a lecture titled '${lecture_title}' in a graduate-level course named "  # noqa: E501
-        "'${course_title}'. The lecture should be written in a style that lends itself well to being recorded "
+        "Generate the complete unabridged text for a lecture titled '${lecture_title}' in a graduate-level course "
+        "named '${course_title}'. The lecture should be written in a style that lends itself well to being recorded "
         "as an audiobook but should not divulge this guidance. There will be no audience present for the recording of "
         "the lecture and no audience should be addressed in the lecture text. Cover the lecture topic in great detail "
         "while keeping in mind the advanced education level of the listeners of the lecture. "
@@ -101,11 +101,11 @@ class CourseGeneratorSettings(BaseModel):
         description="The ID of the image generation model to use.",
     )
     image_model_prompt: str = Field(
-        "Create an image in the style of cover art for an audio recording of a college lecture series shown in an online "  # noqa: E501
-        "academic catalog. The image should clearly convey the subject of the course to customers browsing the courses on "  # noqa: E501
-        "the vendor's site. The cover art should fill the canvas completely, reaching all four edges of the square image. "  # noqa: E501
-        "Its style should reflect the academic nature of the course material and be indicative of the course content. "
-        "The title of the course is '${course_title}'",
+        "Create an image in the style of cover art for an audio recording of a college lecture series shown in an "
+        "online academic catalog. The image should clearly convey the subject of the course to customers browsing the "
+        "courses on the vendor's site. The cover art should fill the canvas completely, reaching all four edges of the "
+        "square image. Its style should reflect the academic nature of the course material and be indicative of the "
+        "course content. The title of the course is '${course_title}'",
         description="The `user` prompt to send to the image model to guide its generation of course cover art.",
     )
     tts_model: str = Field(

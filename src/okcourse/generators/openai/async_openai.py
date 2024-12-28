@@ -12,12 +12,12 @@ from openai.types.chat_model import ChatModel
 from openai.types.image_model import ImageModel
 from pydub import AudioSegment
 
-from ..constants import (
+from ...constants import (
     AI_DISCLAIMER,
     MAX_LECTURES,
 )
-from ..models import Course, CourseGenerationResult, CourseOutline, Lecture
-from ..utils import (
+from ...models import Course, CourseGenerationResult, CourseOutline, Lecture
+from ...utils import (
     LLM_SMELLS,
     download_tokenizer,
     extract_literal_values_from_member,
@@ -28,7 +28,7 @@ from ..utils import (
     tokenizer_available,
     get_logger,
 )
-from .base import CourseGenerator
+from ..base import CourseGenerator
 
 # from ..__init__ import __version__ as okcourse_version
 _okcourse_version = "0.1.7"  # HACK: Avoid circular import
@@ -47,15 +47,19 @@ class AsyncOpenAICourseGenerator(CourseGenerator):
         super().__init__(*args, **kwargs)
 
         if self.settings.log_level:
+            log_file = self.settings.output_directory / Path(__name__).with_suffix(".log")
             self.log = get_logger(
                 source_name=__name__,
                 level=self.settings.log_level,
-                file_path=self.settings.output_directory / Path(__name__).with_suffix(".log")
-                if self.settings.log_to_file
-                else None,
+                file_path=log_file if self.settings.log_to_file else None,
             )
 
+            if self.settings.log_to_file:
+                self.log.debug(f"Logging to file: {log_file}")
+
         self.client = AsyncOpenAI()
+
+        # Populate some lists of available models and voices for use in prompts
         self.image_models: list[str] = extract_literal_values_from_type(ImageModel)
         self.text_models: list[str] = extract_literal_values_from_type(ChatModel)
         self.speech_models: list[str] = extract_literal_values_from_type(SpeechModel)

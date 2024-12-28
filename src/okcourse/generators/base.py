@@ -17,7 +17,7 @@ class CourseGenerator(ABC):
     def __init__(self, generation_settings: CourseGeneratorSettings = default_generator_settings):
         self.settings: CourseGeneratorSettings = generation_settings
         self.result: CourseGenerationResult = CourseGenerationResult(settings=self.settings)
-        self.log: logger = None
+        self.log: logger = None  # Set this in subclasses so the log messages include the actual generator class name
 
     @abstractmethod
     def generate_outline(self, course_title: str | None = None) -> CourseGenerationResult:
