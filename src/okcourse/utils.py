@@ -1,11 +1,12 @@
 """Utility functions that support operations performed by other modules in the okcourse library."""
 
 import logging
+import re
 from datetime import timedelta
 from pathlib import Path
+from typing import Any, Literal, Union, get_args, get_origin, get_type_hints
 
 import nltk
-import re
 
 
 def get_logger(
@@ -41,6 +42,12 @@ def get_logger(
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
+    return logger
+
+
+# Logger for this module
+_log = get_logger(__name__)
+
 
 def tokenizer_available() -> bool:
     """Checks if the NLTK 'punkt_tab' tokenizer is available on the system.
@@ -49,12 +56,12 @@ def tokenizer_available() -> bool:
         True if the tokenizer is available.
     """
     try:
-        log.info("Checking for NLTK 'punkt_tab' tokenizer...")
+        _log.info("Checking for NLTK 'punkt_tab' tokenizer...")
         nltk.data.find("tokenizers/punkt_tab")
-        log.info("Found NLTK 'punkt_tab' tokenizer.")
+        _log.info("Found NLTK 'punkt_tab' tokenizer.")
         return True
     except LookupError:
-        log.warning("NLTK 'punkt_tab' tokenizer NOT found. Download it with ``download_tokenizer()``.")
+        _log.warning("NLTK 'punkt_tab' tokenizer NOT found. Download it with ``download_tokenizer()``.")
         return False
 
 
@@ -65,12 +72,12 @@ def download_tokenizer() -> bool:
         True if the tokenizer was downloaded.
     """
     try:
-        log.info("Downloading NLTK 'punkt_tab' tokenizer...")
+        _log.info("Downloading NLTK 'punkt_tab' tokenizer...")
         nltk.download("punkt_tab", raise_on_error=True)
-        log.info("Downloaded NLTK 'punkt_tab' tokenizer.")
+        _log.info("Downloaded NLTK 'punkt_tab' tokenizer.")
         return True
     except Exception as e:
-        log.error(f"Error downloading NLTK 'punkt_tab' tokenizer: {e}")
+        _log.error(f"Error downloading NLTK 'punkt_tab' tokenizer: {e}")
         return False
 
 
@@ -112,7 +119,7 @@ def split_text_into_chunks(text: str, max_chunk_size: int = 4096) -> list[str]:
     if current_chunk:
         chunks.append(" ".join(current_chunk))
 
-    log.info(f"Split text into {len(chunks)} chunks of ~{max_chunk_size} characters from {len(sentences)} sentences.")
+    _log.info(f"Split text into {len(chunks)} chunks of ~{max_chunk_size} characters from {len(sentences)} sentences.")
     return chunks
 
 
@@ -151,7 +158,7 @@ def get_duration_string_from_seconds(seconds: float) -> str:
     return f"{m}:{s:02}"
 
 
-LLM_SMELLS = dict[str, str] = {
+LLM_SMELLS: dict[str, str] = {
     # "crucial": "important",  # TODO: Uncomment when we can handle phrases (currently breaks due to a/an mismatch).
     "delve": "dig",
     "delved": "dug",
@@ -194,3 +201,52 @@ def swap_words(text: str, replacements: dict[str, str]) -> str:
     pattern = re.compile(r"\b(" + "|".join(map(re.escape, replacements)) + r")\b", re.IGNORECASE)
 
     return pattern.sub(_replacement_callable, text)
+
+
+def extract_literal_values_from_type(typ: object) -> list[str]:
+    """Unwraps a `typing.Literal[...]` or any nested `Union` containing `Literal`s and returns the literal values."""
+
+    def unwrap_literal(t: object):
+        origin = get_origin(t)
+        if origin is Literal:
+            yield from get_args(t)
+        elif origin is Union:
+            for arg in get_args(t):
+                yield from unwrap_literal(arg)
+        # If there's some other generic type, we could check for __args__ as needed,
+        # but we typically only need Union and Literal.
+
+    literals = list(unwrap_literal(typ))
+    if not literals:
+        raise TypeError("No Literal values found.")
+    return literals
+
+
+def extract_literal_values_from_member(cls: Any, member: str) -> list[Any]:
+    """Extracts the `Literal` values of a specified member in a `class` or `TypedDict`.
+
+    If the member's type is a `Literal` or contains Literals within a `Union` like `Optional[Literal[...]]`, the
+    function extracts and returns all the `Literal` values.
+    """
+    type_hints = get_type_hints(cls)
+
+    if member not in type_hints:
+        raise AttributeError(f"Member '{member}' not found in type hints of {cls.__name__}.")
+
+    member_type = type_hints[member]
+
+    def unwrap_literal(t) -> list[Any]:
+        literals = []
+        origin = getattr(t, "__origin__", None)
+        if origin is Literal:
+            literals.extend(get_args(t))
+        elif origin is Union:
+            for arg in get_args(t):
+                literals.extend(unwrap_literal(arg))
+        return literals
+
+    extracted_literals = unwrap_literal(member_type)
+    if not extracted_literals:
+        raise TypeError(f"Member '{member}' in {cls.__name__} does not contain any Literal values.")
+
+    return extracted_literals
