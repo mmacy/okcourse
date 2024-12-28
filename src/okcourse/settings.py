@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 
 class CourseGeneratorSettings(BaseModel):
-    """To configure course generation, pass an instance of this class to a [CourseGenerator][okcourse.generators.CourseGenerator] constructor.  # noqa: E501
+    """To configure course generation, pass an instance of this class to a [CourseGenerator][okcourse.course_generators.CourseGenerator] constructor.
 
     `CourseGeneratorSettings` contains runtime-modifiable settings used by the library to guide AI models in generating
     course content. You should modify at least the `course_title` before generating a course.

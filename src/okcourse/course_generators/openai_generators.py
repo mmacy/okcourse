@@ -55,9 +55,6 @@ class AsyncOpenAICourseGenerator(CourseGenerator):
 
         Set the course title in the generator's `settings` attribute before calling this method.
 
-        Args:
-            topic: The course topic.
-
         Returns:
             CourseGenerationResult: The result of the generation process with its `course.outline` attribute set.
         """

@@ -65,7 +65,8 @@ class CourseGenerator(ABC):
     def generate_audio(self) -> CourseGenerationResult:
         """Generates audio for the course and saves it to the path specified in the settings.
 
-        Args:
-            output_path: The path where the audio file will be saved.
+
+        Returns:
+            CourseGenerationResult: The result of the generation process with its `audio_file` attribute set.
         """
         pass
