@@ -1,6 +1,10 @@
-"""Pydantic model classes representing a course and its components like the outline, lecture topics, and lectures."""
+"""Pydantic model classes representing a course and its outline, lectures, and generated output."""
+
+from pathlib import Path
 
 from pydantic import BaseModel, Field
+
+from .settings import CourseGeneratorSettings
 
 
 class LectureTopic(BaseModel):
@@ -31,12 +35,28 @@ class Lecture(LectureTopic):
 
 class Course(BaseModel):
     outline: CourseOutline = Field(..., description="The detailed outline of the course.")
-    lectures: list[Lecture] = Field(..., description="The lectures that comprise the complete course.")
+    lectures: list[Lecture] | None = Field(None, description="The lectures that comprise the complete course.")
 
     def __str__(self) -> str:
+        if not self.lectures:
+            return str(self.outline)
         lectures_str = "\n\n".join(str(lecture) for lecture in self.lectures)
         return f"{self.outline}\n\n{lectures_str}"
 
     @property
     def title(self) -> str:
         return self.outline.title
+
+
+class CourseGenerationResult(BaseModel):
+    settings: CourseGeneratorSettings | None = Field(
+        None, description="The settings used to generate the course assets."
+    )
+    course: Course | None = Field(
+        None, description="The generated course model or `None` if the course has yet to be generated."
+    )
+    course_file_path: Path | None = Field(None, description="The path to the JSON file containing the course content.")
+    audio_file_path: Path | None = Field(
+        None, description="The path to the audio file generated from the course content."
+    )
+    image_file_path: Path | None = Field(None, description="The path to the cover image generated for the course.")

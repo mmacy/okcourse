@@ -1,39 +1,28 @@
 import logging
 from importlib.metadata import PackageNotFoundError, version
 
-from .constants import TTS_VOICES
-from .models import Course, CourseOutline, Lecture, LectureTopic
-from .okcourse import (
-    generate_course_audio,
-    generate_course_audio_async,
-    generate_course_image,
-    generate_course_image_async,
-    generate_course_lectures,
-    generate_course_lectures_async,
-    generate_course_outline,
-    generate_course_outline_async,
-)
-from .utils import enable_logging, get_duration_string_from_seconds, sanitize_filename
+from .constants import AI_DISCLAIMER, MAX_LECTURES
+from .generators import AsyncOpenAICourseGenerator, CourseGenerator
+from .models import Course, CourseGenerationResult, CourseGeneratorSettings, CourseOutline, Lecture, LectureTopic
+from .settings import default_generator_settings
+from .utils import get_logger, get_duration_string_from_seconds, sanitize_filename, LLM_SMELLS
 
 __all__ = [
+    "AI_DISCLAIMER",
+    "MAX_LECTURES",
+    "AsyncOpenAICourseGenerator",
+    "CourseGenerator",
     "Course",
+    "CourseGenerationResult",
+    "CourseGeneratorSettings",
     "CourseOutline",
     "Lecture",
     "LectureTopic",
-    "TTS_VOICES",
-    "generate_course_async",
-    "generate_course_audio_async",
-    "generate_course_audio",
-    "generate_course_image",
-    "generate_course_image_async",
-    "generate_course_lectures_async",
-    "generate_course_lectures",
-    "generate_course_outline_async",
-    "generate_course_outline",
-    "generate_course",
-    "enable_logging",
+    "default_generator_settings",
+    "get_logger",
     "get_duration_string_from_seconds",
     "sanitize_filename",
+    "LLM_SMELLS",
 ]
 
 try:

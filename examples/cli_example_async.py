@@ -8,29 +8,20 @@ versions, see examples/cli_example.py.
 """
 
 import asyncio
-import logging
 import os
 import sys
 from pathlib import Path
 
-import aiofiles
 import questionary
 
 from okcourse import (
-    TTS_VOICES,
-    enable_logging,
-    generate_course_audio_async,
-    generate_course_image_async,
-    generate_course_lectures_async,
-    generate_course_outline_async,
-    sanitize_filename,
+    AsyncOpenAICourseGenerator,
+    default_generator_settings,
 )
 
-enable_logging(logging.INFO)
-
 num_lectures_default = 10
-# 20 lectures yields approx. 1:40:00 MP3
-# 10 lectures yields approx. 0:45:00 MP3
+# MP3 duration with 20 lectures ~1:40:00
+# MP3 duration with 10 lectures ~0:45:00
 
 
 async def async_prompt(prompt_func, *args, **kwargs):
@@ -53,10 +44,17 @@ async def main():
     print("==  OK Course Maker  ==")
     print("=======================")
 
+    gen_settings = default_generator_settings
+    gen_settings.output_directory = os.path.expanduser("~/.okcourse_files")
+    gen_settings.log_to_file = True
+    course_generator = AsyncOpenAICourseGenerator(gen_settings)
+
     topic = await async_prompt(questionary.text, "Enter a course topic:")
-    if not topic:
+    if not topic or str(topic).strip() == "":
         print("No topic entered - exiting.")
         sys.exit(0)
+
+    course_generator.settings.course_title = str(topic).strip()  # TODO: Prevent course titles about little Bobby Tables
 
     while True:
         num_lectures_input = await async_prompt(
@@ -75,9 +73,30 @@ async def main():
                 print("Enter a valid number greater than 0.")
                 continue
 
+        course_generator.settings.num_lectures = num_lectures
+
+        if await async_prompt(questionary.confirm, "Generate MP3 audio file for course?"):
+            course_generator.settings.generate_audio = True
+            course_generator.settings.tts_voice = await async_prompt(
+                questionary.select,
+                "Choose a voice for the course lecturer",
+                choices=course_generator.tts_voices,
+                default=course_generator.tts_voices[0],
+            )
+
+            if await async_prompt(questionary.confirm, "Generate cover image for audio file?"):
+                course_generator.settings.generate_image = True
+
+            out_dir = await async_prompt(
+                questionary.text,
+                "Enter a directory for the course output:",
+                default=gen_settings.output_directory,
+            )
+            gen_settings.output_directory = Path(out_dir)
+
         print(f"Generating course outline with {num_lectures} lectures...")
-        outline = await generate_course_outline_async(topic, num_lectures)
-        print(str(outline))
+        gen_result = await course_generator.generate_outline()
+        print(str(gen_result.course.outline))
         print(os.linesep)
 
         proceed = await async_prompt(questionary.confirm, "Proceed with this outline?")
@@ -89,46 +108,18 @@ async def main():
             print("Cannot generate lecture without outline - exiting.")
             sys.exit(0)
 
-    print("Generating course text...")
-    course = await generate_course_lectures_async(outline)
+    print(f"Generating content for {course_generator.settings.num_lectures} course lectures...")
+    gen_result = await course_generator.generate_lectures()
 
-    # Set up some default paths
-    output_dir = Path.cwd() / "generated_okcourses"
-    output_file_base = output_dir / sanitize_filename(course.title)
-    output_file_json = output_file_base.with_suffix(".json")
-    output_file_mp3 = output_file_base.with_suffix(".mp3")
-    output_file_png = output_file_base.with_suffix(".png")
+    if course_generator.settings.generate_image:
+        print("Generating cover image...")
+        gen_result = await course_generator.generate_image()
 
-    async with aiofiles.open(output_file_json, "w", encoding="utf-8") as f:
-        await f.write(course.model_dump_json(indent=2))
-        print(f"Saved course JSON to {str(output_file_json)}")
-
-    if await async_prompt(questionary.confirm, "Generate MP3 audio file for course?"):
-        tts_voice = await async_prompt(
-            questionary.select, "Choose a voice for the course lecturer", choices=TTS_VOICES, default=TTS_VOICES[0]
-        )
-
-        # YES they want AUDIO - do they also want a COVER IMAGE?
-        if await async_prompt(questionary.confirm, "Generate cover image for audio file?"):
-            print("Generating cover image...")
-
-            # YES they want a COVER IMAGE - get the PNG
-            await generate_course_image_async(
-                course_outline=course.outline,
-                image_file_path=output_file_png,
-            )
-            if output_file_png.exists():
-                print(f"Cover image generated: {str(output_file_png)}")
-
+    if course_generator.settings.generate_audio:
         print("Generating course audio...")
-        course_audio_path = await generate_course_audio_async(
-            course,
-            output_file_mp3,
-            tts_voice,
-            cover_image_path=output_file_png if output_file_png.exists() else None,
-        )
-        print(f"Course audio: {str(course_audio_path)}")
+        gen_result = await course_generator.generate_audio()
 
+    print(f"Done! Course file(s) saved to {gen_result.settings.output_directory}")
 
 if __name__ == "__main__":
     try:
