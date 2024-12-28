@@ -15,6 +15,7 @@ import questionary
 
 from okcourse import (
     AsyncOpenAICourseGenerator,
+    default_generator_settings,
 )
 
 num_lectures_default = 10
@@ -43,7 +44,10 @@ async def main():
     print("=======================")
 
     print("Initializing course generator...")
-    course_generator = AsyncOpenAICourseGenerator()
+    gen_settings = default_generator_settings
+    gen_settings.output_directory = os.path.expanduser("~/.okcourse_output_new")
+    gen_settings.log_to_file = True
+    course_generator = AsyncOpenAICourseGenerator(gen_settings)
 
     topic = await async_prompt(questionary.text, "Enter a course topic:")
     if not topic or str(topic).strip() == "":

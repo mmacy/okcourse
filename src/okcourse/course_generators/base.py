@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
 from logging import getLogger as logger
-from pathlib import Path
 from ..settings import CourseGeneratorSettings, default_generator_settings
 from ..models import CourseGenerationResult
-from ..utils import get_logger
 
 
 class CourseGenerator(ABC):
@@ -20,15 +18,6 @@ class CourseGenerator(ABC):
         self.settings: CourseGeneratorSettings = generation_settings
         self.result: CourseGenerationResult = CourseGenerationResult(settings=self.settings)
         self.log: logger = None
-
-        if self.settings.log_level:
-            self.log = get_logger(
-                source_name=__name__,
-                level=self.settings.log_level,
-                file_path=self.settings.output_directory / Path(__name__).with_suffix(".log")
-                if self.settings.log_to_file
-                else None,
-            )
 
     @abstractmethod
     def generate_outline(self, course_title: str | None = None) -> CourseGenerationResult:

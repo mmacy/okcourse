@@ -37,6 +37,8 @@ def get_logger(
     logger.addHandler(console_handler)
 
     if file_path:
+        if not file_path.parent.exists():
+            file_path.parent.mkdir(parents=True)
         file_handler = logging.FileHandler(str(file_path))
         file_handler.setLevel(level)
         file_handler.setFormatter(formatter)

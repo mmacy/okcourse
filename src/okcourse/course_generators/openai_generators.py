@@ -26,6 +26,7 @@ from ..utils import (
     split_text_into_chunks,
     swap_words,
     tokenizer_available,
+    get_logger,
 )
 from .base import CourseGenerator
 
@@ -44,6 +45,16 @@ class AsyncOpenAICourseGenerator(CourseGenerator):
             **kwargs: Additional keyword arguments for the generator.
         """
         super().__init__(*args, **kwargs)
+
+        if self.settings.log_level:
+            self.log = get_logger(
+                source_name=__name__,
+                level=self.settings.log_level,
+                file_path=self.settings.output_directory / Path(__name__).with_suffix(".log")
+                if self.settings.log_to_file
+                else None,
+            )
+
         self.client = AsyncOpenAI()
         self.image_models: list[str] = extract_literal_values_from_type(ImageModel)
         self.text_models: list[str] = extract_literal_values_from_type(ChatModel)
