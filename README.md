@@ -1,6 +1,6 @@
 # okcourse
 
-The `okcourse` module generates audio lectures in MP3 format for any topic using Python and the OpenAI API. You supply a topic for the course, the number of lectures in the series, and the LLM generates the series outline, lecture text, and audio for the entire series.
+The `okcourse` library generates audio lectures in MP3 format for any topic using Python and the OpenAI API. You supply a topic for the course, the number of lectures in the series, and the LLM generates the series outline, lecture text, and audio for the entire series.
 
 A real README will replace this one (for realsies), but for now, here's output from a run of the CLI example app generating a four-lecture "course" with logging enabled:
 

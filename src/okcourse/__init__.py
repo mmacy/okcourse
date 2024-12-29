@@ -1,28 +1,32 @@
+"""The `okcourse` package provides a lightweight interface for Python applications to use AI models to generate
+audiobook-style courses containing lectures on any topic.
+
+Given a course title, a [course generator][okcourse.generators] will:
+
+- Generate a [course outline][okcourse.generators.base.CourseGenerator.generate_outline] for the course.
+- Generate [lecture text][okcourse.generators.base.CourseGenerator.generate_lectures] for each topic in the outline.
+- Generate a [cover image][okcourse.generators.base.CourseGenerator.generate_image] for the audio file "album" art.
+- Generate an [audio file][okcourse.generators.base.CourseGenerator.generate_audio] text-to-speech model to
+   to produce audio from the lecture text.
+
+The `okcourse` library includes a [generator base class][okcourse.generators.base.CourseGenerator] that defines the
+methods required by implementing subclasses to perform the course generation tasks.
+"""
+
 import logging
 from importlib.metadata import PackageNotFoundError, version
 
-from .constants import AI_DISCLAIMER, MAX_LECTURES
-from .generators import AsyncOpenAICourseGenerator, CourseGenerator
+from .generators import OpenAIAsyncGenerator
 from .models import Course, CourseGenerationResult, CourseGeneratorSettings, CourseOutline, Lecture, LectureTopic
-from .settings import default_generator_settings
-from .utils import get_logger, get_duration_string_from_seconds, sanitize_filename, LLM_SMELLS
 
 __all__ = [
-    "AI_DISCLAIMER",
-    "MAX_LECTURES",
-    "AsyncOpenAICourseGenerator",
-    "CourseGenerator",
     "Course",
     "CourseGenerationResult",
     "CourseGeneratorSettings",
     "CourseOutline",
     "Lecture",
     "LectureTopic",
-    "default_generator_settings",
-    "get_logger",
-    "get_duration_string_from_seconds",
-    "sanitize_filename",
-    "LLM_SMELLS",
+    "OpenAIAsyncGenerator",
 ]
 
 try:
