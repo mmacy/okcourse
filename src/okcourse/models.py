@@ -1,4 +1,4 @@
-"""Pydantic model classes representing a course and its outline, lectures, and generated output."""
+"""[Pydantic v2](https://docs.pydantic.dev/) models representing a course and its outline, lectures, and generated output."""
 
 from pathlib import Path
 
@@ -8,6 +8,7 @@ from .settings import CourseGeneratorSettings
 
 
 class LectureTopic(BaseModel):
+    """A topic covered by a [lecture][okcourse.models.Lecture] in a course."""
     number: int = Field(..., description="The position number of the lecture within the series.")
     title: str = Field(..., description="The topic of a lecture within a course.")
     subtopics: list[str] = Field(..., description="The subtopics covered in the lecture.")
@@ -18,6 +19,7 @@ class LectureTopic(BaseModel):
 
 
 class CourseOutline(BaseModel):
+    """The outline of a course, including its title and the topics covered by each [lecture][okcourse.models.Lecture]."""
     title: str = Field(..., description="The title of the course.")
     topics: list[LectureTopic] = Field(..., description="The topics covered by each lecture in the series.")
 
@@ -27,6 +29,7 @@ class CourseOutline(BaseModel):
 
 
 class Lecture(LectureTopic):
+    """A lecture in a [course][okcourse.models.Course], including its title text content."""
     text: str = Field(..., description="The unabridged text content of the lecture.")
 
     def __str__(self) -> str:
@@ -34,6 +37,7 @@ class Lecture(LectureTopic):
 
 
 class Course(BaseModel):
+    """A complete course, including its [outline][okcourse.models.CourseOutline] and [lectures][okcourse.models.Lecture]."""
     outline: CourseOutline = Field(..., description="The detailed outline of the course.")
     lectures: list[Lecture] | None = Field(None, description="The lectures that comprise the complete course.")
 
@@ -49,6 +53,7 @@ class Course(BaseModel):
 
 
 class CourseGenerationResult(BaseModel):
+    """The result of generating a course and its assets, including the [settings][okcourse.settings.CourseGeneratorSettings] used, the generated [course][okcourse.models.Course], and the paths to the generated course, audio, and image files."""
     settings: CourseGeneratorSettings | None = Field(
         None, description="The settings used to generate the course assets."
     )

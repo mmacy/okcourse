@@ -5,19 +5,25 @@ from ..models import CourseGenerationResult
 
 
 class CourseGenerator(ABC):
-    """
-    Abstract base class for generating a course outline, its lectures, a cover image, and audio for the course.
+    """Abstract base class for generating a course outline, its lectures, a cover image, and audio for the course.
 
     Attributes:
         settings: The settings used for course generation.
+        result: The result of the generation process.
+        log: The logger for the generator.
 
     Subclasses must implement the abstract methods to generate the course outline, lectures, image, and audio.
     """
 
     def __init__(self, generation_settings: CourseGeneratorSettings = default_generator_settings):
         self.settings: CourseGeneratorSettings = generation_settings
+        """The settings used for course generation."""
+
         self.result: CourseGenerationResult = CourseGenerationResult(settings=self.settings)
+        """The result of the generation process. Updated and also returned by the generator's methods."""
+
         self.log: logger = None  # Set this in subclasses so the log messages include the actual generator class name
+        """The logger for the generator."""
 
     @abstractmethod
     def generate_outline(self, course_title: str | None = None) -> CourseGenerationResult:

@@ -236,6 +236,18 @@ wheels = [
 ]
 
 [[package]]
+name = "griffe-pydantic"
+version = "1.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "griffe" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8e/6b/351be1b24e7afb1d5185095870f7a88403db6edd7af644c253b6671fc81b/griffe_pydantic-1.1.0.tar.gz", hash = "sha256:9c5a701cc485dab087857c1ac960b44671acee5008aaae0752f610b2aa82b068", size = 36997 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9d/4d/a667697bbe0da8810470e71d1034932f3ec590e47719c9a0b7a3dc0e54cf/griffe_pydantic-1.1.0-py3-none-any.whl", hash = "sha256:ac9cc2d9b016cf302d8d9f577c9b3ca2793d88060f500d0b2a65f33a4a785cf1", size = 10284 },
+]
+
+[[package]]
 name = "h11"
 version = "0.14.0"
 source = { registry = "https://pypi.org/simple" }
@@ -670,6 +682,7 @@ dev = [
 ]
 docs = [
     { name = "black" },
+    { name = "griffe-pydantic" },
     { name = "mkdocs-gen-files" },
     { name = "mkdocs-literate-nav" },
     { name = "mkdocs-material" },
@@ -691,6 +704,7 @@ dev = [
 ]
 docs = [
     { name = "black", specifier = ">=24.10.0" },
+    { name = "griffe-pydantic", specifier = ">=1.1.0" },
     { name = "mkdocs-gen-files", specifier = ">=0.5.0" },
     { name = "mkdocs-literate-nav", specifier = ">=0.6.1" },
     { name = "mkdocs-material", specifier = ">=9.5.49" },

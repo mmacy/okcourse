@@ -85,6 +85,9 @@ plugins:
           - https://docs.pydantic.dev/2.10/objects.inv
           - https://mmacy.github.io/openai-python/latest/objects.inv
         options:
+          extensions:
+            - griffe_pydantic:
+                schema: true
           docstring_options:
             ignore_init_summary: true
             summary: true
@@ -117,6 +120,6 @@ nav:
     - index.md
     - Get started: get-started.md
     - Examples: examples/index.md
-    - API reference: reference/index.md
+    - okcourse API reference: reference/index.md
   - Examples: examples/
   - API reference: reference/

@@ -1,9 +1,4 @@
-"""Settings used during the course generation process and a set of default values.
-
-Attributes:
-    default_settings (CourseGeneratorSettings): A set of runtime-modifiable defaults for course generation. You're
-        expected to modify at least the `course_title` prior to course generation.
-"""
+"""Settings used during the course generation process and a set of default values."""
 
 from logging import INFO
 from pathlib import Path
@@ -12,46 +7,22 @@ from pydantic import BaseModel, Field
 
 
 class CourseGeneratorSettings(BaseModel):
-    """To configure course generation, pass an instance of this class to a [CourseGenerator][okcourse.generators.CourseGenerator] constructor.
+    """Runtime-modifiable settings that configure the behavior of a [course generator][okcourse.generators].
 
-    `CourseGeneratorSettings` contains runtime-modifiable settings used by the library to guide AI models in generating
-    course content. You should modify at least the `course_title` before generating a course.
+    An instance of this class with default values is created when initializing a generator, or you can pass a customized
+    instance to the generator's contructor to override the defaults.
 
-    Attributes:
-        course_title (str | None): The title of the course, or `None` if not set.
-        num_lectures (int): The number of lectures to generate for the course.
-            This setting heavily influences API usage and thus the cost of course
-            generation (more lectures means higher cost).
-        output_directory (Path): The directory where generated files and logs
-            will be saved.
-        generate_image (bool): Whether to generate cover images for the course.
-        generate_audio (bool): Whether to generate audio files for the course.
-        text_model (str): The ID of the text generation model to use.
-        text_model_system_prompt (str): The `system` prompt to send to the text
-            model when generating the course content.
-        text_model_outline_prompt (str | None): The `user` prompt to send to the
-            text model for generating the course outline, or `None` if not set.
-        text_model_lecture_prompt (str | None): The `user` prompt to send to the
-            text model for generating lecture content, or `None` if not set.
-        image_model (str): The ID of the image generation model to use.
-        image_model_prompt (str): The `user` prompt to send to the image model
-            for generating course cover art.
-        tts_model (str): The ID of the text-to-speech model to use.
-        tts_voice (str): The voice to use for text-to-speech audio generation.
-        max_concurrent_requests (int): The maximum number of concurrent
-            asynchronous requests during generation.
-        log_level (int | None): Log level for course generation operations. Specify a
-            [Python logging level](https://docs.python.org/3/library/logging.html#logging-levels)
-            like `INFO`, `DEBUG`, `WARNING`, `ERROR`, or `CRITICAL`.
-            To disable logging, specify `None`."
-        log_to_file (bool): Whether to log to a file in the output directory.
+    You can also modify the settings at runtime by updating the attributes of the settings object, such as after getting
+    user input or reading from a configuration file.
     """
 
+    # TODO: Add a setting to specify which AI service provider to use for generation.
+
     course_title: str = Field(
-        "Artificial Super Intelligence: Paperclips All The Way Down",
+        "Artificial Super Intelligence (ASI): Paperclips All The Way Down",
         description="The title of the course guides generation of the course outline and the content of its lectures.",
     )
-    num_lectures: int = Field(2, description="The number of lectures that should generated for for the course.")
+    num_lectures: int = Field(4, description="The number of lectures that should generated for for the course.")
     output_directory: Path = Field(
         Path("~/.okcourse").expanduser(),  # TODO: Make this cross-platform-friendly
         description="Directory for saving generated course content.",
@@ -59,12 +30,14 @@ class CourseGeneratorSettings(BaseModel):
     generate_image: bool = Field(
         False,
         description="Whether to generate a cover image for the course. If `True`, this image is used as the album art "
-        "tag for the audio file and also saved to disk in the [`output_directory`][output_directory].",
+        "tag for the audio file and is also written to the "
+        "[`output_directory`][okcourse.settings.CourseGeneratorSettings.output_directory].",
     )
     generate_audio: bool = Field(
         False,
         description="Whether to generate an audio file containing the course lectures. "
-        "If `True`, the audio file is saved to disk in the [`output_directory`][output_directory].",
+        "If `True`, the audio file is written to the "
+        "[`output_directory`][okcourse.settings.CourseGeneratorSettings.output_directory].",
     )
     text_model: str = Field(
         "gpt-4o",
