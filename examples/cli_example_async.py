@@ -59,9 +59,21 @@ async def main():
         print(f"Done! Course file(s) saved to {result.settings.output_directory}")
         sys.exit(0)
 
-    generator.settings.num_lectures = await async_prompt(
-        questionary.text, f"How many lectures should be in the course (default: {generator.settings.num_lectures})?"
-    )
+    while True:
+        generator.settings.num_lectures = await async_prompt(
+            questionary.text,
+            "How many lectures should be in the course?",
+            default=str(generator.settings.num_lectures),
+        )
+        try:
+            generator.settings.num_lectures = int(generator.settings.num_lectures)
+            if generator.settings.num_lectures <= 0:
+                print("There must be at least one (1) lecture in the series.")
+                continue  # Input is invalid
+        except ValueError:
+            print("Enter a valid number greater than 0.")
+            continue  # Input is invalid
+        break  # Input is valid - exit loop
 
     if await async_prompt(questionary.confirm, "Generate MP3 audio file for course?"):
         generator.settings.generate_audio = True
