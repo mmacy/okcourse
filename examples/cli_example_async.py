@@ -15,7 +15,8 @@ from pathlib import Path
 import questionary
 
 from okcourse import (
-    CourseGeneratorSettings,
+    Course,
+    CourseSettings,
     OpenAIAsyncGenerator,
 )
 
@@ -40,34 +41,35 @@ async def main():
     print("==  OK Course Maker  ==")
     print("=======================")
 
-    settings = CourseGeneratorSettings()
-    settings.output_directory = os.path.expanduser("~/.okcourse_files")
-    settings.log_to_file = True
-    generator = OpenAIAsyncGenerator(settings)
+    course_settings = CourseSettings()
+    course_settings.output_directory = os.path.expanduser("~/.okcourse_files")
+    course_settings.log_to_file = True
+    course = Course(settings=course_settings)
 
     topic = await async_prompt(questionary.text, "Enter a course topic:")
     if not topic or str(topic).strip() == "":
         print("No topic entered - exiting.")
         sys.exit(0)
+    course.title = str(topic).strip()  # TODO: Prevent course titles about little Bobby Tables
 
-    generator.settings.course_title = str(topic).strip()  # TODO: Prevent course titles about little Bobby Tables
+    generator = OpenAIAsyncGenerator(course)
 
     if await async_prompt(questionary.confirm, "Generate course using default settings?"):
-        print(f"Generating course with {generator.settings.num_lectures} lectures...")
-        result = await generator.generate_course()
+        print(f"Generating course with {course.settings.num_lectures} lectures...")
+        course = await generator.generate_course(course)
         print(os.linesep)
-        print(f"Done! Course file(s) saved to {result.settings.output_directory}")
+        print(f"Done! Course file(s) saved to {course.settings.output_directory}")
         sys.exit(0)
 
     while True:
-        generator.settings.num_lectures = await async_prompt(
+        course.settings.num_lectures = await async_prompt(
             questionary.text,
             "How many lectures should be in the course?",
-            default=str(generator.settings.num_lectures),
+            default=str(course.settings.num_lectures),
         )
         try:
-            generator.settings.num_lectures = int(generator.settings.num_lectures)
-            if generator.settings.num_lectures <= 0:
+            course.settings.num_lectures = int(course.settings.num_lectures)
+            if course.settings.num_lectures <= 0:
                 print("There must be at least one (1) lecture in the series.")
                 continue  # Input is invalid
         except ValueError:
@@ -76,8 +78,8 @@ async def main():
         break  # Input is valid - exit loop
 
     if await async_prompt(questionary.confirm, "Generate MP3 audio file for course?"):
-        generator.settings.generate_audio = True
-        generator.settings.tts_voice = await async_prompt(
+        course.settings.generate_audio = True
+        course.settings.tts_voice = await async_prompt(
             questionary.select,
             "Choose a voice for the course lecturer",
             choices=generator.tts_voices,
@@ -85,19 +87,19 @@ async def main():
         )
 
         if await async_prompt(questionary.confirm, "Generate cover image for audio file?"):
-            generator.settings.generate_image = True
+            course.settings.generate_image = True
 
         out_dir = await async_prompt(
             questionary.text,
             "Enter a directory for the course output:",
-            default=settings.output_directory,
+            default=course.settings.output_directory,
         )
-        settings.output_directory = Path(out_dir)
+        course.settings.output_directory = Path(out_dir)
 
     while True:
-        print(f"Generating course outline with {generator.settings.num_lectures} lectures...")
-        result = await generator.generate_outline()
-        print(str(result.course.outline))
+        print(f"Generating course outline with {course.settings.num_lectures} lectures...")
+        course = await generator.generate_outline(course)
+        print(str(course.outline))
         print(os.linesep)
 
         proceed = await async_prompt(questionary.confirm, "Proceed with this outline?")
@@ -109,18 +111,18 @@ async def main():
             print("Cannot generate lecture without outline - exiting.")
             sys.exit(0)
 
-    print(f"Generating content for {generator.settings.num_lectures} course lectures...")
-    result = await generator.generate_lectures()
+    print(f"Generating content for {course.settings.num_lectures} course lectures...")
+    course = await generator.generate_lectures(course)
 
-    if generator.settings.generate_image:
+    if course.settings.generate_image:
         print("Generating cover image...")
-        result = await generator.generate_image()
+        course = await generator.generate_image(course)
 
-    if generator.settings.generate_audio:
+    if course.settings.generate_audio:
         print("Generating course audio...")
-        result = await generator.generate_audio()
+        course = await generator.generate_audio(course)
 
-    print(f"Done! Course file(s) saved to {result.settings.output_directory}")
+    print(f"Done! Course file(s) saved to {course.settings.output_directory}")
 
 
 if __name__ == "__main__":

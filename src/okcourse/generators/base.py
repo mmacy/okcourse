@@ -1,67 +1,78 @@
 from abc import ABC, abstractmethod
 from logging import getLogger as logger
-from ..settings import CourseGeneratorSettings, default_generator_settings
-from ..models import CourseGenerationResult
+from ..models import Course
 
 
 class CourseGenerator(ABC):
     """Abstract base class for generating a course outline, its lectures, a cover image, and audio for the course.
 
+    Args:
+        course: The course to generate content for.
+
     Attributes:
-        settings: The settings used for course generation.
-        result: The result of the generation process.
         log: The logger for the generator.
 
     Subclasses must implement the abstract methods to generate the course outline, lectures, image, and audio.
     """
 
-    def __init__(self, generation_settings: CourseGeneratorSettings = default_generator_settings):
-        self.settings: CourseGeneratorSettings = generation_settings
-        """The settings used for course generation."""
-
-        self.result: CourseGenerationResult = CourseGenerationResult(settings=self.settings)
-        """The result of the generation process. Updated and also returned by the generator's methods."""
+    def __init__(self, course: Course):
 
         self.log: logger = None  # Set this in subclasses so the log messages include the actual generator class name
         """The logger for the generator."""
 
     @abstractmethod
-    def generate_outline(self, course_title: str | None = None) -> CourseGenerationResult:
-        """Generates an outline for a course with the specified title.
+    def generate_outline(self, course: Course) -> Course:
+        """Uses a generative pre-trained transformer (GPT) to generate an outline for the course based on its title.
+
+        Modify the [`Course.settings`][okcourse.models.Course.settings] attribute before calling this method to
+        customize the generation process and its output.
 
         Args:
-            course_title: The title of the course. If not provided, the title from the settings is used.
+            course: The course to generate an outline for.
 
         Returns:
-            CourseGenerationResult: The result of the generation process with its `course.outline` attribute set.
+            Course: The course with its [`outline`][okcourse.models.Course.outline] attribute set.
         """
         pass
 
     @abstractmethod
-    def generate_lectures(self) -> CourseGenerationResult:
-        """Generates lectures for the course and saves the course and its outline to the path specified in the settings.
+    def generate_lectures(self, course: Course) -> Course:
+        """Uses a generative pre-trained transformer (GPT) to generate the lectures in the course outline.
+
+        This method requires that the course has had its outline generated with a call to
+        [`generate_outline`](okcourse.generators.base.CourseGenerator.generate_outline) before being passed to this
+        method.
+
+        Args:
+            course: The course to generate lectures for. The given course must have had its outline generated and its
+                [`outline`][okcourse.models.Course.outline] attribute set.
 
         Returns:
-            CourseGenerationResult: The result of the generation process with its `course.lectures` and `course_file`
-            attributes set.
+            Course: The course with its [`lectures`][okcourse.models.Course.lectures] attribute set.
         """
         pass
 
     @abstractmethod
-    def generate_image(self) -> CourseGenerationResult:
-        """Generates a cover image for the course and saves it to the path specified in the settings.
+    def generate_image(self, course: Course) -> Course:
+        """Uses an image generation model to generate a cover image for the course based on its title.
+
+        Args:
+            course: The course to generate an image for.
 
         Returns:
-            CourseGenerationResult: The result of the generation process with its `image_file` attribute set.
+            Course: The course with its [`image_file_path`][okcourse.models.Course.image_file_path] attribute set.
         """
         pass
 
     @abstractmethod
-    def generate_audio(self) -> CourseGenerationResult:
-        """Generates audio for the course and saves it to the path specified in the settings.
+    def generate_audio(self, course: Course) -> Course:
+        """Uses a text-to-speech (TTS) model to generate audio for the course from its lectures.
 
+        This method requires that the course has had its lectures generated with a call to
+        [`generate_lectures`][okcourse.generators.base.CourseGenerator.generate_lectures] before being passed to this
+        method.
 
         Returns:
-            CourseGenerationResult: The result of the generation process with its `audio_file` attribute set.
+            Course: The course with its [`audio_file_path`][okcourse.models.Course.audio_file_path] attribute set.
         """
         pass

@@ -1,39 +1,29 @@
 """The `okcourse` package provides a lightweight interface for Python applications to use AI models to generate
 audiobook-style courses containing lectures on any topic.
 
-Given a course title, a [course generator][okcourse.generators] will:
+Given a course title, a [course generator][okcourse.generators] will fetch the following from an AI service provider's
+API:
 
-- Generate a [course outline][okcourse.generators.base.CourseGenerator.generate_outline] for the course.
-- Generate [lecture text][okcourse.generators.base.CourseGenerator.generate_lectures] for each topic in the outline.
-- Generate a [cover image][okcourse.generators.base.CourseGenerator.generate_image] for the audio file "album" art.
-- Generate an [audio file][okcourse.generators.base.CourseGenerator.generate_audio] text-to-speech model to
-   to produce audio from the lecture text.
-
-The `okcourse` library includes a [generator base class][okcourse.generators.base.CourseGenerator] that defines the
-methods required by implementing subclasses to perform the course generation tasks.
+- [Course outline][okcourse.generators.base.CourseGenerator.generate_outline]
+- [Lecture text][okcourse.generators.base.CourseGenerator.generate_lectures] the topics in the outline
+- [Cover image][okcourse.generators.base.CourseGenerator.generate_image] for the audio file "album" art
+- [Audio file][okcourse.generators.base.CourseGenerator.generate_audio] from the lecture text
 """
 
 import logging
-from importlib.metadata import PackageNotFoundError, version
 
-from .generators import OpenAIAsyncGenerator
-from .models import Course, CourseGenerationResult, CourseGeneratorSettings, CourseOutline, Lecture, LectureTopic
+from .generators import CourseGenerator, OpenAIAsyncGenerator
+from .models import Course, CourseOutline, CourseSettings, Lecture, LectureTopic
 
 __all__ = [
     "Course",
-    "CourseGenerationResult",
-    "CourseGeneratorSettings",
+    "CourseGenerator",
     "CourseOutline",
+    "CourseSettings",
     "Lecture",
     "LectureTopic",
     "OpenAIAsyncGenerator",
 ]
-
-try:
-    __version__ = version(__name__)
-except PackageNotFoundError:
-    __version__ = "unknown"
-
 
 # Avoid "No handler found" warnings
 logging.getLogger(__name__).addHandler(logging.NullHandler())

@@ -3,6 +3,7 @@
 import logging
 import re
 from datetime import timedelta
+from importlib.metadata import version, PackageNotFoundError
 from pathlib import Path
 from typing import Any, Literal, Union, get_args, get_origin, get_type_hints
 
@@ -252,3 +253,21 @@ def extract_literal_values_from_member(cls: Any, member: str) -> list[Any]:
         raise TypeError(f"Member '{member}' in {cls.__name__} does not contain any Literal values.")
 
     return extracted_literals
+
+
+def get_top_level_version(package_name: str) -> str:
+    """Retrieve the version of the specified top-level package.
+
+    Args:
+        package_name (str): The name of the top-level package.
+
+    Returns:
+        str: The version of the package.
+
+    Raises:
+        PackageNotFoundError: If the package is not found.
+    """
+    try:
+        return version(package_name)
+    except PackageNotFoundError as e:
+        raise RuntimeError(f"Package '{package_name}' is not installed.") from e
