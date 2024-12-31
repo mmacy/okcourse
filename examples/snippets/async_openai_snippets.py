@@ -34,3 +34,15 @@ async def generate_outline_example() -> Course:
     # --8<-- [end:generate_outline]
 
     return course
+
+
+async def generate_course_example() -> Course:
+    """Use the OpenAIAsyncGenerator to generate a course outline."""
+
+    # --8<-- [start:generate_course]
+    course = Course(title="From AGI to ASI: Paperclips, Gray Goo, and You")
+    generator = OpenAIAsyncGenerator(course)
+    course = await generator.generate_course(course)  # (1)
+    # --8<-- [end:generate_course]
+
+    return course

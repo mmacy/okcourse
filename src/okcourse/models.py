@@ -41,9 +41,11 @@ class Lecture(LectureTopic):
 class CourseSettings(BaseModel):
     """Runtime-modifiable settings that configure the behavior of a course [`generator`][okcourse.generators].
 
-    Modify these settings in [`Course.settings`][okcourse.models.Course.settings] after creating a `Course` instance and
-    before passing the `Course` to a generator's
-    [`generate_outline`][okcourse.generators.CourseGenerator.generate_outline] method.
+    Create a `Course` instance and then modify its [`Course.settings`][okcourse.models.Course.settings] attribute, which
+    is an instance of this class with default values. After configuring the course settings, pass the `Course` instance
+    to a course generator's constructor and then to its
+    [`generate_outline`][okcourse.generators.CourseGenerator.generate_outline] method to start generating course
+    content.
     """
 
     # TODO: Add a setting to specify which AI service provider to use for generation.
