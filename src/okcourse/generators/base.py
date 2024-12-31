@@ -1,3 +1,13 @@
+"""Abstract base class for generator subclasses that interact with AI service provider APIs to create course content.
+
+Subclasses must implement the abstract methods on [`CourseGenerator`][okcourse.generators.base.CourseGenerator] and
+add service provider-specific API interaction logic to generate the outline, lectures, image, and audio for a
+course.
+
+For example, the [`OpenAIAsyncGenerator`][okcourse.generators.openai.OpenAIAsyncGenerator] is an example of a subclass
+that implements the `CourseGenerator`'s abstract methods to interact with OpenAI's API to generate course content.
+"""
+
 from abc import ABC, abstractmethod
 from logging import getLogger as logger
 from ..models import Course
@@ -17,7 +27,8 @@ class CourseGenerator(ABC):
 
     def __init__(self, course: Course):
 
-        self.log: logger = None  # Set this in subclasses so the log messages include the actual generator class name
+        # TODO: Set this automatically in subclasses so the log messages include the actual generator class name
+        self.log: logger = None
         """The logger for the generator."""
 
     @abstractmethod
@@ -40,7 +51,7 @@ class CourseGenerator(ABC):
         """Uses a generative pre-trained transformer (GPT) to generate the lectures in the course outline.
 
         This method requires that the course has had its outline generated with a call to
-        [`generate_outline`](okcourse.generators.base.CourseGenerator.generate_outline) before being passed to this
+        [`generate_outline`][okcourse.generators.base.CourseGenerator.generate_outline] before being passed to this
         method.
 
         Args:

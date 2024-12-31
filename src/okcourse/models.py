@@ -1,4 +1,4 @@
-"""[Pydantic v2](https://docs.pydantic.dev/) models representing a course and its generation settings, outline, lectures, and generated assets."""  # noqa: E501
+"""[Pydantic](https://docs.pydantic.dev/) models representing a course and its generation settings, outline, and lectures."""  # noqa: E501
 
 from logging import INFO
 from pathlib import Path
@@ -39,10 +39,11 @@ class Lecture(LectureTopic):
 
 
 class CourseSettings(BaseModel):
-    """Runtime-modifiable settings that configure the behavior of a [course generator][okcourse.generators].
+    """Runtime-modifiable settings that configure the behavior of a course [`generator`][okcourse.generators].
 
-    Modify these settings after creating a [`Course`][okcourse.models.Course] instance and before passing it to a course
-    generator's [`generate_outline`][okcourse.generators.CourseGenerator.generate_outline] method.
+    Modify these settings in [`Course.settings`][okcourse.models.Course.settings] after creating a `Course` instance and
+    before passing the `Course` to a generator's
+    [`generate_outline`][okcourse.generators.CourseGenerator.generate_outline] method.
     """
 
     # TODO: Add a setting to specify which AI service provider to use for generation.
@@ -51,18 +52,6 @@ class CourseSettings(BaseModel):
     output_directory: Path = Field(
         Path("~/.okcourse").expanduser(),  # TODO: Make this cross-platform-friendly
         description="Directory for saving generated course content.",
-    )
-    generate_image: bool = Field(
-        False,
-        description="Whether to generate a cover image for the course. If `True`, this image is used as the album art "
-        "tag for the audio file and is also written to the "
-        "[`output_directory`][okcourse.models.CourseSettings.output_directory].",
-    )
-    generate_audio: bool = Field(
-        False,
-        description="Whether to generate an audio file containing the course lectures. "
-        "If `True`, the audio file is written to the "
-        "[`output_directory`][okcourse.models.CourseSettings.output_directory].",
     )
     text_model: str = Field(
         "gpt-4o",
@@ -136,23 +125,31 @@ class CourseSettings(BaseModel):
 
 
 class Course(BaseModel):
-    """A `Course` contains its content generation settings, and once generated, its outline and lectures.
+    """A `Course` is the container for its content and the settings a course generator uses to generate that content.
 
     Create a `Course` instance, modify its [`settings`][okcourse.models.CourseSettings], and then pass it to a
-    [course generator][okcourse.generators] method like
+    course [`generator`][okcourse.generators] method like
     [`OpenAIAsyncGenerator`][okcourse.generators.OpenAIAsyncGenerator.generate_outline]
     to start generating course content.
     """
 
     title: str | None = Field(
         None,
-        description="The title of the course.",
+        description="The topic of the course and its lectures. The course title, along with the "
+        "[`text_model_outline_prompt`][okcourse.models.CourseSettings.text_model_outline_prompt], are the most "
+        "influential in determining the course content.",
     )
     outline: CourseOutline | None = Field(
         None, description="The outline for the course that defines the topics for each lecture."
     )
     lectures: list[Lecture] | None = Field(None, description="The lectures that comprise the complete course.")
-    settings: CourseSettings | None = Field(None, description="The settings to use when generating the course content.")
+    settings: CourseSettings = Field(
+        default_factory=CourseSettings,
+        description="Course [`generators`][okcourse.generators] use these settings to determine the content of the "
+        "course as well as the behavior of the generation process. Modify these settings to specify the number of "
+        "lectures to generate for the course, the AI models to use to generate them, the output directory for the "
+        "generated content, and more.",
+    )
     audio_file_path: Path | None = Field(
         None, description="The path to the audio file generated from the course content."
     )
