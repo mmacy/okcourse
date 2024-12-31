@@ -14,11 +14,8 @@ from pathlib import Path
 
 import questionary
 
-from okcourse import (
-    Course,
-    CourseSettings,
-    OpenAIAsyncGenerator,
-)
+from okcourse import Course, OpenAIAsyncGenerator
+from okcourse.utils import sanitize_filename
 
 
 async def async_prompt(prompt_func, *args, **kwargs):
@@ -41,10 +38,9 @@ async def main():
     print("==  OK Course Maker  ==")
     print("=======================")
 
-    course_settings = CourseSettings()
-    course_settings.output_directory = os.path.expanduser("~/.okcourse_files")
-    course_settings.log_to_file = True
-    course = Course(settings=course_settings)
+    course = Course()
+    course.settings.output_directory = os.path.expanduser("~/.okcourse_files")
+    course.settings.log_to_file = True
 
     topic = await async_prompt(questionary.text, "Enter a course topic:")
     if not topic or str(topic).strip() == "":
@@ -77,8 +73,10 @@ async def main():
             continue  # Input is invalid
         break  # Input is valid - exit loop
 
+    do_generate_audio = False
+    do_generate_image = False
     if await async_prompt(questionary.confirm, "Generate MP3 audio file for course?"):
-        course.settings.generate_audio = True
+        do_generate_audio = True
         course.settings.tts_voice = await async_prompt(
             questionary.select,
             "Choose a voice for the course lecturer",
@@ -87,7 +85,7 @@ async def main():
         )
 
         if await async_prompt(questionary.confirm, "Generate cover image for audio file?"):
-            course.settings.generate_image = True
+            do_generate_image = True
 
         out_dir = await async_prompt(
             questionary.text,
@@ -114,15 +112,19 @@ async def main():
     print(f"Generating content for {course.settings.num_lectures} course lectures...")
     course = await generator.generate_lectures(course)
 
-    if course.settings.generate_image:
+    if do_generate_image:
         print("Generating cover image...")
         course = await generator.generate_image(course)
 
-    if course.settings.generate_audio:
+    if do_generate_audio:
         print("Generating course audio...")
         course = await generator.generate_audio(course)
 
-    print(f"Done! Course file(s) saved to {course.settings.output_directory}")
+    # Done with generation - save the course to JSON now that it's fully populated
+    json_file_out = course.settings.output_directory / Path(sanitize_filename(course.title)).with_suffix(".json")
+    json_file_out.write_text(course.model_dump_json(indent=2))
+    print(f"Course JSON file saved to {json_file_out}")
+    print(f"Done! Course file(s) available in {course.settings.output_directory}")
 
 
 if __name__ == "__main__":

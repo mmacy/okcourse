@@ -1,23 +1,26 @@
-"""Immutable constant values used
+"""Values that define constraints related to course content or its generation by course [`generators`][okcourse.generators].
 
-These values define constraints not intended to be modified by [`okcourse`][okcourse] library users. In some cases,
-they're driven by policy or practical considerations rather than technical limitations.
+These constraints are in some cases driven by policy, practical, or financial considerations rather than technical
+limitations.
 
 For example, [`MAX_LECTURES`][okcourse.constants.MAX_LECTURES] is intended to prevent accidental excessive API usage and
 the potentially excessive cost incurred by it.
+
+While you *could* modify these values at runtime, they're here in the `constants` module to encourage you to treat them
+as such. At the very least, you should be wary of the implications of changing them.
 """
 
 MAX_LECTURES: int = 100
 """Maximum number of lectures that may be generated for a course.
 
-This limit is imposed to help avoid accidental excessive API usage and its associated cost rather than being a technical
-limitation.
+This limit is imposed to help avoid a surprise financial burden due to accidental excessive API usage rather than being
+a technical limitation.
 """
 
-AI_DISCLAIMER: str = (
+AI_DISCLOSURE: str = (
     "This is an AI-generated voice, not a human, presenting AI-generated content that might be biased or inaccurate."
 )
-"""Disclaimer required by the [OpenAI usage policy](https://openai.com/policies/usage-policies/) and likely others.
+"""Disclosure required by the [OpenAI usage policy](https://openai.com/policies/usage-policies/) and likely other providers' policies.
 
-This disclaimer is inserted as the first line in the course audio.
+This disclosure is inserted by the `okcourse` library as the opening line in all TTS-generated course audio files.
 """

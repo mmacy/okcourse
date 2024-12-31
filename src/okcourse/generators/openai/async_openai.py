@@ -1,3 +1,16 @@
+"""The `async_openai` module contains the [`OpenAIAsyncGenerator`][okcourse.generators.openai.async_openai.OpenAIAsyncGenerator] class.
+
+Use the `OpenAIAsyncGenerator` to generate course content asynchronously using the OpenAI API.
+
+Examples:
+
+Generate a full course, including its outline, lectures, cover image, and audio file:
+
+ ```python
+ --8<-- "examples/snippets/async_openai_snippets.py:full_openaiasyncgenerator"
+ ```
+"""
+
 import asyncio
 import base64
 import io
@@ -13,7 +26,7 @@ from openai.types.image_model import ImageModel
 from pydub import AudioSegment
 
 from ...constants import (
-    AI_DISCLAIMER,
+    AI_DISCLOSURE,
     MAX_LECTURES,
 )
 from ...models import Course, CourseOutline, Lecture
@@ -22,12 +35,12 @@ from ...utils import (
     download_tokenizer,
     extract_literal_values_from_member,
     extract_literal_values_from_type,
+    get_logger,
+    get_top_level_version,
     sanitize_filename,
     split_text_into_chunks,
     swap_words,
     tokenizer_available,
-    get_logger,
-    get_top_level_version,
 )
 from ..base import CourseGenerator
 
@@ -63,15 +76,22 @@ class OpenAIAsyncGenerator(CourseGenerator):
         self.tts_voices: list[str] = extract_literal_values_from_member(SpeechCreateParams, "voice")
 
     async def generate_outline(self, course: Course) -> Course:
-        """Generates a course outline for the course based on its title and `num_lectures`in the settings.
+        """Generates a course outline for the course based on its title and [`num_lectures` in its `settings`.
 
-        Set the course `title` attribute before calling this method.
+        Set the course's [`title`][okcourse.models.Course.title] attribute before calling this method.
 
         Returns:
             Course: The result of the generation process with its `course.outline` attribute set.
 
         Raises:
             ValueError: If the course has no title.
+
+        Examples:
+
+        ```python
+        --8<-- "examples/snippets/async_openai_snippets.py:generate_outline"
+        ```
+
         """
         if not course.title or course.title.strip() == "":
             msg = "The given Course has no title. Set the course's 'title' attribute before calling this method."
@@ -266,7 +286,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         # Combine all lecture texts, including titles, preceded by the disclosure that it's all AI-generated
         course_text = (
-            AI_DISCLAIMER
+            AI_DISCLOSURE
             + "\n\n"
             + course.title
             + "\n\n".join(f"Lecture {lecture.number}:\n\n{lecture.text}" for lecture in course.lectures)

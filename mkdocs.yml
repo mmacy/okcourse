@@ -4,7 +4,7 @@ site_description: A library that generates courses containing lectures on any to
 site_url: https://mmacy.github.io/okcourse/
 repo_name: okcourse
 repo_url: https://github.com/mmacy/okcourse
-watch: [README.md, src/okcourse]
+watch: [README.md, src/okcourse, examples/snippets]
 
 theme:
   name: material
@@ -79,7 +79,6 @@ plugins:
     handlers:
       python:
         paths: [src]
-        load_external_modules: false # 'true' picks up __all__ from __init__.py files
         import:
           - https://docs.python.org/3/objects.inv
           - https://docs.pydantic.dev/2.10/objects.inv
@@ -120,6 +119,6 @@ nav:
     - index.md
     - Get started: get-started.md
     - Examples: examples/index.md
-    - okcourse API reference: reference/index.md
+    - API reference: reference/index.md
   - Examples: examples/
   - API reference: reference/
