@@ -16,7 +16,6 @@ async def main() -> None:
     course = await generator.generate_image(course)
     course = await generator.generate_audio(course)
 
-    # Save the course to JSON (Course and nested types are Pydantic models)
     print(course.model_dump_json(indent=2))
 
 

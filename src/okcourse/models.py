@@ -103,16 +103,13 @@ class CourseSettings(BaseModel):
         "alloy",
         description="The voice to use for text-to-speech audio generation.",
     )
-    max_concurrent_requests: int = Field(
-        32,
-        description="The maximum number of concurrent asynchronous requests during generation.",
-    )
     log_level: int | None = Field(
         INFO,
         description=(
-            "Enables logging and sets log level for course generation operations. Specify a "
-            "[Python logging level](https://docs.python.org/3/library/logging.html#logging-levels) like `INFO`, "
-            "`DEBUG`, `WARNING`, `ERROR`, or `CRITICAL`. To disable logging, set this to `None`."
+            "Specifies the [Python logging level](https://docs.python.org/3/library/logging.html#logging-levels) for "
+            "course and course asset generation operations. Set this attribute to one of the Python standard library's"
+            "[logging levels](https://docs.python.org/3/library/logging.html#logging-levels): `INFO`, `DEBUG`, "
+            "`WARNING`, `ERROR`, or `CRITICAL`. To disable logging, set this attribute to `None`."
         ),
     )
     log_to_file: bool = Field(
