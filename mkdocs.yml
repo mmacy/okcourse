@@ -115,7 +115,7 @@ extra:
     link: https://github.com/mmacy
 
 nav:
-  - Welcome:
+  - Introduction:
     - index.md
     - Get started: get-started.md
     - Examples: examples/index.md

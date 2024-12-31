@@ -1,3 +1,3 @@
 # Get started
 
---8<-- "./README.md:get-started"
+--8<-- "README.md:2"

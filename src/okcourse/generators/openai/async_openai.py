@@ -1,15 +1,4 @@
-"""The `async_openai` module contains the [`OpenAIAsyncGenerator`][okcourse.generators.openai.async_openai.OpenAIAsyncGenerator] class.
-
-Use the `OpenAIAsyncGenerator` to generate course content asynchronously using the OpenAI API.
-
-Examples:
-
-Generate a full course, including its outline, lectures, cover image, and audio file:
-
- ```python
- --8<-- "examples/snippets/async_openai_snippets.py:full_openaiasyncgenerator"
- ```
-"""
+"""The `async_openai` module contains the [`OpenAIAsyncGenerator`][okcourse.generators.openai.async_openai.OpenAIAsyncGenerator] class."""
 
 import asyncio
 import base64
@@ -46,7 +35,18 @@ from ..base import CourseGenerator
 
 
 class OpenAIAsyncGenerator(CourseGenerator):
-    """Uses the OpenAI API asynchronously to generate course content."""
+    """Uses the OpenAI API to generate course content asynchronously.
+
+    Use the `OpenAIAsyncGenerator` to generate a course outline, lectures, cover image, and audio file for a course.
+
+    Examples:
+
+    Generate a full course, including its outline, lectures, cover image, and audio file:
+
+    ```python
+    --8<-- "examples/snippets/async_openai_snippets.py:full_openaiasyncgenerator"
+    ```
+    """
 
     def __init__(self, course: Course):
         """Initializes the asynchronous OpenAI course generator.
@@ -76,7 +76,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
         self.tts_voices: list[str] = extract_literal_values_from_member(SpeechCreateParams, "voice")
 
     async def generate_outline(self, course: Course) -> Course:
-        """Generates a course outline for the course based on its title and [`num_lectures` in its `settings`.
+        """Generates a course outline based on its `title` and other [`settings`][okcourse.models.Course.settings].
 
         Set the course's [`title`][okcourse.models.Course.title] attribute before calling this method.
 

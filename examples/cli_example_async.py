@@ -1,10 +1,7 @@
-"""Command-line interface example of using the okcourse module to generate an OK Course.
+"""Command-line interface example of using the okcourse package to generate an audiobook-style lecture series.
 
-This script demonstrates how to use the okcourse module to create a course outline, generate its lectures, and
-optionally generate an MP3 audio file for the course.
-
-This script uses the asynchronous versions of the okcourse module functions. For an example that uses the synchronous
-versions, see examples/cli_example.py.
+This script demonstrates how to use the okcourse package to create a course outline, generate its lectures, and
+optionally generate an audio file for the course.
 """
 
 import asyncio
