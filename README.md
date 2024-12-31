@@ -61,7 +61,7 @@ As a friendly reminder, using `okcourse` to generate course content may cost you
 
 !!! warning
 
-    **The API token owner is responsible for any API usage fees** incurred by using `okcourse` with your API token.
+    The API token owner is responsible for API usage fees incurred by using `okcourse`.
 
 Set the environment variable appropriate for your AI service provider.
 
