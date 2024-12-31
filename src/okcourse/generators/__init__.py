@@ -1,20 +1,14 @@
-"""The `generators` package includes course generators compatible with APIs offered by different AI service providers.
+"""The `generators` package includes course generators compatible with AI service provider APIs.
 
-## Available generators
-
-- [`OpenAIAsyncGenerator`][okcourse.generators.openai.OpenAIAsyncGenerator]: An asynchronous course generator that uses
-    OpenAI's models to generate course assets.
-
-To use these classes, import them directly from this package.
-
-## Examples
+Examples:
 
 ```python
-from okcourse.generators import OpenAIAsyncGenerator
-
-generator = OpenAIAsyncGenerator()
-await generator.generate_course()
+--8<-- "examples/snippets/async_openai_snippets.py:generate_course"
 ```
+
+1. Generates a complete course—outline, lectures, audio, and cover image—using the
+[`OpenAIAsyncGenerator`][okcourse.generators.OpenAIAsyncGenerator] for the given topic and with default
+[`CourseSettings`][okcourse.models.CourseSettings].
 """
 
 from .base import CourseGenerator
