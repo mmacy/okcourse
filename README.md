@@ -6,15 +6,17 @@ The async version of the `okcourse` OpenAI generator can produce a **1.5-hour** 
 
 ## Prerequisites
 
-- [Python 3.12+](https://python.org)
+- [Python 3.12+](https://python.org) or [uv](https://docs.astral.sh/uv/)[^1]
 - [FFmpeg](https://ffmpeg.org/)
 - [OpenAI API key](https://platform.openai.com/docs/quickstart)
 
+[^1]: uv can [install the right Python version](https://docs.astral.sh/uv/guides/install-python/) for you.
+
 ## Install uv (optional)
 
-Install [`uv` by Astral](https://docs.astral.sh/uv/getting-started/installation/) if you don't already have it.
+Install Astral's [uv](https://docs.astral.sh/uv/getting-started/installation/) if you don't already have it.
 
-Though not strictly required, many people find that working with Python projects is *much* easier with `uv` than with other tools. In fact, `uv` will even [install Python](https://docs.astral.sh/uv/guides/install-python/) for you!
+Though not strictly required, many people find working with Python projects *much* easier with `uv` than with other tools. In fact, `uv` will even [install Python](https://docs.astral.sh/uv/guides/install-python/) for you!
 
 If you prefer, you *can* use `python -m venv` + `pip`, Poetry, or another tool you to create and manage your Python environment, but since this project uses `uv`, so will these instructions.
 

@@ -1,19 +1,26 @@
 # Introduction
 
-The `okcourse` Python library generates audiobook-style courses with lectures on any topic by using artificial intelligence (AI).
-
-You supply a topic for a course and the `okcourse` library uses an AI service provider's API to:
-
-- Generate a **course outline** and **lecture text** with an LLM
-- Create **cover image** for the course by using an image model
-- Produce an **MP3 audio file** from the lecture text using a text-to-speech (TTS) model
+The `okcourse` Python library uses AI to generate audiobook-style courses in MP3 format with lectures on an any topic.
 
 <div class="grid cards" markdown>
 - :material-clock-fast: [Get started](./get-started.md)
 - :simple-python: [API reference](reference/index.md)
-- :octicons-file-code-16: [Example code](./examples/index.md)
+- :octicons-file-code-16: [Example apps](./examples/index.md)
 <!-- - :octicons-versions-16: [Library `CHANGELOG`](./changelog.md) -->
 </div>
+
+Given only a course topic of your choosing, the `okcourse` library handles all the prompting and API interaction required to:
+
+- Generate a **course outline** and **lecture text** with an LLM
+- Create **cover image** for the course by using an image model
+- Produce an **audio file** from the lecture text using a text-to-speech (TTS) model
+
+Curious about interstellar propulsion systems? Feed a catchy title to `okcourse` and you can fire up the course audio in your favorite media player in minutes. (1)
+{.annotate}
+
+1. Durations vary, but `okcourse` can generate a 20-lecture audio course with a **1.5-hour** running time in about **2.5 minutes**.
+
+![Screenshot of Plex web player displaying an audio lecture titled 'Interstellar Space Travel: Propulsion Systems from Factual to Fantastical' by Fable @ OpenAI, showing a retro-styled cover illustration of a futuristic spacecraft and technical diagrams with a playback position of 32:18 out of 49:29.](images/plex-01-interstellar.png)
 
 ## OK for entertainment
 
