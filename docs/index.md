@@ -1,6 +1,6 @@
 # Introduction
 
-The `okcourse` Python library uses AI to generate audiobook-style courses in MP3 format with lectures on an any topic.
+The `okcourse` Python library uses AI to generate audiobook-style courses in MP3 format with lectures on any topic.
 
 <div class="grid cards" markdown>
 - :material-clock-fast: [Get started](./get-started.md)
