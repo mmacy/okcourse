@@ -1,0 +1,36 @@
+name: documentation
+on:
+  push:
+    branches:
+      - main
+permissions:
+  contents: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Git Credentials
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+      - uses: actions/cache@v4
+        with:
+          key: mkdocs-material-${{ env.cache_id }}
+          path: .cache
+          restore-keys: |
+            mkdocs-material-
+      - run: |
+            pip install \
+            black==24.10.0 \
+            griffe-pydantic==1.1.0 \
+            mkdocs-gen-files==0.5.0 \
+            mkdocs-literate-nav==0.6.1 \
+            mkdocs-material==9.5.49 \
+            mkdocstrings-python==1.12.2 \
+            pydantic==2.10.4
+      - run: mkdocs gh-deploy --force

@@ -4,9 +4,9 @@ audiobook-style courses containing lectures on any topic.
 Given a course title, a [course generator][okcourse.generators] will fetch the following from an AI service provider's
 API:
 
-- [Course outline][okcourse.generators.base.CourseGenerator.generate_outline]
-- [Lecture text][okcourse.generators.base.CourseGenerator.generate_lectures] the topics in the outline
-- [Cover image][okcourse.generators.base.CourseGenerator.generate_image] for the audio file "album" art
+- [Course outline][okcourse.CourseOutline]
+- [Lecture text][okcourse.Lecture] for the topics in the outline
+- [Cover image][okcourse.CourseGenerator.generate_image] for the audio file album art
 - [Audio file][okcourse.generators.base.CourseGenerator.generate_audio] from the lecture text
 """
 

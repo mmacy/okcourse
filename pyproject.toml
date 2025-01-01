@@ -30,6 +30,7 @@ docs = [
     "mkdocs-literate-nav>=0.6.1",
     "mkdocs-material>=9.5.49",
     "mkdocstrings-python>=1.12.2",
+    "pydantic>=2.10.4",
 ]
 
 [tool.uv.sources]
