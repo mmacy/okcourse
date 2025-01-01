@@ -32,5 +32,6 @@ jobs:
             mkdocs-gen-files==0.5.0 \
             mkdocs-literate-nav==0.6.1 \
             mkdocs-material==9.5.49 \
-            mkdocstrings-python==1.12.2
+            mkdocstrings-python==1.12.2 \
+            pydantic==2.10.4
       - run: mkdocs gh-deploy --force
