@@ -18,7 +18,7 @@ Given only a course topic of your choosing, the `okcourse` library handles all t
 Curious about interstellar propulsion systems? Feed a catchy title to `okcourse` and you can fire up the course audio in your favorite media player in minutes. (1)
 {.annotate}
 
-1. Durations vary, but `okcourse` can generate a 20-lecture audio course with a **1.5-hour** running time in about **2.5 minutes**.
+1. Durations vary, but `okcourse` can generate a **1.5-hour** audio course with 20 lectures in about **2.5 minutes**.
 
 ![Screenshot of Plex web player displaying an audio lecture titled 'Interstellar Space Travel: Propulsion Systems from Factual to Fantastical' by Fable @ OpenAI, showing a retro-styled cover illustration of a futuristic spacecraft and technical diagrams with a playback position of 32:18 out of 49:29.](images/plex-01-interstellar.png)
 

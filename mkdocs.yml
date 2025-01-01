@@ -4,7 +4,7 @@ site_description: A library that generates courses containing lectures on any to
 site_url: https://mmacy.github.io/okcourse/
 repo_name: okcourse
 repo_url: https://github.com/mmacy/okcourse
-watch: [README.md, src/okcourse, examples/snippets]
+watch: [README.md, src/okcourse, examples]
 
 theme:
   name: material

@@ -1,9 +1,10 @@
-"""Command-line interface example of using the okcourse package to generate an audiobook-style lecture series.
-
-This script demonstrates how to use the okcourse package to create a course outline, generate its lectures, and
-optionally generate an audio file for the course.
-"""
-
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "questionary>=2.1.0",
+#     "okcourse@git+https://github.com/mmacy/okcourse",
+# ]
+# ///
 import asyncio
 import os
 import sys
@@ -16,7 +17,7 @@ from okcourse.utils import sanitize_filename
 
 
 async def async_prompt(prompt_func, *args, **kwargs):
-    """Runs a synchronous questionary prompt in a separate thread and returns the result asynchronously.
+    """Runs a sync questionary prompt in separate thread and returns the result asynchronously.
 
     Args:
         prompt_func: The questionary prompt function (e.g., questionary.text).
@@ -31,9 +32,9 @@ async def async_prompt(prompt_func, *args, **kwargs):
 
 
 async def main():
-    print("=======================")
-    print("==  OK Course Maker  ==")
-    print("=======================")
+    print("============================")
+    print("==  okcourse CLI (async)  ==")
+    print("============================")
 
     course = Course()
     course.settings.output_directory = os.path.expanduser("~/.okcourse_files")
@@ -46,13 +47,6 @@ async def main():
     course.title = str(topic).strip()  # TODO: Prevent course titles about little Bobby Tables
 
     generator = OpenAIAsyncGenerator(course)
-
-    if await async_prompt(questionary.confirm, "Generate course using default settings?"):
-        print(f"Generating course with {course.settings.num_lectures} lectures...")
-        course = await generator.generate_course(course)
-        print(os.linesep)
-        print(f"Done! Course file(s) saved to {course.settings.output_directory}")
-        sys.exit(0)
 
     while True:
         course.settings.num_lectures = await async_prompt(
