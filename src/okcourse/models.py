@@ -78,8 +78,8 @@ class CourseSettings(BaseModel):
         "Generate the complete unabridged text for a lecture titled '${lecture_title}' in a graduate-level course "
         "named '${course_title}'. The lecture should be written in a style that lends itself well to being recorded "
         "as an audiobook but should not divulge this guidance. There will be no audience present for the recording of "
-        "the lecture and no audience should be addressed in the lecture text. Cover the lecture topic in great detail "
-        "while keeping in mind the advanced education level of the listeners of the lecture. "
+        "the lecture and no audience should be addressed in the lecture text. Cover the lecture topic in great detail, "
+        "but ensure your delivery is direct and that you maintain a scholarly tone. "
         "Omit Markdown from the lecture text as well as any tags, formatting markers, or headings that might interfere "
         "with text-to-speech processing. Ensure the content is original and does not duplicate content from the other "
         "lectures in the series:\n${course_outline}",

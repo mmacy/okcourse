@@ -162,7 +162,6 @@ def get_duration_string_from_seconds(seconds: float) -> str:
 
 
 LLM_SMELLS: dict[str, str] = {
-    # "crucial": "important",  # TODO: Uncomment when we can handle phrases (currently breaks due to a/an mismatch).
     "delve": "dig",
     "delved": "dug",
     "delves": "digs",
@@ -173,6 +172,9 @@ LLM_SMELLS: dict[str, str] = {
     "utilization": "usage",
     "meticulous": "careful",
     "meticulously": "carefully",
+    # crucial
+    # underscore
+    # paramount
 }
 """Dictionary mapping words overused by some large language models to their simplified 'everyday' forms.
 
