@@ -12,7 +12,7 @@ The async version of the `okcourse` OpenAI generator can produce a **1.5-hour** 
 
 ## Install uv (optional)
 
-[Install Astral's uv](https://docs.astral.sh/uv/getting-started/installation/) if you don't already have it.
+[Install uv](https://docs.astral.sh/uv/getting-started/installation/) by Astral if you don't already have it.
 
 Though not strictly required, many people find working with Python projects *much* easier with `uv` than with other tools. In fact, `uv` will even [install Python](https://docs.astral.sh/uv/guides/install-python/) for you!
 

@@ -126,10 +126,10 @@ class CourseSettings(BaseModel):
 class Course(BaseModel):
     """A `Course` is the container for its content and the settings a course generator uses to generate that content.
 
-    Create a `Course` instance, modify its [`settings`][okcourse.models.CourseSettings], and then pass it to a
-    course [`generator`][okcourse.generators] method like
-    [`OpenAIAsyncGenerator`][okcourse.generators.OpenAIAsyncGenerator.generate_outline]
-    to start generating course content.
+    Create a `Course` instance, modify its [`settings`][okcourse.models.CourseSettings], and then pass the `Course` to a
+    course generator like
+    [`OpenAIAsyncGenerator`][okcourse.generators.OpenAIAsyncGenerator.generate_outline]. You can then start generating
+    content with the generator's methods like [`generate_outline()`][okcourse.OpenAIAsyncGenerator.generate_outline].
     """
 
     title: str | None = Field(

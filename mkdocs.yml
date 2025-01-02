@@ -4,6 +4,7 @@ site_description: A library that generates courses containing lectures on any to
 site_url: https://mmacy.github.io/okcourse/
 repo_name: okcourse
 repo_url: https://github.com/mmacy/okcourse
+edit_uri: edit/main/docs/
 watch: [README.md, src/okcourse, examples]
 
 theme:
@@ -32,6 +33,8 @@ theme:
     code: Chivo Mono
 
   features:
+    - content.action.edit
+    - content.action.view
     - content.code.annotate
     - header.autohide
     - search.share
@@ -75,7 +78,11 @@ plugins:
         - scripts/gen_ref_docs.py
 - literate-nav:
     nav_file: SUMMARY.md
-
+- git-revision-date-localized:
+      enable_creation_date: true
+- git-committers:
+      repository: mmacy/okcourse
+      branch: main
 - mkdocstrings:
     handlers:
       python:
