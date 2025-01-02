@@ -46,3 +46,18 @@ async def generate_course_example() -> Course:
     # --8<-- [end:generate_course]
 
     return course
+
+
+async def generate_course_with_settings_example() -> Course:
+    """Use the OpenAIAsyncGenerator to generate a course outline with custom settings."""
+
+    # --8<-- [start:generate_course_with_settings]
+    course = Course(title="From AGI to ASI: Paperclips, Gray Goo, and You")
+    course.settings.num_lectures = 10
+    course.settings.tts_voice = "nova"
+
+    generator = OpenAIAsyncGenerator(course)
+    course = await generator.generate_course(course)  # (1)
+    # --8<-- [end:generate_course_with_settings]
+
+    return course
