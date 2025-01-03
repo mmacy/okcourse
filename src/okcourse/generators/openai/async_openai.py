@@ -35,6 +35,7 @@ from ...utils import (
     split_text_into_chunks,
     swap_words,
     tokenizer_available,
+    time_tracker,
 )
 from ..base import CourseGenerator
 
@@ -61,7 +62,8 @@ class OpenAIAsyncGenerator(CourseGenerator):
         """
         super().__init__(course)
 
-        course.details.okcourse_version = get_top_level_version("okcourse")
+        course.generation_info.generator_type = __name__
+        course.generation_info.okcourse_version = get_top_level_version("okcourse")
 
         if course.settings.log_level:
             log_file = course.settings.output_directory / Path(__name__).with_suffix(".log")
@@ -130,17 +132,20 @@ class OpenAIAsyncGenerator(CourseGenerator):
         )
 
         self.log.info(f"Requesting outline for course '{course.title}'...")
-        outline_completion = await self.client.beta.chat.completions.parse(
-            model=course.settings.text_model,
-            messages=[
-                {"role": "system", "content": course.settings.text_model_system_prompt},
-                {"role": "user", "content": outline_prompt},
-            ],
-            response_format=CourseOutline,
-        )
+        with time_tracker(course.generation_info, "outline_gen_elapsed_seconds"):
+            outline_completion = await self.client.beta.chat.completions.parse(
+                model=course.settings.text_model,
+                messages=[
+                    {"role": "system", "content": course.settings.text_model_system_prompt},
+                    {"role": "user", "content": outline_prompt},
+                ],
+                response_format=CourseOutline,
+            )
+        self.log.info(f"Received outline for course '{course.title}'...")
+
         if outline_completion.usage:
-            course.details.input_token_count += outline_completion.usage.prompt_tokens
-            course.details.output_token_count += outline_completion.usage.completion_tokens
+            course.generation_info.input_token_count += outline_completion.usage.prompt_tokens
+            course.generation_info.output_token_count += outline_completion.usage.completion_tokens
         generated_outline = outline_completion.choices[0].message.parsed
 
         # Reset the topic to what was passed in if the LLM modified the original (it sometimes adds its own subtitle)
@@ -187,8 +192,8 @@ class OpenAIAsyncGenerator(CourseGenerator):
             max_completion_tokens=15000,
         )
         if response.usage:
-            course.details.input_token_count += response.usage.prompt_tokens
-            course.details.output_token_count += response.usage.completion_tokens
+            course.generation_info.input_token_count += response.usage.prompt_tokens
+            course.generation_info.output_token_count += response.usage.completion_tokens
         lecture_text = response.choices[0].message.content.strip()
         lecture_text = swap_words(lecture_text, LLM_SMELLS)
 
@@ -208,13 +213,14 @@ class OpenAIAsyncGenerator(CourseGenerator):
         """
         lecture_tasks = []
 
-        async with asyncio.TaskGroup() as task_group:
-            for topic in course.outline.topics:
-                task = task_group.create_task(
-                    self._generate_lecture(course, topic.number),
-                    name=f"generate_lecture_{topic.number}",
-                )
-                lecture_tasks.append(task)
+        with time_tracker(course.generation_info, "lecture_gen_elapsed_seconds"):
+            async with asyncio.TaskGroup() as task_group:
+                for topic in course.outline.topics:
+                    task = task_group.create_task(
+                        self._generate_lecture(course, topic.number),
+                        name=f"generate_lecture_{topic.number}",
+                    )
+                    lecture_tasks.append(task)
 
         course.lectures = [lecture_task.result() for lecture_task in lecture_tasks]
 
@@ -245,7 +251,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
             async for data in response.iter_bytes():
                 audio_bytes.write(data)
             audio_bytes.seek(0)
-            course.details.tts_character_count += len(text_chunk)
+            course.generation_info.tts_character_count += len(text_chunk)
             self.log.info(f"Got TTS audio for text chunk {chunk_num} in voice '{course.settings.tts_voice}'.")
 
             return chunk_num, AudioSegment.from_file(audio_bytes, format="mp3")
@@ -264,32 +270,34 @@ class OpenAIAsyncGenerator(CourseGenerator):
         image_prompt_template = Template(course.settings.image_model_prompt)
         image_prompt = image_prompt_template.substitute(course_title=course.title)
         try:
-            image_response = await self.client.images.generate(
-                model=course.settings.image_model,
-                prompt=image_prompt,
-                n=1,
-                size="1024x1024",
-                response_format="b64_json",
-                quality="standard",
-                style="vivid",
-            )
+            with time_tracker(course.generation_info, "image_gen_elapsed_seconds"):
+                image_response = await self.client.images.generate(
+                    model=course.settings.image_model,
+                    prompt=image_prompt,
+                    n=1,
+                    size="1024x1024",
+                    response_format="b64_json",
+                    quality="standard",
+                    style="vivid",
+                )
+
             if not image_response.data:
                 self.log.warning(f"No image data returned for course '{course.title}'")
                 return None
 
-            course.details.num_images_generated += 1
+            course.generation_info.num_images_generated += 1
             image = image_response.data[0]
             image_bytes = base64.b64decode(image.b64_json)
 
-            course.details.image_file_path = course.settings.output_directory / Path(
+            course.generation_info.image_file_path = course.settings.output_directory / Path(
                 sanitize_filename(course.title)
             ).with_suffix(".png")
-            course.details.image_file_path.parent.mkdir(parents=True, exist_ok=True)
-            self.log.info(f"Saving image to {course.details.image_file_path}")
-            course.details.image_file_path.write_bytes(image_bytes)
+            course.generation_info.image_file_path.parent.mkdir(parents=True, exist_ok=True)
+            self.log.info(f"Saving image to {course.generation_info.image_file_path}")
+            course.generation_info.image_file_path.write_bytes(image_bytes)
 
             # Save the course as JSON now that we have the image path
-            course.details.image_file_path.with_suffix(".json").write_text(course.model_dump_json(indent=2))
+            course.generation_info.image_file_path.with_suffix(".json").write_text(course.model_dump_json(indent=2))
 
             return course
 
@@ -324,57 +332,59 @@ class OpenAIAsyncGenerator(CourseGenerator):
         course_chunks = split_text_into_chunks(course_text)
 
         speech_tasks = []
-        async with asyncio.TaskGroup() as task_group:
-            for chunk_num, chunk in enumerate(course_chunks, start=1):
-                task = task_group.create_task(
-                    self._generate_speech_for_text_chunk(
-                        course=course,
-                        text_chunk=chunk,
-                        chunk_num=chunk_num,
-                    ),
-                )
-                speech_tasks.append(task)
 
-        audio_chunks = [speech_task.result() for speech_task in speech_tasks]
+        with time_tracker(course.generation_info, "audio_gen_elapsed_seconds"):
+            async with asyncio.TaskGroup() as task_group:
+                for chunk_num, chunk in enumerate(course_chunks, start=1):
+                    task = task_group.create_task(
+                        self._generate_speech_for_text_chunk(
+                            course=course,
+                            text_chunk=chunk,
+                            chunk_num=chunk_num,
+                        ),
+                    )
+                    speech_tasks.append(task)
 
-        self.log.info(f"Joining {len(audio_chunks)} audio chunks into one file...")
-        course_audio = sum(
-            (audio_chunk for _, audio_chunk in audio_chunks),
-            AudioSegment.silent(duration=0),  # Start with silence
-        )
+            audio_chunks = [speech_task.result() for speech_task in speech_tasks]
 
-        if course.details.image_file_path and course.details.image_file_path.exists():
-            composer_tag = f"{course.settings.text_model} & {course.settings.tts_model} & {course.settings.image_model}"
-            cover_tag = str(course.details.image_file_path)
-        else:
-            composer_tag = f"{course.settings.text_model} & {course.settings.tts_model}"
-            cover_tag = None
+            self.log.info(f"Joining {len(audio_chunks)} audio chunks into one file...")
+            course_audio = sum(
+                (audio_chunk for _, audio_chunk in audio_chunks),
+                AudioSegment.silent(duration=0),  # Start with silence
+            )
 
-        course.details.audio_file_path = course.settings.output_directory / Path(
-            sanitize_filename(course.title)
-        ).with_suffix(".mp3")
-        course.details.audio_file_path.parent.mkdir(parents=True, exist_ok=True)
+            if course.generation_info.image_file_path and course.generation_info.image_file_path.exists():
+                composer_tag = f"{course.settings.text_model} & {course.settings.tts_model} & {course.settings.image_model}"
+                cover_tag = str(course.generation_info.image_file_path)
+            else:
+                composer_tag = f"{course.settings.text_model} & {course.settings.tts_model}"
+                cover_tag = None
 
-        version_string = get_top_level_version("okcourse")
+            course.generation_info.audio_file_path = course.settings.output_directory / Path(
+                sanitize_filename(course.title)
+            ).with_suffix(".mp3")
+            course.generation_info.audio_file_path.parent.mkdir(parents=True, exist_ok=True)
 
-        self.log.info(f"Saving audio to {course.details.audio_file_path}")
-        course_audio.export(
-            str(course.details.audio_file_path),
-            format="mp3",
-            cover=cover_tag,
-            tags={
-                "title": course.title,
-                "artist": f"{course.settings.tts_voice.capitalize()} @ OpenAI",
-                "composer": composer_tag,
-                "album": "OK Courses",
-                "genre": "Books & Spoken",
-                "date": str(time.gmtime().tm_year),
-                "comment": f"Generated by AI with okcourse v{version_string} - https://github.com/mmacy/okcourse",
-            },
-        )
+            version_string = get_top_level_version("okcourse")
+
+            self.log.info(f"Saving audio to {course.generation_info.audio_file_path}")
+            course_audio.export(
+                str(course.generation_info.audio_file_path),
+                format="mp3",
+                cover=cover_tag,
+                tags={
+                    "title": course.title,
+                    "artist": f"{course.settings.tts_voice.capitalize()} @ OpenAI",
+                    "composer": composer_tag,
+                    "album": "OK Courses",
+                    "genre": "Books & Spoken",
+                    "date": str(time.gmtime().tm_year),
+                    "comment": f"Generated by AI with okcourse v{version_string} - https://github.com/mmacy/okcourse",
+                },
+            )
 
         # Save the course as JSON now that we have the audio file path
-        course.details.audio_file_path.with_suffix(".json").write_text(course.model_dump_json(indent=2))
+        course.generation_info.audio_file_path.with_suffix(".json").write_text(course.model_dump_json(indent=2))
 
         return course
 

@@ -2,8 +2,10 @@
 
 import logging
 import re
+import time
+from contextlib import contextmanager
 from datetime import timedelta
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any, Literal, Union, get_args, get_origin, get_type_hints
 
@@ -273,3 +275,34 @@ def get_top_level_version(package_name: str) -> str:
         return version(package_name)
     except PackageNotFoundError as e:
         raise RuntimeError(f"Package '{package_name}' is not installed.") from e
+
+
+@contextmanager
+def time_tracker(target_object: object, attribute_name: str):
+    """A [`contextmanager`][contextlib.contextmanager] that tracks elapsed time and stores it in the specified `attribute` of the `target` object.
+
+    Wrap your long-running operation with the `time_tracker` context manager and pass it the object and the name of the
+    attribute on the object you want to store the elapsed time in.
+
+    Args:
+        target_object: The object where the elapsed time should be recorded.
+        attribute_name: The name of the attribute on the given target object where the elapsed time should be stored.
+
+    Examples:
+
+    Record time elapsed generating a course's outline in the course's [`CourseGenerationInfo`][okcourse.models.CourseGenerationInfo]:
+
+    ```python
+    async def generate_outline(self, course: Course) -> Course:
+        with time_tracker(course.generation_info, "outline_generation_elapsed"):
+            # Long-running operation here
+        return course
+    ```
+    """
+    start_time = time.perf_counter()
+    yield  # Execution passes back to the caller
+    elapsed_time = time.perf_counter() - start_time
+    if hasattr(target_object, attribute_name):
+        setattr(target_object, attribute_name, elapsed_time)
+    else:
+        raise AttributeError(f"Attribute '{attribute_name}' not found in {target_object.__class__.__name__}.")

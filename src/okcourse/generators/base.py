@@ -27,7 +27,7 @@ class CourseGenerator(ABC):
 
     def __init__(self, course: Course):
 
-        # TODO: Set this automatically in subclasses so the log messages include the actual generator class name
+        # TODO: Assign in the subclass __init__ so the logs and CourseGenerationInfo have the subclass' name
         self.log: logger = None
         """The logger for the generator."""
 
@@ -71,7 +71,8 @@ class CourseGenerator(ABC):
             course: The course to generate an image for.
 
         Returns:
-            Course: The course with its [`image_file_path`][okcourse.models.Course.image_file_path] attribute set.
+            Course: The course with the [`image_file_path`][okcourse.models.CourseGenerationInfo.image_file_path]
+                attribute set in its [`generation_info`][okcourse.models.Course.generation_info] attribute.
         """
         pass
 
@@ -84,6 +85,7 @@ class CourseGenerator(ABC):
         method.
 
         Returns:
-            Course: The course with its [`audio_file_path`][okcourse.models.Course.audio_file_path] attribute set.
+            Course: The course with the [`audio_file_path`][okcourse.models.CourseGenerationInfo.audio_file_path]
+                attribute set in its [`generation_info`][okcourse.models.Course.generation_info] attribute.
         """
         pass

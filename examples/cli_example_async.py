@@ -13,19 +13,26 @@ from pathlib import Path
 import questionary
 
 from okcourse import Course, OpenAIAsyncGenerator
-from okcourse.models import CourseGenerationDetails
-from okcourse.utils import sanitize_filename
+from okcourse.models import CourseGenerationInfo
+from okcourse.utils import sanitize_filename, get_duration_string_from_seconds
 
 
 class OpenAIPricing:
-    """Class to store and manage OpenAI pricing details."""
+    """OpenAI's API usage prices.
+
+    !!! warning
+        Use these for cost estimation purposes *only*. These prices are determined by OpenAI and are subject to change
+        without notice. For current pricing information, see
+        [Pricing on OpenAI's website](https://openai.com/api/pricing/).
+    """
+
     GPT4O_INPUT_COST_PER_1K_TOKENS = 0.00250
     GPT4O_OUTPUT_COST_PER_1K_TOKENS = 0.01000
     TTS_COST_PER_1K_CHARACTERS = 0.015
     DALLE_COST_PER_IMAGE = 0.040
 
 
-def calculate_openai_cost(details: CourseGenerationDetails) -> dict[str, float]:
+def calculate_openai_cost(details: CourseGenerationInfo) -> dict[str, float]:
     """Calculates the costs based on token and character counts using the OpenAI pricing.
 
     OpenAI pricing as of 2024-01-02:
@@ -151,15 +158,23 @@ async def main():
         print("Generating course audio...")
         course = await generator.generate_audio(course)
 
+    total_generation_time = get_duration_string_from_seconds(
+        course.generation_info.outline_gen_elapsed_seconds
+        + course.generation_info.lecture_gen_elapsed_seconds
+        + course.generation_info.image_gen_elapsed_seconds
+        + course.generation_info.audio_gen_elapsed_seconds
+    )
+
     # Done with generation - save the course to JSON now that it's fully populated
     json_file_out = course.settings.output_directory / Path(sanitize_filename(course.title)).with_suffix(".json")
     json_file_out.write_text(course.model_dump_json(indent=2))
     print(f"Course JSON file saved to {json_file_out}")
-    print(f"Done! Course file(s) available in {course.settings.output_directory}")
+    print(f"Done! Course generated in {total_generation_time}. File(s) available in {course.settings.output_directory}")
     print(os.linesep)
-    print(f"Generation details:\n{course.details.model_dump_json(indent=2)}")
+    print(f"Generation details:\n{course.generation_info.model_dump_json(indent=2)}")
     print(os.linesep)
-    print(f"Cost breakdown:\n{calculate_openai_cost(course.details)}")
+    print(f"Cost breakdown:\n{calculate_openai_cost(course.generation_info)}")
+
 
 if __name__ == "__main__":
     try:

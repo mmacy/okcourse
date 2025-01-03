@@ -13,10 +13,18 @@ API:
 import logging
 
 from .generators import CourseGenerator, OpenAIAsyncGenerator
-from .models import Course, CourseOutline, CourseSettings, Lecture, LectureTopic
+from .models import (
+    Course,
+    CourseGenerationInfo,
+    CourseOutline,
+    CourseSettings,
+    Lecture,
+    LectureTopic,
+)
 
 __all__ = [
     "Course",
+    "CourseGenerationInfo",
     "CourseGenerator",
     "CourseOutline",
     "CourseSettings",
