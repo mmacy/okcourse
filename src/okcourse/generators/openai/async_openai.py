@@ -87,6 +87,15 @@ class OpenAIAsyncGenerator(CourseGenerator):
         # gpt-4o    | $0.01000 / 1K output tokens
         # dall-e-3  | $0.040 / image Standard 1024×1024
         # tts-1     | $0.015 / 1K characters
+        # {
+        #     "okcourse_version": "0.1.8",
+        #     "input_token_count": 2079,
+        #     "output_token_count": 2710,
+        #     "tts_character_count": 15896,
+        #     "num_images_generated": 1,
+        #     "audio_file_path": "/Users/mmacy/.okcourse_files/calculating_openai_api_usage_cost.mp3",
+        #     "image_file_path": "/Users/mmacy/.okcourse_files/calculating_openai_api_usage_cost.png"
+        # }
 
     async def generate_outline(self, course: Course) -> Course:
         """Generates a course outline based on its `title` and other [`settings`][okcourse.models.Course.settings].
