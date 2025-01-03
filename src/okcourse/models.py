@@ -123,6 +123,37 @@ class CourseSettings(BaseModel):
     )
 
 
+class CourseGenerationDetails(BaseModel):
+    """Details about the course generation, including okcourse version, tokent counts (input and output), and durations."""
+
+    okcourse_version: str | None = Field(
+        None,
+        description="The version of the okcourse library used to generate the course.",
+    )
+    input_token_count: int = Field(
+        0,
+        description="The total number of tokens sent to the text completion endpoint when requesting content "
+        "generation. This count includes the tokens sent in the outline and lecture prompts.",
+    )
+    output_token_count: int = Field(
+        0,
+        description="The total number of tokens returned by the text completion endpoint. Includes tokens return for "
+        "all outline and lecture content generated.",
+    )
+    tts_character_count: int = Field(
+        0,
+        description="The total number of characters sent to the TTS endpoint.",
+    )
+    num_images_generated: int = Field(
+        0,
+        description="The number of images generated for the course.",
+    )
+    audio_file_path: Path | None = Field(
+        None, description="The path to the audio file generated from the course content."
+    )
+    image_file_path: Path | None = Field(None, description="The path to the cover image generated for the course.")
+
+
 class Course(BaseModel):
     """A `Course` is the container for its content and the settings a course generator uses to generate that content.
 
@@ -149,10 +180,11 @@ class Course(BaseModel):
         "lectures to generate for the course, the AI models to use to generate them, the output directory for the "
         "generated content, and more.",
     )
-    audio_file_path: Path | None = Field(
-        None, description="The path to the audio file generated from the course content."
+    details: CourseGenerationDetails = Field(
+        default_factory=CourseGenerationDetails,
+        description="Details about the course generation, including version, token counts, character counts, and "
+        "duration.",
     )
-    image_file_path: Path | None = Field(None, description="The path to the cover image generated for the course.")
 
     def __str__(self) -> str:
         if not self.lectures:

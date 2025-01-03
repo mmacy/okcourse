@@ -116,6 +116,7 @@ async def main():
     json_file_out.write_text(course.model_dump_json(indent=2))
     print(f"Course JSON file saved to {json_file_out}")
     print(f"Done! Course file(s) available in {course.settings.output_directory}")
+    print(f"Generation details:\n{course.details.model_dump_json(indent=2)}")
 
 
 if __name__ == "__main__":
