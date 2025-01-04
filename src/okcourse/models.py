@@ -123,6 +123,58 @@ class CourseSettings(BaseModel):
     )
 
 
+class CourseGenerationInfo(BaseModel):
+    """Details about the course generation, including okcourse version, tokent counts (input and output), and durations."""
+
+    generator_type: str | None = Field(
+        None,
+        description="The type of course generator used to generate the course content.",
+    )
+    okcourse_version: str | None = Field(
+        None,
+        description="The version of the okcourse library used to generate the course.",
+    )
+    input_token_count: int = Field(
+        0,
+        description="The total number of tokens sent to the text completion endpoint when requesting content "
+        "generation. This count includes the tokens sent in the outline and lecture prompts.",
+    )
+    output_token_count: int = Field(
+        0,
+        description="The total number of tokens returned by the text completion endpoint. Includes tokens return for "
+        "all outline and lecture content generated.",
+    )
+    tts_character_count: int = Field(
+        0,
+        description="The total number of characters sent to the TTS endpoint.",
+    )
+    outline_gen_elapsed_seconds: float = Field(
+        0.0, description="The time in seconds spent generating the course outline. This value is not cumulative and "
+        "contains only the most recent outline generation time."
+    )
+    lecture_gen_elapsed_seconds: float = Field(
+        0.0, description="The time in seconds spent generating the course lectures. This value is not cumulative and "
+        "contains only the most recent lecture generation time."
+    )
+    image_gen_elapsed_seconds: float = Field(
+        0.0, description="The time in seconds spent generating the course cover image. This value is not cumulative and "
+        "contains only the most recent image generation time."
+    )
+    audio_gen_elapsed_seconds: float = Field(
+        0.0, description="The time in seconds spent generating and processing the course audio file. This value is not "
+        "cumulative and contains only the most recent audio generation time. Processing includes combining the speech "
+        "audio chunks into a single file and saving it to disk."
+    )
+    num_images_generated: int = Field(
+        0,
+        description="The number of images generated for the course.",
+    )
+    audio_file_path: Path | None = Field(
+        None, description="The path to the audio file generated from the course content."
+    )
+    image_file_path: Path | None = Field(None, description="The path to the cover image generated for the course.")
+
+
 class Course(BaseModel):
     """A `Course` is the container for its content and the settings a course generator uses to generate that content.
 
@@ -149,10 +201,11 @@ class Course(BaseModel):
         "lectures to generate for the course, the AI models to use to generate them, the output directory for the "
         "generated content, and more.",
     )
-    audio_file_path: Path | None = Field(
-        None, description="The path to the audio file generated from the course content."
+    generation_info: CourseGenerationInfo = Field(
+        default_factory=CourseGenerationInfo,
+        description="Details about the course's content generation process, including the version of `okcourse` used, "
+        "the token and character counts, and the time elapsed.",
     )
-    image_file_path: Path | None = Field(None, description="The path to the cover image generated for the course.")
 
     def __str__(self) -> str:
         if not self.lectures:

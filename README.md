@@ -31,7 +31,7 @@ uv add git+https://github.com/mmacy/okcourse.git
 
 ## Prepare to contribute
 
-If you'd like to contribute your awesome code or doc skills to the `okcourse` project or just mess with the example apps, complete the following steps to prepare your environment.
+If you'd like to contribute your awesome code or doc skills to the `okcourse` project or try out an example app, complete the following steps to prepare your environment.
 
 1. Clone the repo with `git` and enter the project root:
 
@@ -45,19 +45,21 @@ If you'd like to contribute your awesome code or doc skills to the `okcourse` pr
 
 2. Run the async CLI example app with `uv run`.
 
-    By running the example app, `uv` will automatically create a virtual environment that includes the required version of Python and install the project dependencies.
+    By running the example app, `uv` will automatically create a virtual environment that includes the required Python version and install the project dependencies.
 
     ```
     uv run examples/cli_example_async.py
     ```
 
-You're welcome at this point to generate a course by answering the CLI's prompts. However, unless you already have your OpenAI API access token in an environment variable as described in the next section, *course generation will fail*.
+If your OpenAI API key is already available in an environment variable, you can generate your first course now by answering the prompts in the CLI.
+
+If your OpenAI API is *not* available, however, move on to the next section.
 
 ## Enable AI API access
 
-The `okcourse` library and example apps look for an environment variable containing an API token when creating the client to interact with the AI service provider's API.
+The `okcourse` library and example apps look for an environment variable containing an API key when creating the client to interact with the AI service provider's API.
 
-As a friendly reminder, using `okcourse` to generate course content may cost you, your employer, or whomever owns the API token money for API usage.
+As a friendly reminder, using `okcourse` to generate course content may cost you, your employer, or whomever owns the API key money for API usage.
 
 !!! warning
 
@@ -65,11 +67,11 @@ As a friendly reminder, using `okcourse` to generate course content may cost you
 
 Set the environment variable appropriate for your AI service provider.
 
-| AI provider  | Set this environment variable |
-| :-------: | :---------------------------: |
-|  OpenAI   |       `OPENAI_API_KEY`        |
-| Anthropic |      *not yet supported*      |
-|  Google   |      *not yet supported*      |
+| AI provider | Set this environment variable |
+| :---------: | :---------------------------: |
+|   OpenAI    |       `OPENAI_API_KEY`        |
+|  Anthropic  |      *not yet supported*      |
+|   Google    |      *not yet supported*      |
 
 ## Generate a course
 

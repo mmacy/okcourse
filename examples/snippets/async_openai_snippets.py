@@ -6,16 +6,17 @@ from okcourse import Course, OpenAIAsyncGenerator
 async def main() -> None:
     """Use the OpenAIAsyncGenerator to generate a complete course."""
 
-    # Create a course and initialize the generator
+    # Create a course, configure its settings, and initialize the generator
     course = Course(title="From AGI to ASI: Paperclips, Gray Goo, and You")
     generator = OpenAIAsyncGenerator(course)
 
-    # Generate all course content - these make calls to the OpenAI API
+    # Generate all course content with - these call AI provider APIs
     course = await generator.generate_outline(course)
     course = await generator.generate_lectures(course)
     course = await generator.generate_image(course)
     course = await generator.generate_audio(course)
 
+    # A Course is a Pydantic model, as are its nested models
     print(course.model_dump_json(indent=2))
 
 

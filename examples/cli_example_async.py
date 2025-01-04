@@ -13,7 +13,7 @@ from pathlib import Path
 import questionary
 
 from okcourse import Course, OpenAIAsyncGenerator
-from okcourse.utils import sanitize_filename
+from okcourse.utils import sanitize_filename, get_duration_string_from_seconds
 
 
 async def async_prompt(prompt_func, *args, **kwargs):
@@ -111,11 +111,19 @@ async def main():
         print("Generating course audio...")
         course = await generator.generate_audio(course)
 
+    total_generation_time = get_duration_string_from_seconds(
+        course.generation_info.outline_gen_elapsed_seconds
+        + course.generation_info.lecture_gen_elapsed_seconds
+        + course.generation_info.image_gen_elapsed_seconds
+        + course.generation_info.audio_gen_elapsed_seconds
+    )
+
     # Done with generation - save the course to JSON now that it's fully populated
     json_file_out = course.settings.output_directory / Path(sanitize_filename(course.title)).with_suffix(".json")
     json_file_out.write_text(course.model_dump_json(indent=2))
     print(f"Course JSON file saved to {json_file_out}")
-    print(f"Done! Course file(s) available in {course.settings.output_directory}")
+    print(f"Done! Course generated in {total_generation_time}. File(s) available in {course.settings.output_directory}")
+    print(f"Generation details:\n{course.generation_info.model_dump_json(indent=2)}")
 
 
 if __name__ == "__main__":
