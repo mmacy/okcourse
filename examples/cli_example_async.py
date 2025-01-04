@@ -13,54 +13,7 @@ from pathlib import Path
 import questionary
 
 from okcourse import Course, OpenAIAsyncGenerator
-from okcourse.models import CourseGenerationInfo
 from okcourse.utils import sanitize_filename, get_duration_string_from_seconds
-
-
-class OpenAIPricing:
-    """OpenAI's API usage prices.
-
-    !!! warning
-        Use these for cost estimation purposes *only*. These prices are determined by OpenAI and are subject to change
-        without notice. For current pricing information, see
-        [Pricing on OpenAI's website](https://openai.com/api/pricing/).
-    """
-
-    GPT4O_INPUT_COST_PER_1K_TOKENS = 0.00250
-    GPT4O_OUTPUT_COST_PER_1K_TOKENS = 0.01000
-    TTS_COST_PER_1K_CHARACTERS = 0.015
-    DALLE_COST_PER_IMAGE = 0.040
-
-
-def calculate_openai_cost(details: CourseGenerationInfo) -> dict[str, float]:
-    """Calculates the costs based on token and character counts using the OpenAI pricing.
-
-    OpenAI pricing as of 2024-01-02:
-        - GPT-4o: $0.00250 / 1K input tokens
-        - GPT-4o: $0.01000 / 1K output tokens
-        - DALL-E-3: $0.040 / image (Standard 1024×1024)
-        - TTS-1: $0.015 / 1K characters
-
-    Args:
-        details (CourseGenerationDetails): The course generation details containing usage data.
-
-    Returns:
-        dict[str, float]: A dictionary with cost breakdown and total cost.
-    """
-    input_token_cost = (details.input_token_count / 1000) * OpenAIPricing.GPT4O_INPUT_COST_PER_1K_TOKENS
-    output_token_cost = (details.output_token_count / 1000) * OpenAIPricing.GPT4O_OUTPUT_COST_PER_1K_TOKENS
-    tts_cost = (details.tts_character_count / 1000) * OpenAIPricing.TTS_COST_PER_1K_CHARACTERS
-    image_cost = details.num_images_generated * OpenAIPricing.DALLE_COST_PER_IMAGE
-
-    total_cost = input_token_cost + output_token_cost + tts_cost + image_cost
-
-    return {
-        "input_token_cost": round(input_token_cost, 4),
-        "output_token_cost": round(output_token_cost, 4),
-        "tts_cost": round(tts_cost, 4),
-        "image_cost": round(image_cost, 4),
-        "total_cost": round(total_cost, 4),
-    }
 
 
 async def async_prompt(prompt_func, *args, **kwargs):
@@ -170,10 +123,7 @@ async def main():
     json_file_out.write_text(course.model_dump_json(indent=2))
     print(f"Course JSON file saved to {json_file_out}")
     print(f"Done! Course generated in {total_generation_time}. File(s) available in {course.settings.output_directory}")
-    print(os.linesep)
     print(f"Generation details:\n{course.generation_info.model_dump_json(indent=2)}")
-    print(os.linesep)
-    print(f"Cost breakdown:\n{calculate_openai_cost(course.generation_info)}")
 
 
 if __name__ == "__main__":

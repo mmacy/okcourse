@@ -11,11 +11,6 @@ from openai import APIError, APIStatusError, AsyncOpenAI, OpenAIError
 from openai.types.audio.speech_create_params import SpeechCreateParams
 from openai.types.audio.speech_model import SpeechModel
 from openai.types.chat_model import ChatModel
-from openai.types.completion_usage import (
-    CompletionUsage,
-    CompletionTokensDetails,
-    PromptTokensDetails,
-)
 from openai.types.image_model import ImageModel
 from pydub import AudioSegment
 
@@ -126,6 +121,8 @@ class OpenAIAsyncGenerator(CourseGenerator):
             self.log.error(msg)
             raise ValueError(msg)
 
+        course.settings.output_directory = course.settings.output_directory.expanduser().resolve()
+
         outline_prompt_template = Template(course.settings.text_model_outline_prompt)
         outline_prompt = outline_prompt_template.substitute(
             num_lectures=course.settings.num_lectures, course_title=course.title
@@ -211,6 +208,8 @@ class OpenAIAsyncGenerator(CourseGenerator):
         Returns:
             The Course with its `course.lectures` attribute set.
         """
+
+        course.settings.output_directory = course.settings.output_directory.expanduser().resolve()
         lecture_tasks = []
 
         with time_tracker(course.generation_info, "lecture_gen_elapsed_seconds"):
@@ -267,6 +266,8 @@ class OpenAIAsyncGenerator(CourseGenerator):
         Raises:
             OpenAIError: If an error occurs during image generation.
         """
+
+        course.settings.output_directory = course.settings.output_directory.expanduser().resolve()
         image_prompt_template = Template(course.settings.image_model_prompt)
         image_prompt = image_prompt_template.substitute(course_title=course.title)
         try:
@@ -319,6 +320,8 @@ class OpenAIAsyncGenerator(CourseGenerator):
         Returns:
             The course with its `audio_file_path` attribute set which points to the TTS-generated file.
         """
+
+        course.settings.output_directory = course.settings.output_directory.expanduser().resolve()
         if not tokenizer_available():
             download_tokenizer()
 

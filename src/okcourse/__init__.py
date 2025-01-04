@@ -1,7 +1,7 @@
 """The `okcourse` package provides a lightweight interface for Python applications to use AI models to generate
 audiobook-style courses containing lectures on any topic.
 
-Given a course title, a [course generator][okcourse.generators] will fetch the following from an AI service provider's
+Given a course title, a course generator like the [`OpenAIAsyncCourseGenerator`][okcourse.OpenAIAsyncGenerator] will fetch the following from an AI service provider's
 API:
 
 - [Course outline][okcourse.CourseOutline]
