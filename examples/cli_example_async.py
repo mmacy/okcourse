@@ -81,7 +81,7 @@ async def main():
         out_dir = await async_prompt(
             questionary.text,
             "Enter a directory for the course output:",
-            default=course.settings.output_directory,
+            default=str(course.settings.output_directory),
         )
         course.settings.output_directory = Path(out_dir)
 

@@ -57,9 +57,6 @@ class OpenAIAsyncGenerator(CourseGenerator):
         """
         super().__init__(course)
 
-        course.generation_info.generator_type = __name__
-        course.generation_info.okcourse_version = get_top_level_version("okcourse")
-
         self.client = AsyncOpenAI()
 
         # Populate lists of available models and voices for possible use presenting options to the user
@@ -67,21 +64,6 @@ class OpenAIAsyncGenerator(CourseGenerator):
         self.text_models: list[str] = extract_literal_values_from_type(ChatModel)
         self.speech_models: list[str] = extract_literal_values_from_type(SpeechModel)
         self.tts_voices: list[str] = extract_literal_values_from_member(SpeechCreateParams, "voice")
-
-        # OpenAI pricing as of 2024-01-02
-        # gpt-4o    | $0.00250 / 1K input tokens
-        # gpt-4o    | $0.01000 / 1K output tokens
-        # dall-e-3  | $0.040 / image Standard 1024×1024
-        # tts-1     | $0.015 / 1K characters
-        # {
-        #     "okcourse_version": "0.1.8",
-        #     "input_token_count": 2079,
-        #     "output_token_count": 2710,
-        #     "tts_character_count": 15896,
-        #     "num_images_generated": 1,
-        #     "audio_file_path": "/Users/mmacy/.okcourse_files/calculating_openai_api_usage_cost.mp3",
-        #     "image_file_path": "/Users/mmacy/.okcourse_files/calculating_openai_api_usage_cost.png"
-        # }
 
     async def generate_outline(self, course: Course) -> Course:
         """Generates a course outline based on its `title` and other [`settings`][okcourse.models.Course.settings].
@@ -346,7 +328,9 @@ class OpenAIAsyncGenerator(CourseGenerator):
             )
 
             if course.generation_info.image_file_path and course.generation_info.image_file_path.exists():
-                composer_tag = f"{course.settings.text_model} & {course.settings.tts_model} & {course.settings.image_model}"
+                composer_tag = (
+                    f"{course.settings.text_model} & {course.settings.tts_model} & {course.settings.image_model}"
+                )
                 cover_tag = str(course.generation_info.image_file_path)
             else:
                 composer_tag = f"{course.settings.text_model} & {course.settings.tts_model}"

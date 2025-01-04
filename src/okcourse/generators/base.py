@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from logging import getLogger as logger
 from pathlib import Path
 from ..models import Course
-from ..utils import get_logger
+from ..utils import get_logger, get_top_level_version
 
 
 class CourseGenerator(ABC):
@@ -32,9 +32,10 @@ class CourseGenerator(ABC):
         self.log: logger = None
         """The logger for the generator."""
 
-        self._initialize_logger(course)
+        self._init_logger(course)
+        self._init_generator_info(course)
 
-    def _initialize_logger(self, course: Course) -> None:
+    def _init_logger(self, course: Course) -> None:
         """Creates a logger whose name is derived from the CourseGenerator *subclass* at runtime."""
 
         if course.settings.log_level:
@@ -49,6 +50,13 @@ class CourseGenerator(ABC):
 
             if course.settings.log_to_file:
                 self.log.info(f"Logging to file: {log_file}")
+
+    def _init_generator_info(self, course: Course) -> None:
+        """Record the generator type and version in the Course object's generation_info."""
+
+        course.generation_info.generator_type = f"{self.__module__}.{type(self).__name__}"
+        course.generation_info.okcourse_version = get_top_level_version("okcourse")
+
 
     @abstractmethod
     def generate_outline(self, course: Course) -> Course:
