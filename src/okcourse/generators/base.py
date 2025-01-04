@@ -10,7 +10,9 @@ that implements the `CourseGenerator`'s abstract methods to interact with OpenAI
 
 from abc import ABC, abstractmethod
 from logging import getLogger as logger
+from pathlib import Path
 from ..models import Course
+from ..utils import get_logger
 
 
 class CourseGenerator(ABC):
@@ -26,10 +28,27 @@ class CourseGenerator(ABC):
     """
 
     def __init__(self, course: Course):
-
         # TODO: Assign in the subclass __init__ so the logs and CourseGenerationInfo have the subclass' name
         self.log: logger = None
         """The logger for the generator."""
+
+        self._initialize_logger(course)
+
+    def _initialize_logger(self, course: Course) -> None:
+        """Creates a logger whose name is derived from the CourseGenerator *subclass* at runtime."""
+
+        if course.settings.log_level:
+            # Use the actual subclass name and module at runtime
+            source_name = f"{self.__module__}.{type(self).__name__}"
+            log_file = course.settings.output_directory / Path(f"{source_name}.log")
+            self.log = get_logger(
+                source_name=source_name,
+                level=course.settings.log_level,
+                file_path=log_file if course.settings.log_to_file else None,
+            )
+
+            if course.settings.log_to_file:
+                self.log.info(f"Logging to file: {log_file}")
 
     @abstractmethod
     def generate_outline(self, course: Course) -> Course:

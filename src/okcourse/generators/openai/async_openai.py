@@ -60,17 +60,6 @@ class OpenAIAsyncGenerator(CourseGenerator):
         course.generation_info.generator_type = __name__
         course.generation_info.okcourse_version = get_top_level_version("okcourse")
 
-        if course.settings.log_level:
-            log_file = course.settings.output_directory / Path(__name__).with_suffix(".log")
-            self.log = get_logger(
-                source_name=__name__,
-                level=course.settings.log_level,
-                file_path=log_file if course.settings.log_to_file else None,
-            )
-
-            if course.settings.log_to_file:
-                self.log.info(f"Logging to file: {log_file}")
-
         self.client = AsyncOpenAI()
 
         # Populate lists of available models and voices for possible use presenting options to the user
