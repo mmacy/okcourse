@@ -37,7 +37,7 @@ async def main():
     print("============================")
 
     course = Course()
-    course.settings.output_directory = os.path.expanduser("~/.okcourse_files")
+    course.settings.output_directory = Path("~/.okcourse_files").expanduser().resolve()
     course.settings.log_to_file = True
 
     topic = await async_prompt(questionary.text, "Enter a course topic:")
