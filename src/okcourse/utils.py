@@ -89,8 +89,9 @@ def download_tokenizer() -> bool:
 def split_text_into_chunks(text: str, max_chunk_size: int = 4096) -> list[str]:
     """Splits text into chunks of approximately `max_chunk_size` characters.
 
-    The first time you call this function, it will check the default download location for the NLTK 'punkt_tab' tokenizer.
-    If the tokenizer is not found, it will attempt to download it. Subsequent calls will not re-download the tokenizer.
+    The first time you call this function, it will check the default download location for the NLTK 'punkt_tab'
+    tokenizer. If the tokenizer is not found, it will attempt to download it. Subsequent calls will not re-download the
+    tokenizer.
 
     Args:
         text: The text to split.
@@ -182,7 +183,8 @@ LLM_SMELLS: dict[str, str] = {
 
 Words in the keys may be replaced by their simplified forms in generated lecture text to help reduce \"LLM smell.\"
 
-This dictionary is appropriate for use as the `replacements` parameter in the [`swap_words`][okcourse.utils.swap_words] function.
+This dictionary is appropriate for use as the `replacements` parameter in the [`swap_words`][okcourse.utils.swap_words]
+function.
 """
 
 
@@ -211,7 +213,7 @@ def swap_words(text: str, replacements: dict[str, str]) -> str:
 
 
 def extract_literal_values_from_type(typ: object) -> list[str]:
-    """Unwraps a [`Literal`][typing.Literal] or any nested [`Union`][typing.Union] containing literals and returns the `Literal` values."""
+    """Unwraps a [`Literal`][typing.Literal] or any nested [`Union`][typing.Union] containing literals and returns the `Literal` values."""  # noqa: E501
 
     def unwrap_literal(t: object):
         origin = get_origin(t)
@@ -232,8 +234,8 @@ def extract_literal_values_from_type(typ: object) -> list[str]:
 def extract_literal_values_from_member(cls: Any, member: str) -> list[Any]:
     """Extracts the [`Literal`][typing.Literal] values of a specified member in a class or [`TypedDict`][typing.TypedDict].
 
-    If the member's type is a `Literal` or contains literals within a [`Union`][typing.Union] like `Optional[Literal[...]]`, the
-    function extracts and returns all the `Literal` values.
+    If the member's type is a `Literal` or contains literals within a [`Union`][typing.Union] like
+    `Optional[Literal[...]]`, the function extracts and returns all the `Literal` values.
     """
     type_hints = get_type_hints(cls)
 
@@ -290,7 +292,8 @@ def time_tracker(target_object: object, attribute_name: str):
 
     Examples:
 
-    Record time elapsed generating a course's outline in the course's [`CourseGenerationInfo`][okcourse.models.CourseGenerationInfo]:
+    Record time elapsed generating a course's outline in the course's
+    [`CourseGenerationInfo`][okcourse.models.CourseGenerationInfo]:
 
     ```python
     async def generate_outline(self, course: Course) -> Course:
