@@ -33,7 +33,7 @@ class CourseGenerator(ABC):
         """The logger for the generator."""
 
         self._init_logger(course)
-
+        self._init_generator_info(course)
 
     def _init_logger(self, course: Course) -> None:
         """Creates a logger whose name is derived from the CourseGenerator *subclass* at runtime."""
@@ -56,7 +56,6 @@ class CourseGenerator(ABC):
 
         course.generation_info.generator_type = f"{self.__module__}.{type(self).__name__}"
         course.generation_info.okcourse_version = get_top_level_version("okcourse")
-
 
     @abstractmethod
     def generate_outline(self, course: Course) -> Course:
