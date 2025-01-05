@@ -54,11 +54,20 @@ async def main():
             "How many lectures should be in the course?",
             default=str(course.settings.num_lectures),
         )
+        course.settings.num_subtopics = await async_prompt(
+            questionary.text,
+            "How many sub-topics per lecture?",
+            default=str(course.settings.num_subtopics),
+        )
         try:
             course.settings.num_lectures = int(course.settings.num_lectures)
+            course.settings.num_subtopics = int(course.settings.num_subtopics)
             if course.settings.num_lectures <= 0:
                 print("There must be at least one (1) lecture in the series.")
                 continue  # Input is invalid
+            if course.settings.num_subtopics <= 0:
+                print("There must be at least one (1) sub-topic per lecture.")
+                continue
         except ValueError:
             print("Enter a valid number greater than 0.")
             continue  # Input is invalid

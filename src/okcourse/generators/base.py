@@ -33,7 +33,7 @@ class CourseGenerator(ABC):
         """The logger for the generator."""
 
         self._init_logger(course)
-        self._init_generator_info(course)
+
 
     def _init_logger(self, course: Course) -> None:
         """Creates a logger whose name is derived from the CourseGenerator *subclass* at runtime."""

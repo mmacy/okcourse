@@ -24,7 +24,6 @@ from ...utils import (
     download_tokenizer,
     extract_literal_values_from_member,
     extract_literal_values_from_type,
-    get_logger,
     get_top_level_version,
     sanitize_filename,
     split_text_into_chunks,
@@ -96,13 +95,15 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         outline_prompt_template = Template(course.settings.text_model_outline_prompt)
         outline_prompt = outline_prompt_template.substitute(
-            num_lectures=course.settings.num_lectures, course_title=course.title
+            num_lectures=course.settings.num_lectures,
+            course_title=course.title,
+            num_subtopics=course.settings.num_subtopics,
         )
 
         self.log.info(f"Requesting outline for course '{course.title}'...")
         with time_tracker(course.generation_info, "outline_gen_elapsed_seconds"):
             outline_completion = await self.client.beta.chat.completions.parse(
-                model=course.settings.text_model,
+                model=course.settings.text_model_outline,
                 messages=[
                     {"role": "system", "content": course.settings.text_model_system_prompt},
                     {"role": "user", "content": outline_prompt},
@@ -152,7 +153,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
             f"Requesting lecture text for topic {topic.number}/{len(course.outline.topics)}: {topic.title}..."
         )
         response = await self.client.chat.completions.create(
-            model=course.settings.text_model,
+            model=course.settings.text_model_lecture,
             messages=[
                 {"role": "system", "content": course.settings.text_model_system_prompt},
                 {"role": "user", "content": lecture_prompt},
@@ -329,11 +330,11 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
             if course.generation_info.image_file_path and course.generation_info.image_file_path.exists():
                 composer_tag = (
-                    f"{course.settings.text_model} & {course.settings.tts_model} & {course.settings.image_model}"
+                    f"{course.settings.text_model_lecture} & {course.settings.tts_model} & {course.settings.image_model}"
                 )
                 cover_tag = str(course.generation_info.image_file_path)
             else:
-                composer_tag = f"{course.settings.text_model} & {course.settings.tts_model}"
+                composer_tag = f"{course.settings.text_model_lecture} & {course.settings.tts_model}"
                 cover_tag = None
 
             course.generation_info.audio_file_path = course.settings.output_directory / Path(
