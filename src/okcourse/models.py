@@ -51,13 +51,20 @@ class CourseSettings(BaseModel):
     # TODO: Add a setting to specify which AI service provider to use for generation.
 
     num_lectures: int = Field(4, description="The number of lectures that should generated for for the course.")
+    num_subtopics: int = Field(
+        4, description="The number of subtopics that should be generated for each lecture."
+    )
     output_directory: Path = Field(
         Path("~/.okcourse").expanduser(),  # TODO: Make this cross-platform-friendly
         description="Directory for saving generated course content.",
     )
-    text_model: str = Field(
+    text_model_outline: str = Field(
         "gpt-4o",
-        description="The ID of the text generation model to use.",
+        description="The ID of the text generation model to use for generating course outlines.",
+    )
+    text_model_lecture: str = Field(
+        "gpt-4o",
+        description="The ID of the text generation model to use for generating course lectures.",
     )
     text_model_system_prompt: str = Field(
         "You are an esteemed college professor and expert in your field who typically lectures graduate students. "
@@ -70,7 +77,7 @@ class CourseSettings(BaseModel):
     )
     text_model_outline_prompt: str = Field(
         "Provide a detailed outline for ${num_lectures} lectures in a graduate-level course on '${course_title}'. "
-        "List each lecture title numbered. Each lecture should have four subtopics listed after the "
+        "List each lecture title numbered. Each lecture should have ${num_subtopics} subtopics listed after the "
         "lecture title. Respond only with the outline, omitting any other commentary.",
         description="The `user` prompt containing the course outline generation instructions for the language model.",
     )

@@ -24,7 +24,6 @@ from ...utils import (
     download_tokenizer,
     extract_literal_values_from_member,
     extract_literal_values_from_type,
-    get_logger,
     get_top_level_version,
     sanitize_filename,
     split_text_into_chunks,
@@ -57,20 +56,6 @@ class OpenAIAsyncGenerator(CourseGenerator):
         """
         super().__init__(course)
 
-        course.generation_info.generator_type = __name__
-        course.generation_info.okcourse_version = get_top_level_version("okcourse")
-
-        if course.settings.log_level:
-            log_file = course.settings.output_directory / Path(__name__).with_suffix(".log")
-            self.log = get_logger(
-                source_name=__name__,
-                level=course.settings.log_level,
-                file_path=log_file if course.settings.log_to_file else None,
-            )
-
-            if course.settings.log_to_file:
-                self.log.info(f"Logging to file: {log_file}")
-
         self.client = AsyncOpenAI()
 
         # Populate lists of available models and voices for possible use presenting options to the user
@@ -78,21 +63,6 @@ class OpenAIAsyncGenerator(CourseGenerator):
         self.text_models: list[str] = extract_literal_values_from_type(ChatModel)
         self.speech_models: list[str] = extract_literal_values_from_type(SpeechModel)
         self.tts_voices: list[str] = extract_literal_values_from_member(SpeechCreateParams, "voice")
-
-        # OpenAI pricing as of 2024-01-02
-        # gpt-4o    | $0.00250 / 1K input tokens
-        # gpt-4o    | $0.01000 / 1K output tokens
-        # dall-e-3  | $0.040 / image Standard 1024×1024
-        # tts-1     | $0.015 / 1K characters
-        # {
-        #     "okcourse_version": "0.1.8",
-        #     "input_token_count": 2079,
-        #     "output_token_count": 2710,
-        #     "tts_character_count": 15896,
-        #     "num_images_generated": 1,
-        #     "audio_file_path": "/Users/mmacy/.okcourse_files/calculating_openai_api_usage_cost.mp3",
-        #     "image_file_path": "/Users/mmacy/.okcourse_files/calculating_openai_api_usage_cost.png"
-        # }
 
     async def generate_outline(self, course: Course) -> Course:
         """Generates a course outline based on its `title` and other [`settings`][okcourse.models.Course.settings].
@@ -125,13 +95,15 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         outline_prompt_template = Template(course.settings.text_model_outline_prompt)
         outline_prompt = outline_prompt_template.substitute(
-            num_lectures=course.settings.num_lectures, course_title=course.title
+            num_lectures=course.settings.num_lectures,
+            course_title=course.title,
+            num_subtopics=course.settings.num_subtopics,
         )
 
         self.log.info(f"Requesting outline for course '{course.title}'...")
         with time_tracker(course.generation_info, "outline_gen_elapsed_seconds"):
             outline_completion = await self.client.beta.chat.completions.parse(
-                model=course.settings.text_model,
+                model=course.settings.text_model_outline,
                 messages=[
                     {"role": "system", "content": course.settings.text_model_system_prompt},
                     {"role": "user", "content": outline_prompt},
@@ -181,7 +153,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
             f"Requesting lecture text for topic {topic.number}/{len(course.outline.topics)}: {topic.title}..."
         )
         response = await self.client.chat.completions.create(
-            model=course.settings.text_model,
+            model=course.settings.text_model_lecture,
             messages=[
                 {"role": "system", "content": course.settings.text_model_system_prompt},
                 {"role": "user", "content": lecture_prompt},
@@ -357,10 +329,12 @@ class OpenAIAsyncGenerator(CourseGenerator):
             )
 
             if course.generation_info.image_file_path and course.generation_info.image_file_path.exists():
-                composer_tag = f"{course.settings.text_model} & {course.settings.tts_model} & {course.settings.image_model}"
+                composer_tag = (
+                    f"{course.settings.text_model_lecture} & {course.settings.tts_model} & {course.settings.image_model}"
+                )
                 cover_tag = str(course.generation_info.image_file_path)
             else:
-                composer_tag = f"{course.settings.text_model} & {course.settings.tts_model}"
+                composer_tag = f"{course.settings.text_model_lecture} & {course.settings.tts_model}"
                 cover_tag = None
 
             course.generation_info.audio_file_path = course.settings.output_directory / Path(

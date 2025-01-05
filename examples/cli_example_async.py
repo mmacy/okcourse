@@ -37,7 +37,7 @@ async def main():
     print("============================")
 
     course = Course()
-    course.settings.output_directory = os.path.expanduser("~/.okcourse_files")
+    course.settings.output_directory = Path("~/.okcourse_files").expanduser().resolve()
     course.settings.log_to_file = True
 
     topic = await async_prompt(questionary.text, "Enter a course topic:")
@@ -54,11 +54,20 @@ async def main():
             "How many lectures should be in the course?",
             default=str(course.settings.num_lectures),
         )
+        course.settings.num_subtopics = await async_prompt(
+            questionary.text,
+            "How many sub-topics per lecture?",
+            default=str(course.settings.num_subtopics),
+        )
         try:
             course.settings.num_lectures = int(course.settings.num_lectures)
+            course.settings.num_subtopics = int(course.settings.num_subtopics)
             if course.settings.num_lectures <= 0:
                 print("There must be at least one (1) lecture in the series.")
                 continue  # Input is invalid
+            if course.settings.num_subtopics <= 0:
+                print("There must be at least one (1) sub-topic per lecture.")
+                continue
         except ValueError:
             print("Enter a valid number greater than 0.")
             continue  # Input is invalid
@@ -81,7 +90,7 @@ async def main():
         out_dir = await async_prompt(
             questionary.text,
             "Enter a directory for the course output:",
-            default=course.settings.output_directory,
+            default=str(course.settings.output_directory),
         )
         course.settings.output_directory = Path(out_dir)
 
