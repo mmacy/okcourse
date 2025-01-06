@@ -12,7 +12,6 @@ from openai.types.audio.speech_create_params import SpeechCreateParams
 from openai.types.audio.speech_model import SpeechModel
 from openai.types.chat_model import ChatModel
 from openai.types.image_model import ImageModel
-from pydub import AudioSegment
 
 from ...constants import (
     AI_DISCLOSURE,
@@ -32,6 +31,158 @@ from ...utils import (
     time_tracker,
 )
 from ..base import CourseGenerator
+
+from mutagen.mp3 import MP3, EasyMP3
+from mutagen.id3 import ID3, APIC
+from mutagen.id3._util import ID3NoHeaderError
+
+
+def _is_valid_mp3(data: bytes) -> bool:
+    """Quick check to see if this data at least starts like an MP3."""
+    return data.startswith(b"ID3") or data.startswith(b"\xff")
+
+
+async def combine_mp3_buffers(
+    mp3_buffers: list[io.BytesIO],
+    tags: dict[str, str] | None = None,
+    album_art: io.BytesIO | None = None,
+    album_art_mime: str = "image/png",
+) -> io.BytesIO:
+    """Combines multiple in-memory MP3 buffers into a single MP3 file buffer and applies tags and album art.
+
+    This function first validates all MP3 buffers for codec consistency (bitrate and sample rate)
+    and ensures each buffer starts with plausible MP3 bytes (ID3 or frame header).
+    It then concatenates the buffers, skipping ID3 headers for subsequent tracks so that only
+    the first file's ID3 header appears in the final output. Tags and album art are optionally
+    applied at the end.
+
+    Args:
+        mp3_buffers: List of in-memory MP3 buffers to combine.
+        tags: Dictionary of tags to apply to the output MP3.
+        album_art: In-memory buffer for the album art image.
+        album_art_mime: MIME type for the album art (typically 'image/png' or 'image/jpeg').
+
+    Raises:
+        ValueError: If no buffers are provided, if buffers are invalid MP3,
+                    or if their codec parameters (bitrate, sample rate) differ.
+
+    Examples:
+
+     Combine two in-memory MP3 files and tag the result:
+
+    ```python
+    buffer1 = io.BytesIO(open("file1.mp3", "rb").read())
+    buffer2 = io.BytesIO(open("file2.mp3", "rb").read())
+
+    tags = {
+        "title": "Combined Audio",
+        "artist": "AI Composer",
+        "album": "AI Album",
+        "genre": "Books & Spoken",
+    }
+
+    # Load cover image PNG from disk
+    with open("cover.png", "rb") as img_file:
+        album_art_bytes = io.BytesIO(img_file.read())
+
+    combined_mp3 = await combine_mp3_buffers(
+        [buffer1, buffer2],
+        tags=tags,
+        album_art=album_art_bytes,
+        album_art_mime="image/png",
+    )
+
+    # Write MP3 to file
+    with open("output.mp3", "wb") as out_file:
+        combined_mp3.seek(0)
+        out_file.write(combined_mp3.read())
+    ```
+    """
+    if not mp3_buffers:
+        raise ValueError("No MP3 buffers provided for combination.")
+
+    reference_info = None
+    for index, mp3_buffer in enumerate(mp3_buffers):
+        # Reset the buffer position just in case
+        mp3_buffer.seek(0)
+        data = mp3_buffer.read()
+
+        # Sanity check to ensure it at least looks like MP3 data
+        if not _is_valid_mp3(data):
+            raise ValueError("Invalid MP3 buffer: does not start with ID3 or MPEG frame header.")
+
+        # Attempt to parse the MP3 info - if this fails, we can't combine it with anything
+        try:
+            temp_audio = MP3(io.BytesIO(data))
+        except Exception as exc:
+            raise ValueError(f"Error parsing MP3 buffer at index {index}: {exc}") from exc
+
+        current_info = (temp_audio.info.bitrate, temp_audio.info.sample_rate)
+        if reference_info is None:
+            reference_info = current_info
+        else:
+            if current_info != reference_info:
+                raise ValueError(
+                    f"Inconsistent MP3 parameters detected at index {index}. "
+                    f"Expected {reference_info}, got {current_info}."
+                )
+
+    # Once validated, do the actual combination
+    output_buffer = io.BytesIO()
+    for index, mp3_buffer in enumerate(mp3_buffers):
+        mp3_buffer.seek(0)
+        data = mp3_buffer.read()
+
+        if index == 0:
+            # Write the entire first MP3, including headers
+            output_buffer.write(data)
+        else:
+            # Skip the ID3 header for subsequent MP3s
+            try:
+                # Check if the file has ID3 tags and determine the audio frame offset
+                tags = ID3(io.BytesIO(data))
+                audio_offset = tags.size if tags else 0
+            except ID3NoHeaderError:
+                # No ID3 tags present, start from the beginning
+                audio_offset = 0
+
+            # Write the buffer starting from the offset
+            output_buffer.write(data[audio_offset:])
+
+    # Convert the combined bytes to an MP3
+    output_buffer.seek(0)
+    audio: EasyMP3 = EasyMP3(output_buffer)
+
+    # Tag it with what we have so far
+    if tags:
+        # Overwrite or create tags
+        audio.add_tags()
+        for tag_key, tag_value in tags.items():
+            audio[tag_key] = tag_value
+
+    # Save the tags (does not save the file to disk)
+    audio.save(output_buffer)
+    output_buffer.seek(0)
+
+    if album_art:
+        album_art.seek(0)
+        audio = ID3(output_buffer)
+        audio.add(
+            APIC(
+                encoding=3,  # UTF-8
+                mime=album_art_mime,
+                type=3,  # Front cover
+                desc="Cover",
+                data=album_art.read(),
+            )
+        )
+        # Save the tags (again) so the cover image is added
+        audio.save(output_buffer)
+        output_buffer.seek(0)
+
+    # Return the in-memory MP3 as a BytesIO so caller can
+    # do what they wish with it (like save it to a file)
+    return output_buffer
 
 
 class OpenAIAsyncGenerator(CourseGenerator):
@@ -197,36 +348,6 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         return course
 
-    async def _generate_speech_for_text_chunk(
-        self, course: Course, text_chunk: str, chunk_num: int = 1
-    ) -> tuple[int, AudioSegment]:
-        """Generates an MP3 audio segment for a chunk of text using text-to-speech (TTS).
-
-        Get text chunks to pass to this function from ``utils.split_text_into_chunks``.
-
-        Args:
-            course: The course to generate TTS audio for.
-            text_chunk: The text chunk to convert to speech.
-            chunk_num: (Optional) The chunk number.
-
-        Returns:
-            A tuple of (chunk_num, AudioSegment) for the generated audio.
-        """
-        self.log.info(f"Requesting TTS audio in voice '{course.settings.tts_voice}' for text chunk {chunk_num}...")
-        async with self.client.audio.speech.with_streaming_response.create(
-            model=course.settings.tts_model,
-            voice=course.settings.tts_voice,
-            input=text_chunk,
-        ) as response:
-            audio_bytes = io.BytesIO()
-            async for data in response.iter_bytes():
-                audio_bytes.write(data)
-            audio_bytes.seek(0)
-            course.generation_info.tts_character_count += len(text_chunk)
-            self.log.info(f"Got TTS audio for text chunk {chunk_num} in voice '{course.settings.tts_voice}'.")
-
-            return chunk_num, AudioSegment.from_file(audio_bytes, format="mp3")
-
     async def generate_image(self, course: Course) -> Course:
         """Generates cover art for the course with the given outline.
 
@@ -286,6 +407,36 @@ class OpenAIAsyncGenerator(CourseGenerator):
                     )
             raise e
 
+    async def _generate_speech_for_text_chunk(
+        self, course: Course, text_chunk: str, chunk_num: int = 1
+    ) -> tuple[int, io.BytesIO]:
+        """Generates an MP3 audio segment for a chunk of text using text-to-speech (TTS).
+
+        Get text chunks to pass to this function from ``utils.split_text_into_chunks``.
+
+        Args:
+            course: The course to generate TTS audio for.
+            text_chunk: The text chunk to convert to speech.
+            chunk_num: (Optional) The chunk number.
+
+        Returns:
+            An io.BytesIO of the generated audio.
+        """
+        self.log.info(f"Requesting TTS audio in voice '{course.settings.tts_voice}' for text chunk {chunk_num}...")
+        async with self.client.audio.speech.with_streaming_response.create(
+            model=course.settings.tts_model,
+            voice=course.settings.tts_voice,
+            input=text_chunk,
+        ) as response:
+            audio_bytes = io.BytesIO()
+            async for data in response.iter_bytes():
+                audio_bytes.write(data)
+            audio_bytes.seek(0)
+            course.generation_info.tts_character_count += len(text_chunk)
+            self.log.info(f"Got TTS audio for text chunk {chunk_num} in voice '{course.settings.tts_voice}'.")
+
+            return audio_bytes
+
     async def generate_audio(self, course: Course) -> Course:
         """Generates an audio file from the combined text of the lectures in the given course using a TTS AI model.
 
@@ -320,19 +471,13 @@ class OpenAIAsyncGenerator(CourseGenerator):
                     )
                     speech_tasks.append(task)
 
+            # Assemble the chunk list in the same order the tasks were created (no need to sort)
             audio_chunks = [speech_task.result() for speech_task in speech_tasks]
 
-            self.log.info(f"Joining {len(audio_chunks)} audio chunks into one file...")
-            course_audio = sum(
-                (audio_chunk for _, audio_chunk in audio_chunks),
-                AudioSegment.silent(duration=0),  # Start with silence
-            )
-
+            # Get the MP3 tags ready
             if course.generation_info.image_file_path and course.generation_info.image_file_path.exists():
-                composer_tag = (
-                    f"{course.settings.text_model_lecture} & {course.settings.tts_model} & {course.settings.image_model}"
-                )
-                cover_tag = str(course.generation_info.image_file_path)
+                composer_tag = f"{course.settings.text_model_lecture} & {course.settings.tts_model} & {course.settings.image_model}"
+                cover_tag = io.BytesIO(course.generation_info.image_file_path.read_bytes())
             else:
                 composer_tag = f"{course.settings.text_model_lecture} & {course.settings.tts_model}"
                 cover_tag = None
@@ -344,21 +489,26 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
             version_string = get_top_level_version("okcourse")
 
-            self.log.info(f"Saving audio to {course.generation_info.audio_file_path}")
-            course_audio.export(
-                str(course.generation_info.audio_file_path),
-                format="mp3",
-                cover=cover_tag,
-                tags={
-                    "title": course.title,
-                    "artist": f"{course.settings.tts_voice.capitalize()} @ OpenAI",
-                    "composer": composer_tag,
-                    "album": "OK Courses",
-                    "genre": "Books & Spoken",
-                    "date": str(time.gmtime().tm_year),
-                    "comment": f"Generated by AI with okcourse v{version_string} - https://github.com/mmacy/okcourse",
-                },
+            tags = {
+                "title": course.title,
+                "artist": f"{course.settings.tts_voice.capitalize()} @ OpenAI",
+                "composer": composer_tag,
+                "album": "OK Courses",
+                "genre": "Books & Spoken",
+                "date": str(time.gmtime().tm_year),
+                "author": f"Generated by AI with okcourse v{version_string}",
+                "website": "https://github.com/mmacy/okcourse",
+            }
+
+            combined_mp3 = await combine_mp3_buffers(
+                audio_chunks,
+                tags=tags,
+                album_art=cover_tag,
+                album_art_mime="image/png",
             )
+
+            self.log.info(f"Saving audio to {course.generation_info.audio_file_path}")
+            course.generation_info.audio_file_path.write_bytes(combined_mp3.getvalue())
 
         # Save the course as JSON now that we have the audio file path
         course.generation_info.audio_file_path.with_suffix(".json").write_text(course.model_dump_json(indent=2))

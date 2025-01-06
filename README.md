@@ -7,7 +7,6 @@ The async version of the `okcourse` OpenAI generator can produce a **1.5-hour** 
 ## Prerequisites
 
 - [Python 3.12+](https://python.org)
-- [FFmpeg](https://ffmpeg.org/)
 - [OpenAI API key](https://platform.openai.com/docs/quickstart)
 
 ## Install uv (optional)
