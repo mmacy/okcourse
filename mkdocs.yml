@@ -122,6 +122,22 @@ extra:
   social:
   - icon: fontawesome/brands/github
     link: https://github.com/mmacy
+  analytics:
+    provider: google
+    property: G-C3097XSQHR
+    feedback:
+      title: Was this doc helpful?
+      ratings:
+        - icon: material/emoticon-happy-outline
+          name: This doc is helpful
+          data: 1
+          note: >-
+            Yay! Thanks.
+        - icon: material/emoticon-sad-outline
+          name: This doc needs improvement
+          data: 0
+          note: >-
+            Oh no! <a href="https://github.com/mmacy/okcourse/issues/new/?title=[doc-feedback]%20{title}%20-%20https://mmacy.github.io/okcourse{url}&body=%3C!--%20Tell%20us%20about%20your%20doc%20issue%20here%20-%20the%20more%20detail%20the%20better!%20--%3E" target="_blank" rel="noopener">What's wrong with it?</a>
 
 nav:
   - Introduction:
