@@ -10,6 +10,7 @@ watch: [README.md, src/okcourse, examples]
 theme:
   name: material
   icon:
+    logo: material/lectern
     repo: fontawesome/brands/git-alt
 
   palette:
