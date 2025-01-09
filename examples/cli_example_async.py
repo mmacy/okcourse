@@ -13,7 +13,7 @@ from pathlib import Path
 import questionary
 
 from okcourse import Course, OpenAIAsyncGenerator
-from okcourse.utils import sanitize_filename, get_duration_string_from_seconds
+from okcourse.utils.string_utils import sanitize_filename, get_duration_string_from_seconds
 
 
 async def async_prompt(prompt_func, *args, **kwargs):

@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from logging import getLogger as logger
 from pathlib import Path
 from ..models import Course
-from ..utils import get_logger, get_top_level_version
+from ..utils.log_utils import get_logger, get_top_level_version
 
 
 class CourseGenerator(ABC):

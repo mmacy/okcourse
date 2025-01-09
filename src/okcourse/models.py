@@ -48,14 +48,14 @@ class CourseSettings(BaseModel):
     content.
     """
 
-    # TODO: Add a setting to specify which AI service provider to use for generation.
+    # TODO: Add a setting to specify which AI service provider to use for generation (once we support more than OpenAI)
 
     num_lectures: int = Field(4, description="The number of lectures that should generated for for the course.")
     num_subtopics: int = Field(
         4, description="The number of subtopics that should be generated for each lecture."
     )
     output_directory: Path = Field(
-        Path("~/.okcourse").expanduser(),  # TODO: Make this cross-platform-friendly
+        Path("~/.okcourse").expanduser(),
         description="Directory for saving generated course content.",
     )
     text_model_outline: str = Field(
@@ -131,7 +131,7 @@ class CourseSettings(BaseModel):
 
 
 class CourseGenerationInfo(BaseModel):
-    """Details about the course generation, including okcourse version, tokent counts (input and output), and durations."""
+    """Details about the course generation, including okcourse version, tokent counts (input and output), and durations."""  # noqa: E501
 
     generator_type: str | None = Field(
         None,
@@ -164,8 +164,8 @@ class CourseGenerationInfo(BaseModel):
         "contains only the most recent lecture generation time."
     )
     image_gen_elapsed_seconds: float = Field(
-        0.0, description="The time in seconds spent generating the course cover image. This value is not cumulative and "
-        "contains only the most recent image generation time."
+        0.0, description="The time in seconds spent generating the course cover image. This value is not cumulative "
+        "and contains only the most recent image generation time."
     )
     audio_gen_elapsed_seconds: float = Field(
         0.0, description="The time in seconds spent generating and processing the course audio file. This value is not "
