@@ -1,83 +1,102 @@
 import asyncio
-import aiofiles
 from pathlib import Path
 
 import streamlit as st
-from okcourse import (
-    TTS_VOICES,
-    generate_course_audio_async,
-    generate_course_image_async,
-    generate_course_lectures_async,
-    generate_course_outline_async,
-    sanitize_filename,
-    CourseOutline,
-)
+
+from okcourse import Course, OpenAIAsyncGenerator
+from okcourse.utils.string_utils import get_duration_string_from_seconds
 
 
-async def generate_course(
-    outline: CourseOutline, do_generate_audio: bool = False, tts_voice: str = "nova", cover_art_path: Path = None
-):
-    st.write(f"Generating course text for {outline.title}...")
-    course = await generate_course_lectures_async(outline)
+async def main():
+    st.title("Course Generator with okcourse")
 
-    output_dir = Path.cwd() / "generated_okcourses"
-    output_file_base = output_dir / sanitize_filename(course.title)
-    output_file_mp3 = output_file_base.with_suffix(".mp3")
-    output_file_json = output_file_base.with_suffix(".json")
+    course_title = st.text_input("Enter the course topic:")
+    num_lectures = st.number_input("Number of lectures:", min_value=1, max_value=20, value=4, step=1)
+    num_subtopics = st.number_input("Number of subtopics per lecture:", min_value=1, max_value=10, value=4, step=1)
 
-    if do_generate_audio:
-        st.write("Generating course audio...")
-        course_audio_path = await generate_course_audio_async(course, output_file_mp3, tts_voice, cover_art_path)
-        st.write(f"Course audio: {str(course_audio_path)}")
+    generate_audio = st.checkbox("Generate MP3 audio file for course", value=False)
+    generate_image = False
+    tts_voice = None
+    tts_voices = []
 
-    async with aiofiles.open(output_file_json, "w", encoding="utf-8") as f:
-        await f.write(course.model_dump_json(indent=2))
-    st.write(f"Course JSON:  {str(output_file_json)}")
+    if generate_audio:
+        generate_image = st.checkbox("Generate cover image for audio file", value=False)
 
+    # Instantiate OpenAIAsyncGenerator to get available voices
+    temp_course = Course(title=course_title)
+    temp_generator = OpenAIAsyncGenerator(temp_course)
+    tts_voices = temp_generator.tts_voices
+    if generate_audio:
+        tts_voice = st.selectbox("Choose a voice for the course lecturer", options=tts_voices)
 
-async def generate_course_outline(topic, num_lectures):
-    st.write(f"Generating course outline with {num_lectures} lectures...")
-    outline = await generate_course_outline_async(topic, num_lectures)
-    return outline
+    # Output directory
+    default_output_directory = str(Path("~/.okcourse_files").expanduser().resolve())
+    output_directory = st.text_input("Output directory:", value=default_output_directory)
 
-
-def main():
-    st.title("OK Course Maker")
-
-    topic = st.text_input(
-        "Course topic:",
-        placeholder="Artificial Super Intelligence: Gray Goo, Paperclips, and Other Doomsday Scenarios",
-    )
-    num_lectures = st.number_input("Number of lectures in the course:", min_value=1, value=10, max_value=100)
-
-    do_generate_audio = st.checkbox("Generate course audio in MP3 format?")
-    tts_voice = "nova"
-    if do_generate_audio:
-        tts_voice = st.selectbox("Choose a voice for the lecturer", TTS_VOICES, index=TTS_VOICES.index(tts_voice))
-        do_generate_cover_art = st.checkbox("Generate cover image for audio file?")
-
-    if st.button("Generate outline"):
-        if not topic:
-            st.error("You must enter a course topic.")
+    # Generate Course Button
+    if st.button("Generate Course"):
+        if not course_title.strip():
+            st.error("Please enter a course topic.")
         else:
-            outline = asyncio.run(generate_course_outline(topic, num_lectures))
-            st.session_state["outline"] = outline
-            st.json(outline.model_dump_json(indent=2))
+            # Create course and settings
+            course = Course(title=course_title)
+            course.settings.num_lectures = int(num_lectures)
+            course.settings.num_subtopics = int(num_subtopics)
+            course.settings.output_directory = Path(output_directory).expanduser().resolve()
+            course.settings.log_to_file = True
+            if generate_audio:
+                course.settings.tts_voice = tts_voice
 
-    if "outline" in st.session_state:
-        outline = st.session_state["outline"]
-        if st.button("Accept outline"):
-            cover_art_path = (Path.cwd() / "generated_okcourses" / sanitize_filename(outline.title)).with_suffix(".png")
-            st.write(f"Cover art path set to {cover_art_path}")
-            if do_generate_cover_art:
-                st.write("Generating cover image for course audio...")
-                cover_image, cover_image_path = asyncio.run(generate_course_image_async(outline, cover_art_path))
-                st.image(cover_image, caption=f"Cover image for '{outline.title}'", width=400)
+            generator = OpenAIAsyncGenerator(course)
 
-            asyncio.run(generate_course(outline, do_generate_audio, tts_voice, cover_image_path))
-            if do_generate_audio:
-                st.audio(cover_art_path.with_suffix(".mp3"))
+            try:
+                with st.spinner("Generating course outline..."):
+                    course = await generator.generate_outline(course)
+                    st.write("## Course Outline")
+                    st.write(str(course.outline))
+
+                regenerate = st.checkbox("Regenerate the outline", value=False)
+                if regenerate:
+                    st.warning("Click 'Generate Course' again to regenerate the outline.")
+                    return
+
+                with st.spinner("Generating lectures..."):
+                    course = await generator.generate_lectures(course)
+                    st.write("## Lectures")
+                    for lecture in course.lectures:
+                        st.write(f"### Lecture {lecture.number}: {lecture.title}")
+                        st.write(lecture.text)
+
+                if generate_image:
+                    with st.spinner("Generating cover image..."):
+                        course = await generator.generate_image(course)
+                        image_path = course.generation_info.image_file_path
+                        if image_path and image_path.exists():
+                            st.image(str(image_path), caption="Cover Image")
+
+                if generate_audio:
+                    with st.spinner("Generating course audio..."):
+                        course = await generator.generate_audio(course)
+                        audio_path = course.generation_info.audio_file_path
+                        if audio_path and audio_path.exists():
+                            st.audio(str(audio_path), format="audio/mp3")
+
+                # Display generation info
+                total_time_seconds = (
+                    course.generation_info.outline_gen_elapsed_seconds
+                    + course.generation_info.lecture_gen_elapsed_seconds
+                    + course.generation_info.image_gen_elapsed_seconds
+                    + course.generation_info.audio_gen_elapsed_seconds
+                )
+                total_generation_time = get_duration_string_from_seconds(total_time_seconds)
+                st.success(f"Course generated in {total_generation_time}.")
+                st.write("## Generation Details")
+                st.json(course.generation_info.model_dump())
+
+            except Exception as e:
+                st.error(f"An error occurred during course generation: {e}")
+                return
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
