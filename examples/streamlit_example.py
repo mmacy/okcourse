@@ -10,7 +10,6 @@ from okcourse.utils.string_utils import get_duration_string_from_seconds
 
 
 async def main():
-
     log = get_logger("streamlit")
 
     st.title("OK Courses Course Generator")
@@ -44,14 +43,10 @@ async def main():
     generator = OpenAIAsyncGenerator(course)
 
     if generate_audio:
-        course.settings.tts_voice = st.selectbox(
-            "Choose a voice for the course lecturer", options=generator.tts_voices
-        )
+        course.settings.tts_voice = st.selectbox("Choose a voice for the course lecturer", options=generator.tts_voices)
 
     course.settings.output_directory = (
-        Path(st.text_input("Output directory:", value=course.settings.output_directory))
-        .expanduser()
-        .resolve()
+        Path(st.text_input("Output directory:", value=course.settings.output_directory)).expanduser().resolve()
     )
 
     if st.button("Generate outline") or st.session_state.do_generate_outline:
