@@ -189,8 +189,8 @@ LLM_SMELLS: dict[str, str] = {
 
 Words in the keys may be replaced by their simplified forms in generated lecture text to help reduce \"LLM smell.\"
 
-This dictionary is appropriate for use as the `replacements` parameter in the [`swap_words`][okcourse.utils.swap_words]
-function.
+This dictionary is appropriate for use as the `replacements` parameter in the
+[`swap_words`][okcourse.utils.string_utils.swap_words] function.
 """
 
 
