@@ -20,6 +20,7 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "aiofiles>=24.1.0",
+    "pytest>=8.3.4",
     "questionary>=2.0.1",
     "streamlit>=1.41.0",
 ]

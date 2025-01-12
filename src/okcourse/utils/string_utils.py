@@ -93,21 +93,19 @@ def download_tokenizer() -> bool:
 
 
 def split_text_into_chunks(text: str, max_chunk_size: int = 4096) -> list[str]:
-    """Splits text into chunks of approximately `max_chunk_size` characters.
+    """Splits text into chunks of approximately `max_chunk_size` characters, preserving sentence boundaries.
 
-    The first time you call this function, it will check the default download location for the NLTK 'punkt_tab'
-    tokenizer. If the tokenizer is not found, it will attempt to download it. Subsequent calls will not re-download the
-    tokenizer.
+    If a sentence exceeds `max_chunk_size`, a ValueError is raised.
 
     Args:
         text: The text to split.
         max_chunk_size: The maximum number of characters in each chunk.
 
     Returns:
-        A list of text chunks equal to or less than the `max_chunk_size`.
+        A list of text chunks where each chunk is equal to or less than the `max_chunk_size`.
 
     Raises:
-        ValueError: If `max_chunk_size` < 1.
+        ValueError: If `max_chunk_size` < 1 or if a sentence exceeds `max_chunk_size`.
     """
     if max_chunk_size < 1:
         raise ValueError("max_chunk_size must be greater than 0")
@@ -120,16 +118,28 @@ def split_text_into_chunks(text: str, max_chunk_size: int = 4096) -> list[str]:
 
     for sentence in sentences:
         sentence_length = len(sentence)
+
+        if sentence_length > max_chunk_size:
+            # Cannot process this sentence; it's too long
+            raise ValueError(
+                f"Sentence length {sentence_length} exceeds max_chunk_size {max_chunk_size}. "
+                "Cannot split sentence further without potentially altering its meaning."
+            )
+
+        # Check if adding the sentence exceeds the max_chunk_size
         if current_length + sentence_length + 1 <= max_chunk_size:
             current_chunk.append(sentence)
-            current_length += sentence_length + 1
+            current_length += sentence_length + 1  # +1 accounts for space or punctuation
         else:
-            chunks.append(" ".join(current_chunk))
+            # Save the current chunk and start a new one
+            if current_chunk:
+                chunks.append(' '.join(current_chunk))
             current_chunk = [sentence]
-            current_length = sentence_length
+            current_length = sentence_length + 1
 
+    # Add any remaining sentences in the current_chunk
     if current_chunk:
-        chunks.append(" ".join(current_chunk))
+        chunks.append(' '.join(current_chunk))
 
     _log.info(f"Split text into {len(chunks)} chunks of ~{max_chunk_size} characters from {len(sentences)} sentences.")
     return chunks
