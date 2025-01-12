@@ -133,13 +133,13 @@ def split_text_into_chunks(text: str, max_chunk_size: int = 4096) -> list[str]:
         else:
             # Save the current chunk and start a new one
             if current_chunk:
-                chunks.append(' '.join(current_chunk))
+                chunks.append(" ".join(current_chunk))
             current_chunk = [sentence]
-            current_length = sentence_length + 1
+            current_length = sentence_length
 
     # Add any remaining sentences in the current_chunk
     if current_chunk:
-        chunks.append(' '.join(current_chunk))
+        chunks.append(" ".join(current_chunk))
 
     _log.info(f"Split text into {len(chunks)} chunks of ~{max_chunk_size} characters from {len(sentences)} sentences.")
     return chunks
