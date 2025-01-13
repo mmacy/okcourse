@@ -12,6 +12,7 @@ from abc import ABC, abstractmethod
 from logging import getLogger as logger
 from pathlib import Path
 from ..models import Course
+from ..prompt_library import ACADEMIC
 from ..utils.log_utils import get_logger, get_top_level_version
 
 
@@ -34,6 +35,7 @@ class CourseGenerator(ABC):
 
         self._init_logger(course)
         self._init_generator_info(course)
+        self._init_prompts(course)
 
     def _init_logger(self, course: Course) -> None:
         """Creates a logger whose name is derived from the CourseGenerator *subclass* at runtime."""
@@ -56,6 +58,10 @@ class CourseGenerator(ABC):
 
         course.generation_info.generator_type = f"{self.__module__}.{type(self).__name__}"
         course.generation_info.okcourse_version = get_top_level_version("okcourse")
+
+    def _init_prompts(self, course: Course) -> None:
+        if not course.settings.prompts:
+            course.settings.prompts = ACADEMIC
 
     @abstractmethod
     def generate_outline(self, course: Course) -> Course:

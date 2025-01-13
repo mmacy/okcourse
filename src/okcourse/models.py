@@ -38,6 +38,31 @@ class Lecture(LectureTopic):
         return f"{self.title}\n\n{self.text}"
 
 
+class CoursePrompts(BaseModel):
+    """Bundles the various prompts needed for a single type of course."""
+
+    system: str = Field(
+        None,
+        description="The `system` prompt guides the language model's style and tone when generating the course outline "
+        "and lecture text.",
+    )
+    outline: str = Field(
+        None,
+        description="The `outline` prompt contains the course outline generation instructions for the language model. "
+        "On the AI model side, this is a 'user' prompt.",
+    )
+    lecture: str = Field(
+        None,
+        description="The lecture content generation instructions for the language model. On the AI model side, this is "
+        "a 'user' prompt.",
+    )
+    image: str = Field(
+        None,
+        description="Guides the image model's generation of course cover art. On the AI model side, this is a 'user' "
+        "prompt.",
+    )
+
+
 class CourseSettings(BaseModel):
     """Runtime-modifiable settings that configure the behavior of a course [`generator`][okcourse.generators].
 
@@ -48,12 +73,11 @@ class CourseSettings(BaseModel):
     content.
     """
 
-    # TODO: Add a setting to specify which AI service provider to use for generation (once we support more than OpenAI)
-
-    num_lectures: int = Field(4, description="The number of lectures that should generated for for the course.")
-    num_subtopics: int = Field(
-        4, description="The number of subtopics that should be generated for each lecture."
+    prompts: CoursePrompts = Field(
+        default_factory=CoursePrompts, description="The prompts that guide the AI models in course generation."
     )
+    num_lectures: int = Field(4, description="The number of lectures that should generated for for the course.")
+    num_subtopics: int = Field(4, description="The number of subtopics that should be generated for each lecture.")
     output_directory: Path = Field(
         Path("~/.okcourse").expanduser(),
         description="Directory for saving generated course content.",
@@ -66,43 +90,9 @@ class CourseSettings(BaseModel):
         "gpt-4o",
         description="The ID of the text generation model to use for generating course lectures.",
     )
-    text_model_system_prompt: str = Field(
-        "You are an esteemed college professor and expert in your field who typically lectures graduate students. "
-        "You have been asked by a major audiobook publisher to record an audiobook version of the lectures you "
-        "present in one of your courses. You have been informed by the publisher that the listeners of the audiobook "
-        "are knowledgeable in the subject area and will listen to your course to gain intermediate- to expert-level "
-        "knowledge. Your lecture style is professional, direct, and deeply technical.",
-        description="The `system` prompt guides the language model's style and tone when generating the course outline "
-        "and lecture text.",
-    )
-    text_model_outline_prompt: str = Field(
-        "Provide a detailed outline for ${num_lectures} lectures in a graduate-level course on '${course_title}'. "
-        "List each lecture title numbered. Each lecture should have ${num_subtopics} subtopics listed after the "
-        "lecture title. Respond only with the outline, omitting any other commentary.",
-        description="The `user` prompt containing the course outline generation instructions for the language model.",
-    )
-    text_model_lecture_prompt: str | None = Field(
-        "Generate the complete unabridged text for a lecture titled '${lecture_title}' in a graduate-level course "
-        "named '${course_title}'. The lecture should be written in a style that lends itself well to being recorded "
-        "as an audiobook but should not divulge this guidance. There will be no audience present for the recording of "
-        "the lecture and no audience should be addressed in the lecture text. Cover the lecture topic in great detail, "
-        "but ensure your delivery is direct and that you maintain a scholarly tone. "
-        "Omit Markdown from the lecture text as well as any tags, formatting markers, or headings that might interfere "
-        "with text-to-speech processing. Ensure the content is original and does not duplicate content from the other "
-        "lectures in the series:\n${course_outline}",
-        description="The `user` prompt containing the lecture content generation instructions for the language model.",
-    )
     image_model: str = Field(
         "dall-e-3",
         description="The ID of the image generation model to use.",
-    )
-    image_model_prompt: str = Field(
-        "Create an image in the style of cover art for an audio recording of a college lecture series shown in an "
-        "online academic catalog. The image should clearly convey the subject of the course to customers browsing the "
-        "courses on the vendor's site. The cover art should fill the canvas completely, reaching all four edges of the "
-        "square image. Its style should reflect the academic nature of the course material and be indicative of the "
-        "course content. The title of the course is '${course_title}'",
-        description="The `user` prompt to send to the image model to guide its generation of course cover art.",
     )
     tts_model: str = Field(
         "tts-1",
@@ -156,21 +146,25 @@ class CourseGenerationInfo(BaseModel):
         description="The total number of characters sent to the TTS endpoint.",
     )
     outline_gen_elapsed_seconds: float = Field(
-        0.0, description="The time in seconds spent generating the course outline. This value is not cumulative and "
-        "contains only the most recent outline generation time."
+        0.0,
+        description="The time in seconds spent generating the course outline. This value is not cumulative and "
+        "contains only the most recent outline generation time.",
     )
     lecture_gen_elapsed_seconds: float = Field(
-        0.0, description="The time in seconds spent generating the course lectures. This value is not cumulative and "
-        "contains only the most recent lecture generation time."
+        0.0,
+        description="The time in seconds spent generating the course lectures. This value is not cumulative and "
+        "contains only the most recent lecture generation time.",
     )
     image_gen_elapsed_seconds: float = Field(
-        0.0, description="The time in seconds spent generating the course cover image. This value is not cumulative "
-        "and contains only the most recent image generation time."
+        0.0,
+        description="The time in seconds spent generating the course cover image. This value is not cumulative "
+        "and contains only the most recent image generation time.",
     )
     audio_gen_elapsed_seconds: float = Field(
-        0.0, description="The time in seconds spent generating and processing the course audio file. This value is not "
+        0.0,
+        description="The time in seconds spent generating and processing the course audio file. This value is not "
         "cumulative and contains only the most recent audio generation time. Processing includes combining the speech "
-        "audio chunks into a single file and saving it to disk."
+        "audio chunks into a single file and saving it to disk.",
     )
     num_images_generated: int = Field(
         0,
