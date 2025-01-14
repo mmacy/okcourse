@@ -5,7 +5,7 @@ import streamlit as st
 
 from okcourse import Course, CourseSettings, OpenAIAsyncGenerator
 from okcourse.constants import MAX_LECTURES
-from okcourse.prompt_library import ACADEMIC, GAME_MASTER
+from okcourse.prompt_library import PROMPT_COLLECTION, ACADEMIC, GAME_MASTER
 from okcourse.utils.log_utils import get_logger
 from okcourse.utils.text_utils import get_duration_string_from_seconds
 
@@ -18,7 +18,7 @@ async def main():
     # Initialize session state variables
     if "course" not in st.session_state:
         log.info("Initializing session state with new 'Course' instance...")
-        settings = CourseSettings(prompts=GAME_MASTER)
+        settings = CourseSettings(prompts=ACADEMIC)
         st.session_state.course = Course(settings=settings)
     if "do_generate_outline" not in st.session_state:
         log.info("Initializing session state with outline generation flag set to 'False'...")
@@ -28,6 +28,15 @@ async def main():
         st.session_state.do_generate_course = False
 
     course = st.session_state.course
+
+    # Dynamically generate prompt selection options
+    prompt_options = {
+        prompt.description.replace("_", " ").capitalize(): prompt for prompt in PROMPT_COLLECTION
+    }
+    selected_prompt_name = st.selectbox("Select the course prompt style:", options=list(prompt_options.keys()))
+    selected_prompt = prompt_options[selected_prompt_name]
+    course.settings.prompts = selected_prompt
+
     course.title = st.text_input("Enter the course topic:")
     course.settings.num_lectures = st.number_input(
         "Number of lectures:", min_value=1, max_value=MAX_LECTURES, value=20, step=1

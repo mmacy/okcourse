@@ -17,7 +17,7 @@ from ...constants import (
     AI_DISCLOSURE,
     MAX_LECTURES,
 )
-from ...models import Course, CourseOutline, Lecture
+from ...models import Course, CourseOutline, CourseLecture
 from ...utils.audio_utils import combine_mp3_buffers
 from ...utils.log_utils import get_top_level_version, time_tracker
 from ...utils.misc_utils import extract_literal_values_from_member, extract_literal_values_from_type
@@ -122,7 +122,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
         course.outline = generated_outline
         return course
 
-    async def _generate_lecture(self, course: Course, lecture_number: int) -> Lecture:
+    async def _generate_lecture(self, course: Course, lecture_number: int) -> CourseLecture:
         """Generates a lecture for the topic with the specified number in the given outline.
 
         Args:
@@ -166,7 +166,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
             f"Got lecture text for topic {topic.number}/{len(course.outline.topics)} "
             f"@ {len(lecture_text)} chars: {topic.title}."
         )
-        return Lecture(**topic.model_dump(), text=lecture_text)
+        return CourseLecture(**topic.model_dump(), text=lecture_text)
 
     async def generate_lectures(self, course: Course) -> Course:
         """Generates the text for the lectures in the course outline in the settings.

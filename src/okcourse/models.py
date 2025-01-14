@@ -6,8 +6,8 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 
-class LectureTopic(BaseModel):
-    """A topic covered by a [lecture][okcourse.models.Lecture] in a course."""
+class CourseLectureTopic(BaseModel):
+    """A topic covered by a [lecture][okcourse.models.CourseLecture] in a course."""
 
     number: int = Field(..., description="The position number of the lecture within the series.")
     title: str = Field(..., description="The topic of a lecture within a course.")
@@ -19,17 +19,17 @@ class LectureTopic(BaseModel):
 
 
 class CourseOutline(BaseModel):
-    """The outline of a course, including its title and the topics covered by each [lecture][okcourse.models.Lecture]."""  # noqa: E501
+    """The outline of a course, including its title and the topics covered by each [lecture][okcourse.models.CourseLecture]."""  # noqa: E501
 
     title: str = Field(..., description="The title of the course.")
-    topics: list[LectureTopic] = Field(..., description="The topics covered by each lecture in the series.")
+    topics: list[CourseLectureTopic] = Field(..., description="The topics covered by each lecture in the series.")
 
     def __str__(self) -> str:
         topics_str = "\n\n".join(str(topic) for topic in self.topics)
         return f"Course title: {self.title}\n\n{topics_str}"
 
 
-class Lecture(LectureTopic):
+class CourseLecture(CourseLectureTopic):
     """A lecture in a [course][okcourse.models.Course], including its title text content."""
 
     text: str = Field(..., description="The unabridged text content of the lecture.")
@@ -38,28 +38,33 @@ class Lecture(LectureTopic):
         return f"{self.title}\n\n{self.text}"
 
 
-class CoursePrompts(BaseModel):
-    """Bundles the various prompts needed for a single type of course."""
+class CoursePromptSet(BaseModel):
+    """Bundles a set of prompts used for generating a certain type of course, like academic, storytelling, or technical."""  # noqa: E501
 
+    description: str = Field(
+        "`system` and `user` prompts appropriate for a certain type of course.",
+        description="A name or description for the type of course this collection of prompts is intended to create.",
+    )
     system: str = Field(
         None,
         description="The `system` prompt guides the language model's style and tone when generating the course outline "
-        "and lecture text.",
+        "and lecture text. This prompt should be appropriate for passing to the AI service provider's API along with "
+        "any of the other prompts (the outline, lecture, or image prompts)",
     )
     outline: str = Field(
         None,
-        description="The `outline` prompt contains the course outline generation instructions for the language model. "
-        "On the AI model side, this is a 'user' prompt.",
+        description="The `user` prompt that contains the course outline generation instructions for the language "
+        "model. This prompt is passed along with the `system` prompt when requesting an outline.",
     )
     lecture: str = Field(
         None,
-        description="The lecture content generation instructions for the language model. On the AI model side, this is "
-        "a 'user' prompt.",
+        description="The `user` prompt that contains the lecture content generation instructions for the language "
+        "model. This prompt is passed along with the `system` prompt when requesting one of the lectures in the course.",
     )
     image: str = Field(
         None,
-        description="Guides the image model's generation of course cover art. On the AI model side, this is a 'user' "
-        "prompt.",
+        description="The `user` prompt that guides the image model's generation of course cover art. This prompt is "
+        "passed along with the `system` prompt when requesting a cover image for the course.",
     )
 
 
@@ -73,8 +78,8 @@ class CourseSettings(BaseModel):
     content.
     """
 
-    prompts: CoursePrompts = Field(
-        default_factory=CoursePrompts, description="The prompts that guide the AI models in course generation."
+    prompts: CoursePromptSet = Field(
+        default_factory=CoursePromptSet, description="The prompts that guide the AI models in course generation."
     )
     num_lectures: int = Field(4, description="The number of lectures that should generated for for the course.")
     num_subtopics: int = Field(4, description="The number of subtopics that should be generated for each lecture.")
@@ -187,14 +192,14 @@ class Course(BaseModel):
 
     title: str | None = Field(
         None,
-        description="The topic of the course and its lectures. The course title, along with the "
-        "[`text_model_outline_prompt`][okcourse.models.CourseSettings.text_model_outline_prompt], are the most "
+        description="The topic of the course and its lectures. The course title, along with its "
+        "[`settings.prompts`][okcourse.models.CourseSettings.prompts], are the most "
         "influential in determining the course content.",
     )
     outline: CourseOutline | None = Field(
         None, description="The outline for the course that defines the topics for each lecture."
     )
-    lectures: list[Lecture] | None = Field(None, description="The lectures that comprise the complete course.")
+    lectures: list[CourseLecture] | None = Field(None, description="The lectures that comprise the complete course.")
     settings: CourseSettings = Field(
         default_factory=CourseSettings,
         description="Course [`generators`][okcourse.generators] use these settings to determine the content of the "
