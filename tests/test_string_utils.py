@@ -3,7 +3,7 @@ from collections.abc import Sequence
 import nltk
 import pytest
 
-from okcourse.utils.string_utils import split_text_into_chunks
+from okcourse.utils.text_utils import split_text_into_chunks
 
 
 @pytest.fixture(scope="session", autouse=True)
