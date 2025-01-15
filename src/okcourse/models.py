@@ -6,8 +6,8 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 
-class LectureTopic(BaseModel):
-    """A topic covered by a [lecture][okcourse.models.Lecture] in a course."""
+class CourseLectureTopic(BaseModel):
+    """A topic covered by a [lecture][okcourse.models.CourseLecture] in a course."""
 
     number: int = Field(..., description="The position number of the lecture within the series.")
     title: str = Field(..., description="The topic of a lecture within a course.")
@@ -19,23 +19,81 @@ class LectureTopic(BaseModel):
 
 
 class CourseOutline(BaseModel):
-    """The outline of a course, including its title and the topics covered by each [lecture][okcourse.models.Lecture]."""  # noqa: E501
+    """The outline of a course, including its title and the topics covered by each [lecture][okcourse.models.CourseLecture]."""  # noqa: E501
 
     title: str = Field(..., description="The title of the course.")
-    topics: list[LectureTopic] = Field(..., description="The topics covered by each lecture in the series.")
+    topics: list[CourseLectureTopic] = Field(..., description="The topics covered by each lecture in the series.")
 
     def __str__(self) -> str:
         topics_str = "\n\n".join(str(topic) for topic in self.topics)
         return f"Course title: {self.title}\n\n{topics_str}"
 
 
-class Lecture(LectureTopic):
+class CourseLecture(CourseLectureTopic):
     """A lecture in a [course][okcourse.models.Course], including its title text content."""
 
     text: str = Field(..., description="The unabridged text content of the lecture.")
 
     def __str__(self) -> str:
         return f"{self.title}\n\n{self.text}"
+
+
+class CoursePromptSet(BaseModel):
+    """Bundles a set of prompts used for generating a certain type of course, like academic, storytelling, or technical."""  # noqa: E501
+
+    description: str = Field(
+        "`system` and `user` prompts appropriate for a certain type of course.",
+        description="A name or description for the type of course this collection of prompts is intended to create.",
+    )
+    system: str = Field(
+        None,
+        description="The `system` prompt guides the language model's style and tone when generating the course outline "
+        "and lecture text. This prompt should be appropriate for passing to the AI service provider's API along with "
+        "any of the other prompts (the outline, lecture, or image prompts)",
+    )
+    outline: str = Field(
+        None,
+        description="The `user` prompt that contains the course outline generation instructions for the language "
+        "model. This prompt is passed along with the `system` prompt when requesting an outline.",
+    )
+    lecture: str = Field(
+        None,
+        description="The `user` prompt that contains the lecture content generation instructions for the language "
+        "model. This prompt is passed along with the `system` prompt when requesting one of the lectures in the course.",
+    )
+    image: str = Field(
+        None,
+        description="The `user` prompt that guides the image model's generation of course cover art. This prompt is "
+        "passed along with the `system` prompt when requesting a cover image for the course.",
+    )
+
+
+_DEFAULT_PROMPT_SET = CoursePromptSet(
+    description="Academic Lecture Series",
+    system="You are an esteemed college professor and expert in your field who typically lectures graduate students. "
+    "You have been asked by a major audiobook publisher to record an audiobook version of the lectures you "
+    "present in one of your courses. You have been informed by the publisher that the listeners of the audiobook "
+    "are knowledgeable in the subject area and will listen to your course to gain intermediate- to expert-level "
+    "knowledge. Your lecture style is professional, direct, and deeply technical.",
+    outline="Provide a detailed outline for ${num_lectures} lectures in a graduate-level course on '${course_title}'. "
+    "List each lecture title numbered. Each lecture should have ${num_subtopics} subtopics listed after the "
+    "lecture title. Respond only with the outline, omitting any other commentary.",
+    lecture="Generate the complete unabridged text for a lecture titled '${lecture_title}' in a graduate-level course "
+    "named '${course_title}'. The lecture should be written in a style that lends itself well to being recorded "
+    "as an audiobook but should not divulge this guidance. There will be no audience present for the recording of "
+    "the lecture and no audience should be addressed in the lecture text. Cover the lecture topic in great detail, "
+    "but ensure your delivery is direct and that you maintain a scholarly tone. "
+    "Omit Markdown from the lecture text as well as any tags, formatting markers, or headings that might interfere "
+    "with text-to-speech processing. Ensure the content is original and does not duplicate content from the other "
+    "lectures in the series:\n${course_outline}",
+    image="Create a cover art image for the college lecture series titled '${course_title}'. Fill the entire canvas "
+    "with an academic art style using muted colors that reflects the course material.",
+)
+"""The default "academic" set of prompts used by a course generator like the [`OpenAIAsyncGenerator`][okcourse.OpenAIAsyncGenerator].
+
+You should not reference this prompt set directly - use the [`ACADEMIC`][okcourse.prompt_library.ACADEMIC] prompt set in
+the `prompt_library` module instead (it's an alias of this one).
+"""
 
 
 class CourseSettings(BaseModel):
@@ -48,12 +106,12 @@ class CourseSettings(BaseModel):
     content.
     """
 
-    # TODO: Add a setting to specify which AI service provider to use for generation (once we support more than OpenAI)
-
-    num_lectures: int = Field(4, description="The number of lectures that should generated for for the course.")
-    num_subtopics: int = Field(
-        4, description="The number of subtopics that should be generated for each lecture."
+    prompts: CoursePromptSet = Field(
+        _DEFAULT_PROMPT_SET,
+        description="The prompts that guide the AI models in course generation.",
     )
+    num_lectures: int = Field(4, description="The number of lectures that should generated for for the course.")
+    num_subtopics: int = Field(4, description="The number of subtopics that should be generated for each lecture.")
     output_directory: Path = Field(
         Path("~/.okcourse").expanduser(),
         description="Directory for saving generated course content.",
@@ -66,43 +124,9 @@ class CourseSettings(BaseModel):
         "gpt-4o",
         description="The ID of the text generation model to use for generating course lectures.",
     )
-    text_model_system_prompt: str = Field(
-        "You are an esteemed college professor and expert in your field who typically lectures graduate students. "
-        "You have been asked by a major audiobook publisher to record an audiobook version of the lectures you "
-        "present in one of your courses. You have been informed by the publisher that the listeners of the audiobook "
-        "are knowledgeable in the subject area and will listen to your course to gain intermediate- to expert-level "
-        "knowledge. Your lecture style is professional, direct, and deeply technical.",
-        description="The `system` prompt guides the language model's style and tone when generating the course outline "
-        "and lecture text.",
-    )
-    text_model_outline_prompt: str = Field(
-        "Provide a detailed outline for ${num_lectures} lectures in a graduate-level course on '${course_title}'. "
-        "List each lecture title numbered. Each lecture should have ${num_subtopics} subtopics listed after the "
-        "lecture title. Respond only with the outline, omitting any other commentary.",
-        description="The `user` prompt containing the course outline generation instructions for the language model.",
-    )
-    text_model_lecture_prompt: str | None = Field(
-        "Generate the complete unabridged text for a lecture titled '${lecture_title}' in a graduate-level course "
-        "named '${course_title}'. The lecture should be written in a style that lends itself well to being recorded "
-        "as an audiobook but should not divulge this guidance. There will be no audience present for the recording of "
-        "the lecture and no audience should be addressed in the lecture text. Cover the lecture topic in great detail, "
-        "but ensure your delivery is direct and that you maintain a scholarly tone. "
-        "Omit Markdown from the lecture text as well as any tags, formatting markers, or headings that might interfere "
-        "with text-to-speech processing. Ensure the content is original and does not duplicate content from the other "
-        "lectures in the series:\n${course_outline}",
-        description="The `user` prompt containing the lecture content generation instructions for the language model.",
-    )
     image_model: str = Field(
         "dall-e-3",
         description="The ID of the image generation model to use.",
-    )
-    image_model_prompt: str = Field(
-        "Create an image in the style of cover art for an audio recording of a college lecture series shown in an "
-        "online academic catalog. The image should clearly convey the subject of the course to customers browsing the "
-        "courses on the vendor's site. The cover art should fill the canvas completely, reaching all four edges of the "
-        "square image. Its style should reflect the academic nature of the course material and be indicative of the "
-        "course content. The title of the course is '${course_title}'",
-        description="The `user` prompt to send to the image model to guide its generation of course cover art.",
     )
     tts_model: str = Field(
         "tts-1",
@@ -156,21 +180,25 @@ class CourseGenerationInfo(BaseModel):
         description="The total number of characters sent to the TTS endpoint.",
     )
     outline_gen_elapsed_seconds: float = Field(
-        0.0, description="The time in seconds spent generating the course outline. This value is not cumulative and "
-        "contains only the most recent outline generation time."
+        0.0,
+        description="The time in seconds spent generating the course outline. This value is not cumulative and "
+        "contains only the most recent outline generation time.",
     )
     lecture_gen_elapsed_seconds: float = Field(
-        0.0, description="The time in seconds spent generating the course lectures. This value is not cumulative and "
-        "contains only the most recent lecture generation time."
+        0.0,
+        description="The time in seconds spent generating the course lectures. This value is not cumulative and "
+        "contains only the most recent lecture generation time.",
     )
     image_gen_elapsed_seconds: float = Field(
-        0.0, description="The time in seconds spent generating the course cover image. This value is not cumulative "
-        "and contains only the most recent image generation time."
+        0.0,
+        description="The time in seconds spent generating the course cover image. This value is not cumulative "
+        "and contains only the most recent image generation time.",
     )
     audio_gen_elapsed_seconds: float = Field(
-        0.0, description="The time in seconds spent generating and processing the course audio file. This value is not "
+        0.0,
+        description="The time in seconds spent generating and processing the course audio file. This value is not "
         "cumulative and contains only the most recent audio generation time. Processing includes combining the speech "
-        "audio chunks into a single file and saving it to disk."
+        "audio chunks into a single file and saving it to disk.",
     )
     num_images_generated: int = Field(
         0,
@@ -193,14 +221,14 @@ class Course(BaseModel):
 
     title: str | None = Field(
         None,
-        description="The topic of the course and its lectures. The course title, along with the "
-        "[`text_model_outline_prompt`][okcourse.models.CourseSettings.text_model_outline_prompt], are the most "
+        description="The topic of the course and its lectures. The course title, along with its "
+        "[`settings.prompts`][okcourse.models.CourseSettings.prompts], are the most "
         "influential in determining the course content.",
     )
     outline: CourseOutline | None = Field(
         None, description="The outline for the course that defines the topics for each lecture."
     )
-    lectures: list[Lecture] | None = Field(None, description="The lectures that comprise the complete course.")
+    lectures: list[CourseLecture] | None = Field(None, description="The lectures that comprise the complete course.")
     settings: CourseSettings = Field(
         default_factory=CourseSettings,
         description="Course [`generators`][okcourse.generators] use these settings to determine the content of the "

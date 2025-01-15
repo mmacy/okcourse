@@ -5,7 +5,7 @@ Given a course title, a course generator like the [`OpenAIAsyncCourseGenerator`]
 API:
 
 - [Course outline][okcourse.CourseOutline]
-- [Lecture text][okcourse.Lecture] for the topics in the outline
+- [Lecture text][okcourse.CourseLecture] for the topics in the outline
 - [Cover image][okcourse.CourseGenerator.generate_image] for the audio file album art
 - [Audio file][okcourse.generators.base.CourseGenerator.generate_audio] from the lecture text
 """
@@ -16,20 +16,22 @@ from .generators import CourseGenerator, OpenAIAsyncGenerator
 from .models import (
     Course,
     CourseGenerationInfo,
+    CourseLecture,
+    CourseLectureTopic,
     CourseOutline,
+    CoursePromptSet,
     CourseSettings,
-    Lecture,
-    LectureTopic,
 )
 
 __all__ = [
     "Course",
     "CourseGenerationInfo",
     "CourseGenerator",
+    "CourseLecture",
+    "CourseLectureTopic",
     "CourseOutline",
+    "CoursePromptSet",
     "CourseSettings",
-    "Lecture",
-    "LectureTopic",
     "OpenAIAsyncGenerator",
 ]
 

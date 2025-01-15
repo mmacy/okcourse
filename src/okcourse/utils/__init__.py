@@ -7,6 +7,6 @@ library. These modules include logging, string manipulation, audio file (MP3) pr
 __all__ = [
     "audio_utils",
     "log_utils",
-    "string_utils",
     "misc_utils",
+    "text_utils",
 ]

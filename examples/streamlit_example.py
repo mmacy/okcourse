@@ -5,8 +5,9 @@ import streamlit as st
 
 from okcourse import Course, OpenAIAsyncGenerator
 from okcourse.constants import MAX_LECTURES
+from okcourse.prompt_library import PROMPT_COLLECTION
 from okcourse.utils.log_utils import get_logger
-from okcourse.utils.string_utils import get_duration_string_from_seconds
+from okcourse.utils.text_utils import get_duration_string_from_seconds
 
 
 async def main():
@@ -26,6 +27,15 @@ async def main():
         st.session_state.do_generate_course = False
 
     course = st.session_state.course
+
+    # Dynamically generate prompt selection options
+    prompt_options = {
+        prompt.description.replace("_", " ").capitalize(): prompt for prompt in PROMPT_COLLECTION
+    }
+    selected_prompt_name = st.selectbox("Select the course prompt style:", options=list(prompt_options.keys()))
+    selected_prompt = prompt_options[selected_prompt_name]
+    course.settings.prompts = selected_prompt
+
     course.title = st.text_input("Enter the course topic:")
     course.settings.num_lectures = st.number_input(
         "Number of lectures:", min_value=1, max_value=MAX_LECTURES, value=20, step=1

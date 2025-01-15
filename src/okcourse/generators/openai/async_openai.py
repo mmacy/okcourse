@@ -17,11 +17,11 @@ from ...constants import (
     AI_DISCLOSURE,
     MAX_LECTURES,
 )
-from ...models import Course, CourseOutline, Lecture
+from ...models import Course, CourseOutline, CourseLecture
 from ...utils.audio_utils import combine_mp3_buffers
 from ...utils.log_utils import get_top_level_version, time_tracker
 from ...utils.misc_utils import extract_literal_values_from_member, extract_literal_values_from_type
-from ...utils.string_utils import (
+from ...utils.text_utils import (
     LLM_SMELLS,
     download_tokenizer,
     sanitize_filename,
@@ -91,8 +91,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         course.settings.output_directory = course.settings.output_directory.expanduser().resolve()
 
-        outline_prompt_template = Template(course.settings.text_model_outline_prompt)
-        outline_prompt = outline_prompt_template.substitute(
+        outline_prompt = Template(course.settings.prompts.outline).substitute(
             num_lectures=course.settings.num_lectures,
             course_title=course.title,
             num_subtopics=course.settings.num_subtopics,
@@ -103,7 +102,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
             outline_completion = await self.client.beta.chat.completions.parse(
                 model=course.settings.text_model_outline,
                 messages=[
-                    {"role": "system", "content": course.settings.text_model_system_prompt},
+                    {"role": "system", "content": course.settings.prompts.system},
                     {"role": "user", "content": outline_prompt},
                 ],
                 response_format=CourseOutline,
@@ -123,7 +122,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
         course.outline = generated_outline
         return course
 
-    async def _generate_lecture(self, course: Course, lecture_number: int) -> Lecture:
+    async def _generate_lecture(self, course: Course, lecture_number: int) -> CourseLecture:
         """Generates a lecture for the topic with the specified number in the given outline.
 
         Args:
@@ -140,8 +139,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
         if not topic:
             raise ValueError(f"No topic found for lecture number {lecture_number}")
 
-        lecture_prompt_template = Template(course.settings.text_model_lecture_prompt)
-        lecture_prompt = lecture_prompt_template.substitute(
+        lecture_prompt = Template(course.settings.prompts.lecture).substitute(
             lecture_title=topic.title,
             course_title=course.title,
             course_outline=str(course.outline),
@@ -153,7 +151,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
         response = await self.client.chat.completions.create(
             model=course.settings.text_model_lecture,
             messages=[
-                {"role": "system", "content": course.settings.text_model_system_prompt},
+                {"role": "system", "content": course.settings.prompts.system},
                 {"role": "user", "content": lecture_prompt},
             ],
             max_completion_tokens=15000,
@@ -168,7 +166,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
             f"Got lecture text for topic {topic.number}/{len(course.outline.topics)} "
             f"@ {len(lecture_text)} chars: {topic.title}."
         )
-        return Lecture(**topic.model_dump(), text=lecture_text)
+        return CourseLecture(**topic.model_dump(), text=lecture_text)
 
     async def generate_lectures(self, course: Course) -> Course:
         """Generates the text for the lectures in the course outline in the settings.
@@ -208,13 +206,11 @@ class OpenAIAsyncGenerator(CourseGenerator):
         """
 
         course.settings.output_directory = course.settings.output_directory.expanduser().resolve()
-        image_prompt_template = Template(course.settings.image_model_prompt)
-        image_prompt = image_prompt_template.substitute(course_title=course.title)
         try:
             with time_tracker(course.generation_info, "image_gen_elapsed_seconds"):
                 image_response = await self.client.images.generate(
                     model=course.settings.image_model,
-                    prompt=image_prompt,
+                    prompt=Template(course.settings.prompts.image).substitute(course_title=course.title),
                     n=1,
                     size="1024x1024",
                     response_format="b64_json",

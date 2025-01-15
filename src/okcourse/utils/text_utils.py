@@ -9,7 +9,7 @@ Examples of usage include:
 - Checking and downloading an NLTK tokenizer:
 
   ```python
-  from string_utils import tokenizer_available, download_tokenizer
+  from text_utils import tokenizer_available, download_tokenizer
 
   if not tokenizer_available():
       download_tokenizer()
@@ -18,7 +18,7 @@ Examples of usage include:
 - Splitting text into manageable chunks:
 
   ```python
-  from string_utils import split_text_into_chunks
+  from text_utils import split_text_into_chunks
 
   text = "Your long text here..."
   chunks = split_text_into_chunks(text, max_chunk_size=1024)
@@ -27,7 +27,7 @@ Examples of usage include:
 - Sanitizing a name for use as a filename:
 
   ```python
-  from string_utils import sanitize_filename
+  from text_utils import sanitize_filename
 
   safe_name = sanitize_filename("My Unsafe Filename.txt")
   ```
@@ -35,7 +35,7 @@ Examples of usage include:
 - Formatting a duration in seconds to a human-readable format:
 
   ```python
-  from string_utils import get_duration_string_from_seconds
+  from text_utils import get_duration_string_from_seconds
 
   duration = get_duration_string_from_seconds(3661)  # "1:01:01"
   ```
@@ -43,7 +43,7 @@ Examples of usage include:
 - Replacing overused LLM words with simpler alternatives:
 
   ```python
-  from string_utils import swap_words, LLM_SMELLS
+  from text_utils import swap_words, LLM_SMELLS
 
   updated_text = swap_words("In this course we delve into...", LLM_SMELLS)
   ```
@@ -93,21 +93,23 @@ def download_tokenizer() -> bool:
 
 
 def split_text_into_chunks(text: str, max_chunk_size: int = 4096) -> list[str]:
-    """Splits text into chunks of approximately `max_chunk_size` characters.
+    """Splits text into chunks of approximately `max_chunk_size` characters, preserving sentence boundaries.
 
-    The first time you call this function, it will check the default download location for the NLTK 'punkt_tab'
-    tokenizer. If the tokenizer is not found, it will attempt to download it. Subsequent calls will not re-download the
-    tokenizer.
+    If a sentence exceeds `max_chunk_size`, a ValueError is raised.
+
+    Typical use of this function is to split a long piece of text into chunks that are each just under the character
+    length limit a TTS model will accept for converting to audio. For example, OpenAI's `tts-1` model has a limit of
+    4096 characters.
 
     Args:
         text: The text to split.
         max_chunk_size: The maximum number of characters in each chunk.
 
     Returns:
-        A list of text chunks equal to or less than the `max_chunk_size`.
+        A list of text chunks where each chunk is equal to or less than the `max_chunk_size`.
 
     Raises:
-        ValueError: If `max_chunk_size` < 1.
+        ValueError: If `max_chunk_size` < 1 or if a sentence exceeds `max_chunk_size`.
     """
     if max_chunk_size < 1:
         raise ValueError("max_chunk_size must be greater than 0")
@@ -120,14 +122,27 @@ def split_text_into_chunks(text: str, max_chunk_size: int = 4096) -> list[str]:
 
     for sentence in sentences:
         sentence_length = len(sentence)
+
+        if sentence_length > max_chunk_size:
+            # Cannot process this sentence; it's too long
+            raise ValueError(
+                f"Sentence length {sentence_length} exceeds max_chunk_size {max_chunk_size}. "
+                "Cannot split sentence further without potentially altering its meaning."
+            )
+
         if current_length + sentence_length + 1 <= max_chunk_size:
+            # Sentence can fit in current chunk
             current_chunk.append(sentence)
-            current_length += sentence_length + 1
+            current_length += sentence_length + 1  # +1 accounts for space or punctuation
         else:
-            chunks.append(" ".join(current_chunk))
+            # Sentence doesn't fit in the current chunk, so add the current chunk to the
+            # chunks collection and start a new chunk with the sentence that didn't fit
+            if current_chunk:
+                chunks.append(" ".join(current_chunk))
             current_chunk = [sentence]
             current_length = sentence_length
 
+    # Add any "leftover" sentences in the current chunk to the chunks collection
     if current_chunk:
         chunks.append(" ".join(current_chunk))
 
@@ -190,7 +205,7 @@ LLM_SMELLS: dict[str, str] = {
 Words in the keys may be replaced by their simplified forms in generated lecture text to help reduce \"LLM smell.\"
 
 This dictionary is appropriate for use as the `replacements` parameter in the
-[`swap_words`][okcourse.utils.string_utils.swap_words] function.
+[`swap_words`][okcourse.utils.text_utils.swap_words] function.
 """
 
 
