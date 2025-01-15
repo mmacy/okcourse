@@ -3,9 +3,9 @@ from pathlib import Path
 
 import streamlit as st
 
-from okcourse import Course, CourseSettings, OpenAIAsyncGenerator
+from okcourse import Course, OpenAIAsyncGenerator
 from okcourse.constants import MAX_LECTURES
-from okcourse.prompt_library import PROMPT_COLLECTION, ACADEMIC, GAME_MASTER
+from okcourse.prompt_library import PROMPT_COLLECTION
 from okcourse.utils.log_utils import get_logger
 from okcourse.utils.text_utils import get_duration_string_from_seconds
 
@@ -18,8 +18,7 @@ async def main():
     # Initialize session state variables
     if "course" not in st.session_state:
         log.info("Initializing session state with new 'Course' instance...")
-        settings = CourseSettings(prompts=ACADEMIC)
-        st.session_state.course = Course(settings=settings)
+        st.session_state.course = Course()
     if "do_generate_outline" not in st.session_state:
         log.info("Initializing session state with outline generation flag set to 'False'...")
         st.session_state.do_generate_outline = False
