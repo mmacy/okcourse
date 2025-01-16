@@ -8,20 +8,13 @@ from pathlib import Path
 from string import Template
 
 from openai import APIError, APIStatusError, AsyncOpenAI, OpenAIError
-from openai.types.audio.speech_create_params import SpeechCreateParams
-from openai.types.audio.speech_model import SpeechModel
-from openai.types.chat_model import ChatModel
-from openai.types.image_model import ImageModel
 
-from ...constants import (
-    AI_DISCLOSURE,
-    MAX_LECTURES,
-)
-from ...models import Course, CourseOutline, CourseLecture
-from ...utils.audio_utils import combine_mp3_buffers
-from ...utils.log_utils import get_top_level_version, time_tracker
-from ...utils.misc_utils import extract_literal_values_from_member, extract_literal_values_from_type
-from ...utils.text_utils import (
+from okcourse.constants import AI_DISCLOSURE, MAX_LECTURES
+from okcourse.generators.base import CourseGenerator
+from okcourse.models import Course, CourseLecture, CourseOutline
+from okcourse.utils.audio_utils import combine_mp3_buffers
+from okcourse.utils.log_utils import get_top_level_version, time_tracker
+from okcourse.utils.text_utils import (
     LLM_SMELLS,
     download_tokenizer,
     sanitize_filename,
@@ -29,7 +22,6 @@ from ...utils.text_utils import (
     swap_words,
     tokenizer_available,
 )
-from ..base import CourseGenerator
 
 
 class OpenAIAsyncGenerator(CourseGenerator):
@@ -38,12 +30,12 @@ class OpenAIAsyncGenerator(CourseGenerator):
     Use the `OpenAIAsyncGenerator` to generate a course outline, lectures, cover image, and audio file for a course.
 
     Examples:
-
     Generate a full course, including its outline, lectures, cover image, and audio file:
 
     ```python
     --8<-- "examples/snippets/async_openai_snippets.py:full_openaiasyncgenerator"
     ```
+
     """
 
     def __init__(self, course: Course):
@@ -51,16 +43,11 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         Args:
             course: The course to generate content for.
+
         """
         super().__init__(course)
 
         self.client = AsyncOpenAI()
-
-        # Populate lists of available models and voices for possible use presenting options to the user
-        self.image_models: list[str] = extract_literal_values_from_type(ImageModel)
-        self.text_models: list[str] = extract_literal_values_from_type(ChatModel)
-        self.speech_models: list[str] = extract_literal_values_from_type(SpeechModel)
-        self.tts_voices: list[str] = extract_literal_values_from_member(SpeechCreateParams, "voice")
 
     async def generate_outline(self, course: Course) -> Course:
         """Generates a course outline based on its `title` and other [`settings`][okcourse.models.Course.settings].
@@ -74,7 +61,6 @@ class OpenAIAsyncGenerator(CourseGenerator):
             ValueError: If the course has no title.
 
         Examples:
-
         ```python
         --8<-- "examples/snippets/async_openai_snippets.py:generate_outline"
         ```
@@ -134,6 +120,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         Raises:
             ValueError: If no topic is found for the given lecture number.
+
         """
         topic = next((t for t in course.outline.topics if t.number == lecture_number), None)
         if not topic:
@@ -146,7 +133,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
         )
 
         self.log.info(
-            f"Requesting lecture text for topic {topic.number}/{len(course.outline.topics)}: {topic.title}..."
+            f"Requesting lecture text for topic {topic.number}/{len(course.outline.topics)}: {topic.title}...",
         )
         response = await self.client.chat.completions.create(
             model=course.settings.text_model_lecture,
@@ -164,7 +151,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         self.log.info(
             f"Got lecture text for topic {topic.number}/{len(course.outline.topics)} "
-            f"@ {len(lecture_text)} chars: {topic.title}."
+            f"@ {len(lecture_text)} chars: {topic.title}.",
         )
         return CourseLecture(**topic.model_dump(), text=lecture_text)
 
@@ -175,8 +162,8 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         Returns:
             The Course with its `course.lectures` attribute set.
-        """
 
+        """
         course.settings.output_directory = course.settings.output_directory.expanduser().resolve()
         lecture_tasks = []
 
@@ -203,8 +190,8 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         Raises:
             OpenAIError: If an error occurs during image generation.
-        """
 
+        """
         course.settings.output_directory = course.settings.output_directory.expanduser().resolve()
         try:
             with time_tracker(course.generation_info, "image_gen_elapsed_seconds"):
@@ -227,7 +214,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
             image_bytes = base64.b64decode(image.b64_json)
 
             course.generation_info.image_file_path = course.settings.output_directory / Path(
-                sanitize_filename(course.title)
+                sanitize_filename(course.title),
             ).with_suffix(".png")
             course.generation_info.image_file_path.parent.mkdir(parents=True, exist_ok=True)
             self.log.info(f"Saving image to {course.generation_info.image_file_path}")
@@ -246,12 +233,15 @@ class OpenAIAsyncGenerator(CourseGenerator):
                 if e is APIStatusError:
                     self.log.error(
                         # Guaranteed to have a complete response as this is bubbled up from httpx
-                        f"   Status: {e.response.status_code} - {e.response.reason_phrase}"
+                        f"   Status: {e.response.status_code} - {e.response.reason_phrase}",
                     )
             raise e
 
     async def _generate_speech_for_text_chunk(
-        self, course: Course, text_chunk: str, chunk_num: int = 1
+        self,
+        course: Course,
+        text_chunk: str,
+        chunk_num: int = 1,
     ) -> tuple[int, io.BytesIO]:
         """Generates an MP3 audio segment for a chunk of text using text-to-speech (TTS).
 
@@ -264,6 +254,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         Returns:
             An io.BytesIO of the generated audio.
+
         """
         self.log.info(f"Requesting TTS audio in voice '{course.settings.tts_voice}' for text chunk {chunk_num}...")
         async with self.client.audio.speech.with_streaming_response.create(
@@ -285,8 +276,8 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         Returns:
             The course with its `audio_file_path` attribute set which points to the TTS-generated file.
-        """
 
+        """
         course.settings.output_directory = course.settings.output_directory.expanduser().resolve()
         if not tokenizer_available():
             download_tokenizer()
@@ -326,7 +317,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
                 cover_tag = None
 
             course.generation_info.audio_file_path = course.settings.output_directory / Path(
-                sanitize_filename(course.title)
+                sanitize_filename(course.title),
             ).with_suffix(".mp3")
             course.generation_info.audio_file_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -366,8 +357,8 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         Returns:
             Course: The course with all attributes populated by the generation process.
-        """
 
+        """
         course = await self.generate_outline(course)
         course = await self.generate_lectures(course)
         course = await self.generate_image(course)

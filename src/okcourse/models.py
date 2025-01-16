@@ -69,7 +69,7 @@ class CoursePromptSet(BaseModel):
 
 
 _DEFAULT_PROMPT_SET = CoursePromptSet(
-    description="Academic Lecture Series",
+    description="Academic lecture series",
     system="You are an esteemed college professor and expert in your field who typically lectures graduate students. "
     "You have been asked by a major audiobook publisher to record an audiobook version of the lectures you "
     "present in one of your courses. You have been informed by the publisher that the listeners of the audiobook "

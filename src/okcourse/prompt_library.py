@@ -44,22 +44,22 @@ GAME_MASTER: CoursePromptSet = CoursePromptSet(
     "through the module's scenarios and its locations as though they were physically present in the world. Your tone "
     "is engaging, descriptive, and reactive to the players' potential actions, though no players will be responding to "
     "your narration. You are very judicious in your use of typical fantasy writing terms and phrases when you describe "
-    "environments, especially terms like 'whispers' and 'echoes,' both of which you avoid completely in your "
-    "narration.",
+    "environments, especially terms like 'whispers' and 'echoes,' neither of which you include in your narrations.",
     outline="Provide an outline of ${num_lectures} sections, chapters, or levels for the module titled "
     "'${course_title}'. Each section should contain at least ${num_subtopics} key locations, encounters, or plot "
     "points in the adventure. Respond only with the outline, omitting any other commentary.",
     lecture="Narrate the section titled '${lecture_title}' from the module '${course_title}' in a first-person style, "
     "addressing the adventuring party as though they are physically exploring the location and experiencing its "
-    "events. Use vivid sensory details and descriptive language that evokes the fantasy atmosphere. Do not simply "
-    "summarize; immerse the party in the experience. No Markdown or formatting—just pure narrative text. Ensure the "
-    "section content does not duplicate content from the other sections in the module, though you may refer to content "
-    "in preceding sections as needed to maintain a cohesive story:\n"
+    "events. Be as faithful to the original module as possible, using its content as the source of your narration. "
+    "Use vivid sensory details and descriptive language that evokes the fantasy atmosphere. Do not simply summarize; "
+    "immerse the party in the experience. No Markdown or formatting—just pure narrative text. Ensure the section "
+    "content does not duplicate content from the other sections in the module, though you may refer to content in "
+    "preceding sections as needed to maintain a cohesive story:\n"
     "${course_outline}",
     image="Create a cover art image for the classic fantasy adventure module '${course_title}'. "
     "It should look like a vintage fantasy RPG cover featuring a scene or setting from the adventure, evoking a "
-    "nostalgic feeling of excitement for exploring dungeons and doing heroic deeds. Fill the entire canvas with a "
-    "colorful, illustrative style reminiscent of old-school fantasy art from 1980s table-top role-playing game books.",
+    "nostalgic feeling of excitement for exploring dungeons and doing heroic deeds. Fill the entire canvas with an "
+    "illustrative style and colors reminiscent of old-school fantasy art from a 1980s tabletop role-playing game.",
 )
 """Prompt set for generating an audiobook-style first-person walkthrough of a tabletop RPG (TTRPG) adventure module.
 

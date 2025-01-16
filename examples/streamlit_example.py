@@ -4,6 +4,7 @@ from pathlib import Path
 import streamlit as st
 
 from okcourse import Course, OpenAIAsyncGenerator
+from okcourse.generators.openai.openai_utils import tts_voices
 from okcourse.constants import MAX_LECTURES
 from okcourse.prompt_library import PROMPT_COLLECTION
 from okcourse.utils.log_utils import get_logger
@@ -29,9 +30,7 @@ async def main():
     course = st.session_state.course
 
     # Dynamically generate prompt selection options
-    prompt_options = {
-        prompt.description.replace("_", " ").capitalize(): prompt for prompt in PROMPT_COLLECTION
-    }
+    prompt_options = {prompt.description: prompt for prompt in PROMPT_COLLECTION}
     selected_prompt_name = st.selectbox("Select the course prompt style:", options=list(prompt_options.keys()))
     selected_prompt = prompt_options[selected_prompt_name]
     course.settings.prompts = selected_prompt
@@ -53,7 +52,7 @@ async def main():
     generator = OpenAIAsyncGenerator(course)
 
     if generate_audio:
-        course.settings.tts_voice = st.selectbox("Choose a voice for the course lecturer", options=generator.tts_voices)
+        course.settings.tts_voice = st.selectbox("Choose a voice for the course lecturer", options=tts_voices)
 
     course.settings.output_directory = (
         Path(st.text_input("Output directory:", value=course.settings.output_directory)).expanduser().resolve()
