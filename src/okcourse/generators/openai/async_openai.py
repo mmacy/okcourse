@@ -132,15 +132,25 @@ class OpenAIAsyncGenerator(CourseGenerator):
             course_outline=str(course.outline),
         )
 
+        messages = []
+        if course.settings.text_model_lecture.startswith("o1"):
+            # Current o1 models don't have a 'system' role, only 'user'.
+            lecture_prompt = f"{course.settings.prompts.system}\n\n{lecture_prompt}"
+            messages = [
+                {"role": "user", "content": lecture_prompt},
+            ]
+        else:
+            messages = [
+                {"role": "system", "content": course.settings.prompts.system},
+                {"role": "user", "content": lecture_prompt},
+            ]
+
         self.log.info(
             f"Requesting lecture text for topic {topic.number}/{len(course.outline.topics)}: {topic.title}...",
         )
         response = await self.client.chat.completions.create(
             model=course.settings.text_model_lecture,
-            messages=[
-                {"role": "system", "content": course.settings.prompts.system},
-                {"role": "user", "content": lecture_prompt},
-            ],
+            messages=messages,
             max_completion_tokens=15000,
         )
         if response.usage:
@@ -325,7 +335,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
             tags = {
                 "title": course.title,
-                "artist": f"{course.settings.tts_voice.capitalize()} @ OpenAI",
+                "artist": f"{course.settings.tts_voice.capitalize()} & {course.settings.text_model_lecture} @ OpenAI",
                 "composer": composer_tag,
                 "album": "OK Courses",
                 "genre": "Books & Spoken",

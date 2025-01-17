@@ -31,7 +31,7 @@ class AIModels:
     other_models: list[str] | None
 
 
-def get_library_models() -> AIModels:
+def _get_library_models() -> AIModels:
     """Gets all the models known to the OpenAI Python library.
 
     These are *all* the available models the OpenAI library knows about, which might include models not available for
@@ -46,6 +46,7 @@ def get_library_models() -> AIModels:
         image_models=extract_literal_values_from_type(ImageModel),
         speech_models=extract_literal_values_from_type(SpeechModel),
         text_models=extract_literal_values_from_type(ChatModel),
+        other_models=[],
     )
 
 
@@ -60,20 +61,20 @@ async def _get_usable_models() -> AIModels:
     image_models: list[str] = []
     text_models: list[str] = []
     speech_models: list[str] = []
-    custom_models: list[str] = []
+    other_models: list[str] = []
 
-    all_models = get_library_models()
+    all_models = _get_library_models()
 
     try:
         _log.info("Fetching list of models available for use by current API key...")
-        models_data: list[Model] = await client.models.list().data
-        _log.info(f"Got {len(models_data)} models from OpenAI API.")
+        models_list: list[Model] = await client.models.list()
+        _log.info(f"Got {len(models_list.data)} models from OpenAI API.")
     except Exception as e:
         _log.error(f"Failed to fetch models: {e}")
-        return AIModels([], [], [], [])
+        raise e
 
     # Categorize models based on the extracted literals
-    for model in models_data:
+    for model in models_list.data:
         if model.id in all_models.text_models:
             text_models.append(model.id)
         elif model.id in all_models.image_models:
@@ -81,13 +82,13 @@ async def _get_usable_models() -> AIModels:
         elif model.id in all_models.speech_models:
             speech_models.append(model.id)
         else:
-            custom_models.append(model.id)
+            other_models.append(model.id)
 
     return AIModels(
         image_models=image_models,
         text_models=text_models,
         speech_models=speech_models,
-        other_models=custom_models,
+        other_models=other_models,
     )
 
 

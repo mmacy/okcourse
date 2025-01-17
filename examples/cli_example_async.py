@@ -13,6 +13,7 @@ from pathlib import Path
 import questionary
 
 from okcourse import Course, OpenAIAsyncGenerator
+from okcourse.generators.openai.openai_utils import tts_voices, get_usable_models_async
 from okcourse.utils.text_utils import sanitize_filename, get_duration_string_from_seconds
 
 
@@ -73,6 +74,15 @@ async def main():
             continue  # Input is invalid
         break  # Input is valid - exit loop
 
+    models = await get_usable_models_async()
+    models.text_models.sort()
+    course.settings.text_model_lecture = await async_prompt(
+            questionary.select,
+            "Choose a model to generate the course outline and lectures",
+            choices=models.text_models,
+            default=models.text_models[-1],
+        )
+
     do_generate_audio = False
     do_generate_image = False
     if await async_prompt(questionary.confirm, "Generate MP3 audio file for course?"):
@@ -80,8 +90,8 @@ async def main():
         course.settings.tts_voice = await async_prompt(
             questionary.select,
             "Choose a voice for the course lecturer",
-            choices=generator.tts_voices,
-            default=generator.tts_voices[0],
+            choices=tts_voices,
+            default=tts_voices[0],
         )
 
         if await async_prompt(questionary.confirm, "Generate cover image for audio file?"):
