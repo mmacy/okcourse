@@ -155,25 +155,41 @@ class CourseSettings(BaseModel):
 
 
 class CourseGenerationInfo(BaseModel):
-    """Details about the course generation, including okcourse version, tokent counts (input and output), and durations."""  # noqa: E501
+    """Details about the course generation, including okcourse version, token counts (input and output), and durations.
 
-    generator_type: str | None = Field(
-        None,
-        description="The type of course generator used to generate the course content.",
-    )
+    You can estimate the cost of course generation based on the token count values in this class and the models that
+    were used to produce them. The model names are specified in the [`CourseSettings`][okcourse.CourseSettings] and most
+    AI service providers make cost-per-token pricing available on their website, which may vary by provider and your
+    account or subscription level.
+    """
+
     okcourse_version: str | None = Field(
         None,
         description="The version of the okcourse library used to generate the course.",
     )
-    input_token_count: int = Field(
-        0,
-        description="The total number of tokens sent to the text completion endpoint when requesting content "
-        "generation. This count includes the tokens sent in the outline and lecture prompts.",
+    generator_type: str | None = Field(
+        None,
+        description="The type of course generator used to generate the course content.",
     )
-    output_token_count: int = Field(
+    lecture_input_token_count: int = Field(
         0,
-        description="The total number of tokens returned by the text completion endpoint. Includes tokens return for "
-        "all outline and lecture content generated.",
+        description="The total number of tokens sent to the text completion endpoint when requesting the lecture "
+        "content for the course. This count does NOT include the tokens sent when requesting the outline.",
+    )
+    lecture_output_token_count: int = Field(
+        0,
+        description="The total number of tokens returned by the text completion endpoint is response to lecture "
+        "generation request for the course. This count does NOT include the tokens returned for outline requests.",
+    )
+    outline_input_token_count: int = Field(
+        0,
+        description="The total number of tokens sent to the text completion endpoint when requesting the outline(s) "
+        "for the course. This count does NOT include the tokens sent when requesting the course's lecture content.",
+    )
+    outline_output_token_count: int = Field(
+        0,
+        description="The total number of tokens returned by the text completion endpoint is response to outline "
+        "generation requests for the course. This count does NOT include the tokens returned for lecture requests.",
     )
     tts_character_count: int = Field(
         0,

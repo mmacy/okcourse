@@ -4,7 +4,6 @@ from pathlib import Path
 import click
 from rich.console import Console
 from rich.table import Table
-
 from okcourse.models import Course, CourseGenerationInfo
 
 
@@ -17,8 +16,10 @@ class OpenAIPricing:
         For current pricing information, see [OpenAI's 'Pricing' page](https://openai.com/api/pricing/).
     """
 
-    TEXT_MODEL_INPUT_COST_PER_1K_TOKENS = 0.0150  # o1-preview-2024-09-12 as of 2024-01-17
-    TEXT_MODEL_OUTPUT_COST_PER_1K_TOKENS = 0.0600  # o1-preview-2024-09-12 as of 2024-01-17
+    OUTLINE_INPUT_COST_PER_1K_TOKENS = 0.0025  # Cost for input tokens for course outline
+    OUTLINE_OUTPUT_COST_PER_1K_TOKENS = 0.0100  # Cost for output tokens for course outline
+    LECTURE_INPUT_COST_PER_1K_TOKENS = 0.0150  # Cost for input tokens for course lectures
+    LECTURE_OUTPUT_COST_PER_1K_TOKENS = 0.0600  # Cost for output tokens for course lectures
     TTS_MODEL_COST_PER_1K_CHARACTERS = 0.015
     IMAGE_MODEL_COST_PER_IMAGE = 0.040
 
@@ -32,16 +33,28 @@ def calculate_openai_cost(details: CourseGenerationInfo) -> dict[str, float]:
     Returns:
         dict[str, float]: A dictionary with cost breakdown and total cost.
     """
-    input_token_cost = (details.input_token_count / 1000) * OpenAIPricing.TEXT_MODEL_INPUT_COST_PER_1K_TOKENS
-    output_token_cost = (details.output_token_count / 1000) * OpenAIPricing.TEXT_MODEL_OUTPUT_COST_PER_1K_TOKENS
+    # Costs for course outline
+    outline_input_cost = (details.outline_input_token_count / 1000) * OpenAIPricing.OUTLINE_INPUT_COST_PER_1K_TOKENS
+    outline_output_cost = (details.outline_output_token_count / 1000) * OpenAIPricing.OUTLINE_OUTPUT_COST_PER_1K_TOKENS
+
+    # Costs for course lecture
+    lecture_input_cost = (details.lecture_input_token_count / 1000) * OpenAIPricing.LECTURE_INPUT_COST_PER_1K_TOKENS
+    lecture_output_cost = (details.lecture_output_token_count / 1000) * OpenAIPricing.LECTURE_OUTPUT_COST_PER_1K_TOKENS
+
+    # Other costs (TTS and images)
     tts_cost = (details.tts_character_count / 1000) * OpenAIPricing.TTS_MODEL_COST_PER_1K_CHARACTERS
     image_cost = details.num_images_generated * OpenAIPricing.IMAGE_MODEL_COST_PER_IMAGE
 
-    total_cost = input_token_cost + output_token_cost + tts_cost + image_cost
+    # Total cost
+    total_cost = (
+        outline_input_cost + outline_output_cost + lecture_input_cost + lecture_output_cost + tts_cost + image_cost
+    )
 
     return {
-        "Input token cost": round(input_token_cost, 2),
-        "Output token cost": round(output_token_cost, 2),
+        "Outline input token cost": round(outline_input_cost, 2),
+        "Outline output token cost": round(outline_output_cost, 2),
+        "Lecture input token cost": round(lecture_input_cost, 2),
+        "Lecture output token cost": round(lecture_output_cost, 2),
         "TTS cost": round(tts_cost, 2),
         "Image cost": round(image_cost, 2),
         "TOTAL": round(total_cost, 2),

@@ -96,8 +96,8 @@ class OpenAIAsyncGenerator(CourseGenerator):
         self.log.info(f"Received outline for course '{course.title}'...")
 
         if outline_completion.usage:
-            course.generation_info.input_token_count += outline_completion.usage.prompt_tokens
-            course.generation_info.output_token_count += outline_completion.usage.completion_tokens
+            course.generation_info.outline_input_token_count += outline_completion.usage.prompt_tokens
+            course.generation_info.outline_output_token_count += outline_completion.usage.completion_tokens
         generated_outline = outline_completion.choices[0].message.parsed
 
         # Reset the topic to what was passed in if the LLM modified the original (it sometimes adds its own subtitle)
@@ -154,8 +154,8 @@ class OpenAIAsyncGenerator(CourseGenerator):
             max_completion_tokens=15000,
         )
         if response.usage:
-            course.generation_info.input_token_count += response.usage.prompt_tokens
-            course.generation_info.output_token_count += response.usage.completion_tokens
+            course.generation_info.lecture_input_token_count += response.usage.prompt_tokens
+            course.generation_info.lecture_output_token_count += response.usage.completion_tokens
         lecture_text = response.choices[0].message.content.strip()
         lecture_text = swap_words(lecture_text, LLM_SMELLS)
 
