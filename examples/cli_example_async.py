@@ -14,6 +14,7 @@ import questionary
 
 from okcourse import Course, OpenAIAsyncGenerator
 from okcourse.generators.openai.openai_utils import tts_voices, get_usable_models_async
+from okcourse.prompt_library import PROMPT_COLLECTION
 from okcourse.utils.text_utils import sanitize_filename, get_duration_string_from_seconds
 
 
@@ -40,6 +41,16 @@ async def main():
     course = Course()
     course.settings.output_directory = Path("~/.okcourse_files").expanduser().resolve()
     course.settings.log_to_file = True
+
+    prompt_options = {prompt.description: prompt for prompt in PROMPT_COLLECTION}
+    selected_prompt_name = await async_prompt(
+        questionary.select,
+        "Choose a course type",
+        choices=list(prompt_options.keys()),
+        # default=list(prompt_options.keys()),
+    )
+    selected_prompt = prompt_options[selected_prompt_name]
+    course.settings.prompts = selected_prompt
 
     topic = await async_prompt(questionary.text, "Enter a course topic:")
     if not topic or str(topic).strip() == "":
@@ -77,33 +88,20 @@ async def main():
     models = await get_usable_models_async()
     models.text_models.sort()
     course.settings.text_model_lecture = await async_prompt(
-            questionary.select,
-            "Choose a model to generate the course outline and lectures",
-            choices=models.text_models,
-            default=models.text_models[-1],
-        )
+        questionary.select,
+        "Choose a model to generate the course outline and lectures",
+        choices=models.text_models,
+        default=models.text_models[-1],
+    )
 
-    do_generate_audio = False
-    do_generate_image = False
-    if await async_prompt(questionary.confirm, "Generate MP3 audio file for course?"):
-        do_generate_audio = True
-        course.settings.tts_voice = await async_prompt(
-            questionary.select,
-            "Choose a voice for the course lecturer",
-            choices=tts_voices,
-            default=tts_voices[0],
-        )
+    out_dir = await async_prompt(
+        questionary.text,
+        "Enter a directory for the course output:",
+        default=str(course.settings.output_directory),
+    )
+    course.settings.output_directory = Path(out_dir)
 
-        if await async_prompt(questionary.confirm, "Generate cover image for audio file?"):
-            do_generate_image = True
-
-        out_dir = await async_prompt(
-            questionary.text,
-            "Enter a directory for the course output:",
-            default=str(course.settings.output_directory),
-        )
-        course.settings.output_directory = Path(out_dir)
-
+    outline_accepted = False
     while True:
         print(f"Generating course outline with {course.settings.num_lectures} lectures...")
         course = await generator.generate_outline(course)
@@ -112,21 +110,42 @@ async def main():
 
         proceed = await async_prompt(questionary.confirm, "Proceed with this outline?")
         if proceed:
+            outline_accepted = True
             break
 
         regenerate = await async_prompt(questionary.confirm, "Generate a new outline?")
         if not regenerate:
-            print("Cannot generate lecture without outline - exiting.")
-            sys.exit(0)
+            print("No lectures will be generated.")
+            break
 
-    print(f"Generating content for {course.settings.num_lectures} course lectures...")
-    course = await generator.generate_lectures(course)
+    lectures_accepted = False
+    while outline_accepted:
+        print(f"Generating content for {course.settings.num_lectures} course lectures...")
+        course = await generator.generate_lectures(course)
+        print(str(course))
 
-    if do_generate_image:
+        if await async_prompt(questionary.confirm, "Continue with these lectures?"):
+            lectures_accepted = True
+            break  # Exit loop to move on to generate image and/or audio
+        else:
+            if await async_prompt(questionary.confirm, "Generate new lectures?"):
+                continue  # Stay in the loop and generate another batch of lectures
+
+            else:
+                break  # Exit loop with !lectures_accepted
+
+    if lectures_accepted and await async_prompt(questionary.confirm, "Generate cover image for course?"):
         print("Generating cover image...")
         course = await generator.generate_image(course)
 
-    if do_generate_audio:
+    if lectures_accepted and await async_prompt(questionary.confirm, "Generate MP3 audio file for course?"):
+        course.settings.tts_voice = await async_prompt(
+            questionary.select,
+            "Choose a voice for the course lecturer",
+            choices=tts_voices,
+            default=tts_voices[0],
+        )
+
         print("Generating course audio...")
         course = await generator.generate_audio(course)
 
