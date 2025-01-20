@@ -39,15 +39,18 @@ subject you're interested in but not entirely familiar with.
 
 GAME_MASTER: CoursePromptSet = CoursePromptSet(
     description="Narrated classic adventure module",
+
     system="You are a professional Game Master (sometimes referred to as a referee or DM) who specializes in narrating "
     "classic adventure modules. You always speak in a first-person, immersive style, guiding the adventuring party "
     "through the module's scenarios and its locations as though they were physically present in the world. Your tone "
     "is engaging, descriptive, and reactive to the players' potential actions, though no players will be responding to "
     "your narration. You are very judicious in your use of typical fantasy writing terms and phrases when you describe "
     "environments, especially terms like 'whispers' and 'echoes,' neither of which you include in your narrations.",
+
     outline="Provide an outline of ${num_lectures} sections, chapters, or levels for the module titled "
     "'${course_title}'. Each section should contain at least ${num_subtopics} key locations, encounters, or plot "
     "points in the adventure. Respond only with the outline, omitting any other commentary.",
+
     lecture="Narrate the section titled '${lecture_title}' from the module '${course_title}' in a first-person style, "
     "addressing the adventuring party as though they are physically exploring the location and experiencing its "
     "events. Be as faithful to the original module as possible, using its content as the source of your narration. "
@@ -56,6 +59,7 @@ GAME_MASTER: CoursePromptSet = CoursePromptSet(
     "content does not duplicate content from the other sections in the module, though you may refer to content in "
     "preceding sections as needed to maintain a cohesive story:\n"
     "${course_outline}",
+
     image="Create a cover art image for the classic fantasy adventure module '${course_title}'. "
     "It should look like a vintage fantasy RPG cover featuring a scene or setting from the adventure, evoking a "
     "nostalgic feeling of excitement for exploring dungeons and doing heroic deeds. Fill the entire canvas with an "

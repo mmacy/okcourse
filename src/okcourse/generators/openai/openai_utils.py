@@ -74,6 +74,7 @@ async def _get_usable_models() -> AIModels:
         raise e
 
     # Categorize models based on the extracted literals
+    models_list.data.sort(key=lambda model: (-model.created, model.id))
     for model in models_list.data:
         if model.id in all_models.text_models:
             text_models.append(model.id)
