@@ -196,7 +196,7 @@ LLM_SMELLS: dict[str, str] = {
     "utilization": "usage",
     "meticulous": "careful",
     "meticulously": "carefully",
-    # crucial
+    "crucial": "critical",
     # underscore
     # paramount
 }

@@ -4,7 +4,7 @@ from pathlib import Path
 import streamlit as st
 
 from okcourse import Course, OpenAIAsyncGenerator
-from okcourse.generators.openai.openai_utils import tts_voices
+from okcourse.generators.openai.openai_utils import AIModels, get_usable_models_async, tts_voices
 from okcourse.constants import MAX_LECTURES
 from okcourse.prompt_library import PROMPT_COLLECTION
 from okcourse.utils.log_utils import get_logger
@@ -29,25 +29,38 @@ async def main():
 
     course = st.session_state.course
 
-    # Dynamically generate prompt selection options
     prompt_options = {prompt.description: prompt for prompt in PROMPT_COLLECTION}
-    selected_prompt_name = st.selectbox("Select the course prompt style:", options=list(prompt_options.keys()))
+    selected_prompt_name = st.selectbox("Course style", options=list(prompt_options.keys()))
     selected_prompt = prompt_options[selected_prompt_name]
     course.settings.prompts = selected_prompt
 
-    course.title = st.text_input("Enter the course topic:")
+    course.title = st.text_input(
+        "Course title", placeholder="Artificial Super Intelligence: Paperclips, Gray Goo, And You"
+    )
+
+    usable_model_options: AIModels = await get_usable_models_async()
+    course.settings.text_model_outline = st.selectbox(
+        "Outline model",
+        options=usable_model_options.text_models,
+        placeholder="Choose an AI model for outline generation",
+    )
+
+    course.settings.text_model_lecture = st.selectbox(
+        "Lecture model",
+        options=usable_model_options.text_models,
+        placeholder="Choose an AI model for lecture generation",
+
+    )
+
     course.settings.num_lectures = st.number_input(
-        "Number of lectures:", min_value=1, max_value=MAX_LECTURES, value=20, step=1
+        "Number of lectures:", min_value=1, max_value=MAX_LECTURES, value=4, step=1
     )
     course.settings.num_subtopics = st.number_input(
         "Number of subtopics per lecture:", min_value=1, max_value=10, value=4, step=1
     )
 
-    generate_audio = st.checkbox("Generate MP3 audio file for course", value=False)
-    generate_image = False
-
-    if generate_audio:
-        generate_image = st.checkbox("Generate cover image for audio file", value=False)
+    generate_image = st.checkbox("Generate course image (PNG)", value=False)
+    generate_audio = st.checkbox("Generate course audio (MP3)", value=False)
 
     generator = OpenAIAsyncGenerator(course)
 
@@ -55,12 +68,12 @@ async def main():
         course.settings.tts_voice = st.selectbox("Choose a voice for the course lecturer", options=tts_voices)
 
     course.settings.output_directory = (
-        Path(st.text_input("Output directory:", value=course.settings.output_directory)).expanduser().resolve()
+        Path(st.text_input("Output directory", value=course.settings.output_directory)).expanduser().resolve()
     )
 
     if st.button("Generate outline") or st.session_state.do_generate_outline:
         if not course.title.strip():
-            st.error("Enter a course topic.")
+            st.error("Enter a course title.")
 
         try:
             with st.spinner("Generating course outline..."):
