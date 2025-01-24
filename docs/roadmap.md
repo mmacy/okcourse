@@ -1,30 +1,36 @@
 # Roadmap
 
-Here are some features that might be or have been implemented in the `okcourse` library project.
+Features that have been or that might be implemented in the `okcourse` library project.
 
-## To do
+- [ ] Not yet implemented
+- [x] implemented
+___
 
 - [ ] Library
-    * [ ] Register callback for generator progress
-- [ ] Dist / Infra
-    * [ ] Publish `okcourse` package on PyPi
-    * [ ] Run tests on PR open
-- [ ] Examples
-    * [ ] Synchronous CLI example
+    - [x] Generate course outlines
+    - [x] Generate course lectures from outline
+    - [x] Generate course cover art (PNG)
+    - [x] Generate course audio (MP3) from lectures
+    - [x] Remove `FFmpeg` dependency
+    - [ ] Remove `nltk` dependency
+    - [ ] Generator progress monitoring (callback-based)
+    - [ ] Anthropic-based generator
+    - [ ] Local TTS model option
+    - [ ] Tests for course generation and audio utils
 - [ ] Docs
-    * [ ] guide: Real *Get started* guide (not just reuse `README`)
-    * [ ] how-to: Determine and estimate cost
-    * [ ] how-to: Create a prompt set
-    * [ ] reference: Release notes (automated)
-
-## Done
-
-- [x] Course generation
-    - [ ] Outline
-    - [ ] Lectures
-    - [ ] Cover art (PNG)
-    - [ ] Audio file (MP3)
-- [x] Vestibulum convallis sit amet nisi a tincidunt
-- [x] In hac habitasse platea dictumst
-- [x] In scelerisque nibh non dolor mollis congue sed et metus
-- [x] Aenean pretium efficitur erat, donec pharetra, ligula non scelerisque
+    - [x] mkdocs-material site on GitHub Pages
+    - [x] README
+    - [ ] API reference: all public members have Google Python Style docstrings
+    - [ ] Guide: Real *Get started* guide (not just the `README`)
+    - [ ] How-to: Determine and estimate cost
+    - [ ] How-to: Create a custom course type
+    - [ ] Concept: Course generation workflow
+    - [ ] Reference: Release notes (automated)
+- [ ] Example apps and courses
+    - [x] CLI - async
+    - [x] Streamlit
+    - [ ] CLI - sync
+    - [ ] Course MP3 examples for streaming
+- [ ] Package dist / Infrastructure
+    - [ ] Publish `okcourse` package on PyPi
+    - [ ] Automate tests
