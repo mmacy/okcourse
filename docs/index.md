@@ -6,6 +6,7 @@ The `okcourse` Python library uses AI to generate audiobook-style courses in MP3
 - :material-clock-fast: [Get started](./get-started.md)
 - :simple-python: [API reference](reference/index.md)
 - :octicons-file-code-16: [Example apps](./examples/index.md)
+- :material-map: [Roadmap](./roadmap.md)
 <!-- - :octicons-versions-16: [Library `CHANGELOG`](./changelog.md) -->
 </div>
 
