@@ -46,20 +46,26 @@ def get_logger(
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
+    console_handler_name = f"{source_name}_console_handler"
+    file_handler_name = f"{source_name}_file_handler"
+
     # The first call to getLogger() with a new source name creates a new logger instance for that source
     logger = logging.getLogger(source_name)
     logger.setLevel(level)
     # logger.propagate = False  # Prevents messages from propagating to the root logger
 
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(level)
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
+    if console_handler_name not in (h.name for h in logger.handlers):
+        console_handler = logging.StreamHandler()
+        console_handler.set_name(f"{source_name}_console_handler")
+        console_handler.setLevel(level)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
 
-    if file_path:
+    if file_path and file_handler_name not in (h.name for h in logger.handlers) and file_path:
         if not file_path.parent.exists():
             file_path.parent.mkdir(parents=True)
         file_handler = logging.FileHandler(str(file_path))
+        file_handler.set_name(f"{source_name}_file_handler")
         file_handler.setLevel(level)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)

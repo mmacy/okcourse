@@ -3,11 +3,14 @@
 import asyncio
 import base64
 import io
+import random
+import re
 import time
 from pathlib import Path
 from string import Template
+from typing import Any, Awaitable, Callable, TypeVar
 
-from openai import APIError, APIStatusError, AsyncOpenAI, OpenAIError
+from openai import APIError, APIStatusError, AsyncOpenAI, OpenAIError, RateLimitError
 
 from okcourse.constants import AI_DISCLOSURE, MAX_LECTURES
 from okcourse.generators.base import CourseGenerator
@@ -23,11 +26,98 @@ from okcourse.utils.text_utils import (
     tokenizer_available,
 )
 
+T = TypeVar("T")
+
+
+def _parse_openai_rate_limit_wait_time(error_message: str) -> int:
+    """Parses the OpenAI rate limit error message to extract wait time in seconds.
+
+    If no specific wait time is found, returns a default of 60 seconds.
+
+    Args:
+        error_message: The error message returned by OpenAI containing rate limit info.
+
+    Returns:
+        The number of seconds to wait before retrying, or 60 if no time can be parsed.
+    """
+    match_minutes_seconds = re.search(r"Please try again in (\d+)m(\d+)s", error_message)
+    if match_minutes_seconds:
+        minutes, seconds = match_minutes_seconds.groups()
+        return int(minutes) * 60 + int(seconds)
+
+    match_seconds = re.search(r"Please try again in (\d+)s", error_message)
+    if match_seconds:
+        return int(match_seconds.group(1))
+
+    return 60
+
+
+async def _retry_with_exponential_backoff(
+    func: Callable[..., Awaitable[T]],
+    *args: Any,
+    max_retries: int = 6,
+    initial_delay: float = 1,
+    exponential_base: float = 2,
+    jitter: bool = True,
+    logger: Any = None,
+    **kwargs: Any,
+) -> T:
+    """Calls an async function and retries with exponential backoff on RateLimitError.
+
+    This method parses the rate-limit-specific wait time from the OpenAI error message
+    and uses random exponential backoff to avoid hammering the API in tight loops.
+
+    Args:
+        func: The function to call.
+        *args: Positional arguments to pass to the function.
+        max_retries: The maximum number of retries before giving up.
+        initial_delay: The initial delay in seconds before the first retry.
+        exponential_base: The exponential growth factor for delay intervals.
+        jitter: Whether to apply random jitter to the delay interval.
+        logger: A logger instance for logging retries and warnings.
+        **kwargs: Keyword arguments to pass to the function.
+
+    Returns:
+        The awaited result of `func`.
+
+    Raises:
+        Exception: If `max_retries` is exceeded.
+    """
+    attempt = 0
+    delay = initial_delay
+
+    while True:
+        try:
+            return await func(*args, **kwargs)
+        except RateLimitError as exc:
+            if logger:
+                logger.warning(f"RateLimitError encountered: {exc}")
+
+            attempt += 1
+            if attempt > max_retries:
+                raise Exception(f"Maximum number of retries ({max_retries}) exceeded.") from exc
+
+            # Parse recommended wait time from the error, fall back to existing delay if smaller
+            recommended_wait = _parse_openai_rate_limit_wait_time(str(exc))
+            delay = max(delay, recommended_wait)
+
+            # Add exponential backoff
+            if jitter:
+                # Multiply delay by random factor in [1, 2) to spread out bursts
+                delay *= exponential_base * (1 + random.random())
+            else:
+                delay *= exponential_base
+
+            if logger:
+                logger.warning(f"Retrying in {round(delay, 2)} seconds (attempt {attempt}/{max_retries})...")
+            await asyncio.sleep(delay)
+
 
 class OpenAIAsyncGenerator(CourseGenerator):
     """Uses the OpenAI API to generate course content asynchronously.
 
-    Use the `OpenAIAsyncGenerator` to generate a course outline, lectures, cover image, and audio file for a course.
+    This class includes exponential backoff with optional random jitter when encountering
+    rate limit errors from OpenAI.
 
     Examples:
     Generate a full course, including its outline, lectures, cover image, and audio file:
@@ -35,7 +125,6 @@ class OpenAIAsyncGenerator(CourseGenerator):
     ```python
     --8<-- "examples/snippets/async_openai_snippets.py:full_openaiasyncgenerator"
     ```
-
     """
 
     def __init__(self, course: Course):
@@ -43,7 +132,6 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         Args:
             course: The course to generate content for.
-
         """
         super().__init__(course)
 
@@ -85,22 +173,23 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         self.log.info(f"Requesting outline for course '{course.title}'...")
         with time_tracker(course.generation_info, "outline_gen_elapsed_seconds"):
-            outline_completion = await self.client.beta.chat.completions.parse(
+            outline_completion = await _retry_with_exponential_backoff(
+                self.client.beta.chat.completions.parse,
                 model=course.settings.text_model_outline,
                 messages=[
                     {"role": "system", "content": course.settings.prompts.system},
                     {"role": "user", "content": outline_prompt},
                 ],
                 response_format=CourseOutline,
+                logger=self.log,
             )
         self.log.info(f"Received outline for course '{course.title}'...")
 
         if outline_completion.usage:
             course.generation_info.outline_input_token_count += outline_completion.usage.prompt_tokens
             course.generation_info.outline_output_token_count += outline_completion.usage.completion_tokens
-        generated_outline = outline_completion.choices[0].message.parsed
 
-        # Reset the topic to what was passed in if the LLM modified the original (it sometimes adds its own subtitle)
+        generated_outline = outline_completion.choices[0].message.parsed
         if generated_outline.title.lower() != course.title.lower():
             self.log.info(f"Resetting course topic to '{course.title}' (LLM returned '{generated_outline.title}'")
             generated_outline.title = course.title
@@ -132,50 +221,45 @@ class OpenAIAsyncGenerator(CourseGenerator):
             course_outline=str(course.outline),
         )
 
-        messages = []
-        if course.settings.text_model_lecture.startswith("o1"):
-            # Current o1 models don't have a 'system' role, only 'user'.
-            lecture_prompt = f"{course.settings.prompts.system}\n\n{lecture_prompt}"
-            messages = [
-                {"role": "user", "content": lecture_prompt},
-            ]
-        else:
-            messages = [
-                {"role": "system", "content": course.settings.prompts.system},
-                {"role": "user", "content": lecture_prompt},
-            ]
+        messages = [
+            {"role": "system", "content": course.settings.prompts.system},
+            {"role": "user", "content": lecture_prompt},
+        ]
 
         self.log.info(
-            f"Requesting lecture text for topic {topic.number}/{len(course.outline.topics)}: {topic.title}...",
+            f"Requesting lecture text for topic {topic.number}/{len(course.outline.topics)}: {topic.title}..."
         )
-        response = await self.client.chat.completions.create(
+
+        response = await _retry_with_exponential_backoff(
+            self.client.chat.completions.create,
             model=course.settings.text_model_lecture,
             messages=messages,
-            max_completion_tokens=15000,
+            max_completion_tokens=90000,
+            logger=self.log,
         )
+
         if response.usage:
             course.generation_info.lecture_input_token_count += response.usage.prompt_tokens
             course.generation_info.lecture_output_token_count += response.usage.completion_tokens
-        lecture_text = response.choices[0].message.content.strip()
-        lecture_text = swap_words(lecture_text, LLM_SMELLS)
+
+        lecture_text = swap_words(response.choices[0].message.content.strip(), LLM_SMELLS)
 
         self.log.info(
             f"Got lecture text for topic {topic.number}/{len(course.outline.topics)} "
-            f"@ {len(lecture_text)} chars: {topic.title}.",
+            f"@ {len(lecture_text)} chars: {topic.title}."
         )
         return CourseLecture(**topic.model_dump(), text=lecture_text)
 
     async def generate_lectures(self, course: Course) -> Course:
-        """Generates the text for the lectures in the course outline in the settings.
+        """Generates the text for the lectures in the course outline.
 
         To generate an audio file for the Course generated by this method, call `generate_audio`.
 
         Returns:
-            The Course with its `course.lectures` attribute set.
-
+            The `Course` with its `course.lectures` attribute set.
         """
         course.settings.output_directory = course.settings.output_directory.expanduser().resolve()
-        lecture_tasks = []
+        lecture_tasks: list[asyncio.Task[CourseLecture]] = []
 
         with time_tracker(course.generation_info, "lecture_gen_elapsed_seconds"):
             async with asyncio.TaskGroup() as task_group:
@@ -186,8 +270,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
                     )
                     lecture_tasks.append(task)
 
-        course.lectures = [lecture_task.result() for lecture_task in lecture_tasks]
-
+        course.lectures = [t.result() for t in lecture_tasks]
         return course
 
     async def generate_image(self, course: Course) -> Course:
@@ -196,16 +279,17 @@ class OpenAIAsyncGenerator(CourseGenerator):
         The image is appropriate for use as cover art for the course text or audio.
 
         Returns:
-            The results of the generation process with the `image_bytes` attribute set.
+            The `Course` with the `image_bytes` attribute set if successful.
 
         Raises:
             OpenAIError: If an error occurs during image generation.
-
         """
         course.settings.output_directory = course.settings.output_directory.expanduser().resolve()
+
         try:
             with time_tracker(course.generation_info, "image_gen_elapsed_seconds"):
-                image_response = await self.client.images.generate(
+                image_response = await _retry_with_exponential_backoff(
+                    self.client.images.generate,
                     model=course.settings.image_model,
                     prompt=Template(course.settings.prompts.image).substitute(course_title=course.title),
                     n=1,
@@ -213,38 +297,37 @@ class OpenAIAsyncGenerator(CourseGenerator):
                     response_format="b64_json",
                     quality="standard",
                     style="vivid",
+                    logger=self.log,
                 )
 
             if not image_response.data:
                 self.log.warning(f"No image data returned for course '{course.title}'")
-                return None
+                return course
 
             course.generation_info.num_images_generated += 1
             image = image_response.data[0]
             image_bytes = base64.b64decode(image.b64_json)
 
             course.generation_info.image_file_path = course.settings.output_directory / Path(
-                sanitize_filename(course.title),
+                sanitize_filename(course.title)
             ).with_suffix(".png")
             course.generation_info.image_file_path.parent.mkdir(parents=True, exist_ok=True)
             self.log.info(f"Saving image to {course.generation_info.image_file_path}")
             course.generation_info.image_file_path.write_bytes(image_bytes)
 
-            # Save the course as JSON now that we have the image path
+            # Save the course JSON now that we have the image path
             course.generation_info.image_file_path.with_suffix(".json").write_text(course.model_dump_json(indent=2))
 
             return course
 
         except OpenAIError as e:
             self.log.error("Encountered error generating image with OpenAI:")
-            if e is APIError:
+            if isinstance(e, APIError):
                 self.log.error(f"  Message: {e.message}")
-                self.log.error(f"      URL: {e.request.url}")  # e.request is an httpx.Request
-                if e is APIStatusError:
-                    self.log.error(
-                        # Guaranteed to have a complete response as this is bubbled up from httpx
-                        f"   Status: {e.response.status_code} - {e.response.reason_phrase}",
-                    )
+                if e.request:
+                    self.log.error(f"      URL: {e.request.url}")  # e.request is an httpx.Request
+                if isinstance(e, APIStatusError) and e.response is not None:
+                    self.log.error(f"   Status: {e.response.status_code} - {e.response.reason_phrase}")
             raise e
 
     async def _generate_speech_for_text_chunk(
@@ -255,44 +338,52 @@ class OpenAIAsyncGenerator(CourseGenerator):
     ) -> tuple[int, io.BytesIO]:
         """Generates an MP3 audio segment for a chunk of text using text-to-speech (TTS).
 
-        Get text chunks to pass to this function from ``utils.split_text_into_chunks``.
+        Get text chunks to pass to this function from `utils.split_text_into_chunks`.
 
         Args:
             course: The course to generate TTS audio for.
             text_chunk: The text chunk to convert to speech.
-            chunk_num: (Optional) The chunk number.
+            chunk_num: The chunk number (1-based).
 
         Returns:
-            An io.BytesIO of the generated audio.
-
+            A tuple containing the chunk number and an in-memory bytes buffer of the generated audio.
         """
         self.log.info(f"Requesting TTS audio in voice '{course.settings.tts_voice}' for text chunk {chunk_num}...")
-        async with self.client.audio.speech.with_streaming_response.create(
-            model=course.settings.tts_model,
-            voice=course.settings.tts_voice,
-            input=text_chunk,
-        ) as response:
-            audio_bytes = io.BytesIO()
-            async for data in response.iter_bytes():
-                audio_bytes.write(data)
-            audio_bytes.seek(0)
-            course.generation_info.tts_character_count += len(text_chunk)
-            self.log.info(f"Got TTS audio for text chunk {chunk_num} in voice '{course.settings.tts_voice}'.")
 
-            return audio_bytes
+        while True:
+            try:
+                async with self.client.audio.speech.with_streaming_response.create(
+                    model=course.settings.tts_model,
+                    voice=course.settings.tts_voice,
+                    input=text_chunk,
+                ) as response:
+                    audio_bytes = io.BytesIO()
+                    async for data in response.iter_bytes():
+                        audio_bytes.write(data)
+                    audio_bytes.seek(0)
+                    course.generation_info.tts_character_count += len(text_chunk)
+
+                self.log.info(f"Got TTS audio for text chunk {chunk_num} in voice '{course.settings.tts_voice}'.")
+                return chunk_num, audio_bytes
+
+            except RateLimitError as exc:
+                self.log.warning(f"RateLimitError while generating TTS for chunk {chunk_num}: {exc}")
+                # Leverage the manual approach or the same exponential function for concurrency
+                recommended_wait = _parse_openai_rate_limit_wait_time(str(exc))
+                self.log.warning(f"Retrying TTS chunk {chunk_num} in {recommended_wait} seconds...")
+                await asyncio.sleep(recommended_wait)
 
     async def generate_audio(self, course: Course) -> Course:
         """Generates an audio file from the combined text of the lectures in the given course using a TTS AI model.
 
         Returns:
-            The course with its `audio_file_path` attribute set which points to the TTS-generated file.
-
+            The `Course` with its `audio_file_path` attribute set, pointing to the TTS-generated file.
         """
         course.settings.output_directory = course.settings.output_directory.expanduser().resolve()
         if not tokenizer_available():
             download_tokenizer()
 
-        # Combine all lecture texts, including titles, preceded by the disclosure that it's all AI-generated
+        # Combine all lecture texts, preceded by an AI disclosure
         course_text = (
             AI_DISCLOSURE
             + "\n\n"
@@ -300,40 +391,38 @@ class OpenAIAsyncGenerator(CourseGenerator):
             + "\n\n".join(f"Lecture {lecture.number}:\n\n{lecture.text}" for lecture in course.lectures)
         )
         course_chunks = split_text_into_chunks(course_text)
-
-        speech_tasks = []
+        speech_tasks: list[asyncio.Task[tuple[int, io.BytesIO]]] = []
 
         with time_tracker(course.generation_info, "audio_gen_elapsed_seconds"):
             async with asyncio.TaskGroup() as task_group:
                 for chunk_num, chunk in enumerate(course_chunks, start=1):
                     task = task_group.create_task(
-                        self._generate_speech_for_text_chunk(
-                            course=course,
-                            text_chunk=chunk,
-                            chunk_num=chunk_num,
-                        ),
+                        self._generate_speech_for_text_chunk(course, chunk, chunk_num),
+                        name=f"generate_speech_chunk_{chunk_num}",
                     )
                     speech_tasks.append(task)
 
-            # Assemble the chunk list in the same order the tasks were created (no need to sort)
-            audio_chunks = [speech_task.result() for speech_task in speech_tasks]
+            audio_chunks = [task.result()[1] for task in sorted(speech_tasks, key=lambda t: t.result()[0])]
 
-            # Get the MP3 tags ready
+            # If the user generated an image for the course, embed it
             if course.generation_info.image_file_path and course.generation_info.image_file_path.exists():
-                composer_tag = f"{course.settings.text_model_lecture} & {course.settings.tts_model} & {course.settings.image_model}"
+                composer_tag = (
+                    f"{course.settings.text_model_lecture} & "
+                    f"{course.settings.tts_model} & "
+                    f"{course.settings.image_model}"
+                )
                 cover_tag = io.BytesIO(course.generation_info.image_file_path.read_bytes())
             else:
                 composer_tag = f"{course.settings.text_model_lecture} & {course.settings.tts_model}"
                 cover_tag = None
 
             course.generation_info.audio_file_path = course.settings.output_directory / Path(
-                sanitize_filename(course.title),
+                sanitize_filename(course.title)
             ).with_suffix(".mp3")
             course.generation_info.audio_file_path.parent.mkdir(parents=True, exist_ok=True)
 
             version_string = get_top_level_version("okcourse")
-
-            tags = {
+            tags: dict[str, str] = {
                 "title": course.title,
                 "artist": f"{course.settings.tts_voice.capitalize()} & {course.settings.text_model_lecture} @ OpenAI",
                 "composer": composer_tag,
@@ -354,7 +443,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
             self.log.info(f"Saving audio to {course.generation_info.audio_file_path}")
             course.generation_info.audio_file_path.write_bytes(combined_mp3.getvalue())
 
-        # Save the course as JSON now that we have the audio file path
+        # Save the course JSON now that we have the audio path
         course.generation_info.audio_file_path.with_suffix(".json").write_text(course.model_dump_json(indent=2))
 
         return course
@@ -366,12 +455,10 @@ class OpenAIAsyncGenerator(CourseGenerator):
             course: The course to generate.
 
         Returns:
-            Course: The course with all attributes populated by the generation process.
-
+            The `Course` with attributes populated by the generation process.
         """
         course = await self.generate_outline(course)
         course = await self.generate_lectures(course)
         course = await self.generate_image(course)
         course = await self.generate_audio(course)
-
         return course
