@@ -160,4 +160,4 @@ Done! Course file(s) available in /Users/mmacy/.okcourse_files
 
 I'm guessing the two `I`s in "SERIIES" is for a double dose of intelligence.
 
-![Screenshot Apple's Music app interface showing album 'OK Courses' by Nova @ OpenAI, categorized as Books & Spoken from 2024. The cover art features a stylized illustration of technology components, paperclips, and a robotic hand. The selected track, 'Artificial Super Intelligence: Paperclips All The Way Down,' is 17 minutes and 42 seconds long.](images/media-player-01.png)
+![Screenshot Apple's Music app interface showing album 'OK Courses' by Nova @ OpenAI, categorized as Books & Spoken from 2024. The cover art features a stylized illustration of technology components, paperclips, and a robotic hand. The selected track, 'Artificial Super Intelligence: Paperclips All The Way Down,' is 17 minutes and 42 seconds long.](./images/media-player-01.png)
