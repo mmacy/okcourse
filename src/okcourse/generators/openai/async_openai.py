@@ -26,92 +26,6 @@ from okcourse.utils.text_utils import (
     tokenizer_available,
 )
 
-T = TypeVar("T")
-
-
-def _parse_openai_rate_limit_wait_time(error_message: str) -> int:
-    """Parses the OpenAI rate limit error message to extract wait time in seconds.
-
-    If no specific wait time is found, returns a default of 60 seconds.
-
-    Args:
-        error_message: The error message returned by OpenAI containing rate limit info.
-
-    Returns:
-        The number of seconds to wait before retrying, or 60 if no time can be parsed.
-    """
-    match_minutes_seconds = re.search(r"Please try again in (\d+)m(\d+)s", error_message)
-    if match_minutes_seconds:
-        minutes, seconds = match_minutes_seconds.groups()
-        return int(minutes) * 60 + int(seconds)
-
-    match_seconds = re.search(r"Please try again in (\d+)s", error_message)
-    if match_seconds:
-        return int(match_seconds.group(1))
-
-    return 60
-
-
-async def _retry_with_exponential_backoff(
-    func: Callable[..., Awaitable[T]],
-    *args: Any,
-    max_retries: int = 6,
-    initial_delay: float = 1,
-    exponential_base: float = 2,
-    jitter: bool = True,
-    logger: Any = None,
-    **kwargs: Any,
-) -> T:
-    """Calls an async function and retries with exponential backoff on RateLimitError.
-
-    This method parses the rate-limit-specific wait time from the OpenAI error message
-    and uses random exponential backoff to avoid hammering the API in tight loops.
-
-    Args:
-        func: The function to call.
-        *args: Positional arguments to pass to the function.
-        max_retries: The maximum number of retries before giving up.
-        initial_delay: The initial delay in seconds before the first retry.
-        exponential_base: The exponential growth factor for delay intervals.
-        jitter: Whether to apply random jitter to the delay interval.
-        logger: A logger instance for logging retries and warnings.
-        **kwargs: Keyword arguments to pass to the function.
-
-    Returns:
-        The awaited result of `func`.
-
-    Raises:
-        Exception: If `max_retries` is exceeded.
-    """
-    attempt = 0
-    delay = initial_delay
-
-    while True:
-        try:
-            return await func(*args, **kwargs)
-        except RateLimitError as exc:
-            if logger:
-                logger.warning(f"RateLimitError encountered: {exc}")
-
-            attempt += 1
-            if attempt > max_retries:
-                raise Exception(f"Maximum number of retries ({max_retries}) exceeded.") from exc
-
-            # Parse recommended wait time from the error, fall back to existing delay if smaller
-            recommended_wait = _parse_openai_rate_limit_wait_time(str(exc))
-            delay = max(delay, recommended_wait)
-
-            # Add exponential backoff
-            if jitter:
-                # Multiply delay by random factor in [1, 2) to spread out bursts
-                delay *= exponential_base * (1 + random.random())
-            else:
-                delay *= exponential_base
-
-            if logger:
-                logger.warning(f"Retrying in {round(delay, 2)} seconds (attempt {attempt}/{max_retries})...")
-            await asyncio.sleep(delay)
-
 
 class OpenAIAsyncGenerator(CourseGenerator):
     """Uses the OpenAI API to generate course content asynchronously.
@@ -234,8 +148,11 @@ class OpenAIAsyncGenerator(CourseGenerator):
             self.client.chat.completions.create,
             model=course.settings.text_model_lecture,
             messages=messages,
-            max_completion_tokens=90000,
+            max_completion_tokens=16000,
             logger=self.log,
+            initial_delay_ms=1,
+            exponential_base=1.5,
+            jitter=True,
         )
 
         if response.usage:
@@ -262,13 +179,17 @@ class OpenAIAsyncGenerator(CourseGenerator):
         lecture_tasks: list[asyncio.Task[CourseLecture]] = []
 
         with time_tracker(course.generation_info, "lecture_gen_elapsed_seconds"):
-            async with asyncio.TaskGroup() as task_group:
-                for topic in course.outline.topics:
-                    task = task_group.create_task(
-                        self._generate_lecture(course, topic.number),
-                        name=f"generate_lecture_{topic.number}",
-                    )
-                    lecture_tasks.append(task)
+            try:
+                async with asyncio.TaskGroup() as task_group:
+                    for topic in course.outline.topics:
+                        task = task_group.create_task(
+                            self._generate_lecture(course, topic.number),
+                            name=f"generate_lecture_{topic.number}",
+                        )
+                        lecture_tasks.append(task)
+            except ExceptionGroup as eg:
+                for e in eg.exceptions:
+                    self.log.error(f"Error generating lecture: {e}")
 
         course.lectures = [t.result() for t in lecture_tasks]
         return course
@@ -366,10 +287,10 @@ class OpenAIAsyncGenerator(CourseGenerator):
                 self.log.info(f"Got TTS audio for text chunk {chunk_num} in voice '{course.settings.tts_voice}'.")
                 return chunk_num, audio_bytes
 
-            except RateLimitError as exc:
-                self.log.warning(f"RateLimitError while generating TTS for chunk {chunk_num}: {exc}")
+            except RateLimitError as rle:
+                self.log.warning(f"RateLimitError while generating TTS for chunk {chunk_num}: {rle}")
                 # Leverage the manual approach or the same exponential function for concurrency
-                recommended_wait = _parse_openai_rate_limit_wait_time(str(exc))
+                recommended_wait = _parse_openai_rate_limit_wait_time(str(rle))
                 self.log.warning(f"Retrying TTS chunk {chunk_num} in {recommended_wait} seconds...")
                 await asyncio.sleep(recommended_wait)
 

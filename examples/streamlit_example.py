@@ -1,6 +1,14 @@
+"""OK Courses Course Generator
+
+ Example Streamlit application that generates a course in four steps:
+
+ 1. Generate a course outline.
+ 2. Generate the course lectures based on the outline.
+ 3. (Optional) Generate a cover image based on the course title.
+ 4. (Optional) Generate TTS audio for the course; uses the cover image (if generated) for the MP3 album art tag.
+"""
 import asyncio
 from pathlib import Path
-from logging import getLogger
 import streamlit as st
 
 from okcourse import Course, OpenAIAsyncGenerator
@@ -12,25 +20,6 @@ from okcourse.utils.text_utils import get_duration_string_from_seconds
 
 
 async def main():
-    """OK Courses Course Generator
-
-    This Streamlit application creates a course based on user-provided settings and a selected custom prompt. It can:
-    1. Generate a course outline and allow regeneration until the user is satisfied.
-    2. Generate the course lectures, allowing repeated regeneration of lectures until accepted.
-    3. Generate a cover image (optionally), allowing repeated regeneration of the image until accepted.
-    4. (Optionally) Generate TTS audio for the final course.
-
-    ---
-    **Features**
-    - Multiple AI model choices for outline and lecture generation.
-    - Optional cover image creation.
-    - Optional TTS audio generation.
-
-    Use the **"Generate outline"** button to first produce the outline.
-    Once satisfied, press **"Proceed with course generation"** to generate or regenerate lectures.
-    If specified, cover images are also generated with repeated acceptance/regeneration.
-    Finally, audio is generated (if chosen) and a summary of all generation data is displayed.
-    """
 
     if "logger" not in st.session_state:
         st.session_state.logger = get_logger("streamlit")
@@ -60,32 +49,31 @@ async def main():
 
     course = st.session_state.course
 
-    # Prompt options
+    # Course style drop-down
     prompt_options = {prompt.description: prompt for prompt in PROMPT_COLLECTION}
     selected_prompt_name = st.selectbox("Course style", options=list(prompt_options.keys()))
     selected_prompt = prompt_options[selected_prompt_name]
     course.settings.prompts = selected_prompt
 
-    # Course title
+    # Course title text box
     course.title = st.text_input(
         "Course title", placeholder="Artificial Super Intelligence: Paperclips, Gray Goo, And You"
     )
 
-    # AI model selection
+    # AI model selection drop-downs
     usable_model_options: AIModels = await get_usable_models_async()
     course.settings.text_model_outline = st.selectbox(
         "Outline model",
         options=usable_model_options.text_models,
         placeholder="Choose an AI model for outline generation",
     )
-
     course.settings.text_model_lecture = st.selectbox(
         "Lecture model",
         options=usable_model_options.text_models,
         placeholder="Choose an AI model for lecture generation",
     )
 
-    # Number of lectures/subtopics
+    # Lecture and subtopic count checkboxes
     course.settings.num_lectures = st.number_input(
         "Number of lectures:", min_value=1, max_value=MAX_LECTURES, value=4, step=1
     )
@@ -102,7 +90,6 @@ async def main():
     if generate_audio:
         course.settings.tts_voice = st.selectbox("Choose a voice for the course lecturer", options=tts_voices)
 
-    # Output directory
     course.settings.output_directory = (
         Path(st.text_input("Output directory", value=course.settings.output_directory)).expanduser().resolve()
     )
@@ -139,11 +126,7 @@ async def main():
             st.session_state.cover_image_done = False
             st.rerun()
 
-    # Generate Course Content in steps
     if st.session_state.do_generate_course and course.outline:
-        # We reuse the same generator object every step to keep consistent settings
-        generator = OpenAIAsyncGenerator(course)
-
         # ---------------------
         # Step 1: Lectures
         # ---------------------
@@ -189,16 +172,16 @@ async def main():
             # Display generated cover image
             img_path = course.generation_info.image_file_path
             if img_path and img_path.exists():
-                st.image(str(img_path), caption="Cover Image")
+                st.image(str(img_path), caption=course.title)
 
-            col_img1, col_img2 = st.columns(2)
-            if col_img1.button("Regenerate Cover Image"):
+            img_col_left, img_col_right = st.columns(2)
+            if img_col_left.button("Regenerate cover image"):
                 if img_path and img_path.exists():
                     img_path.unlink(missing_ok=True)
                 course.generation_info.image_file_path = None
                 st.rerun()
 
-            if col_img2.button("Accept Cover Image"):
+            if img_col_right.button("Use this cover image"):
                 st.session_state.cover_image_done = True
                 st.rerun()
 
@@ -216,7 +199,6 @@ async def main():
                 except Exception as e:
                     st.error(f"Failed to generate course audio: {e}")
                     log.error(f"Failed to generate course audio: {e}")
-                    return
 
             # If audio was generated, display it
             audio_path = course.generation_info.audio_file_path
