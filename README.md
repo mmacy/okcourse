@@ -31,7 +31,7 @@ I recommend installing from PyPi as described above. You can, however, install t
 uv add git+https://github.com/mmacy/okcourse.git # (1)!
 ```
 
-1. Installing directly from GitHub is the equivalent of installing a nightly dev build—[caveat emptor](https://www.findlaw.com/consumer/consumer-transactions/what-does-caveat-emptor-mean-.html).
+1. Installing directly from GitHub is the equivalent of installing a nightly dev build and can also be considered risky from a security standpoint—[caveat emptor](https://www.findlaw.com/consumer/consumer-transactions/what-does-caveat-emptor-mean-.html).
 
 ## Generate a course
 
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-This code snippet demonstrates generating a course from only a title, but there are several other settings available for tuning course generation.
+The previous code snippet demonstrates generating a course from only a title, but there are several other settings available for tuning course generation.
 
 [`CourseSettings`][okcourse.CourseSettings] lets you configure the number of lectures, number of subtopics in each lecture, and which AI models to use for generating the course content (lecture text, cover image, and audio file).
 
@@ -169,6 +169,6 @@ Course JSON file saved to /Users/mmacy/.okcourse_files/artificial_super_intellig
 Done! Course file(s) available in /Users/mmacy/.okcourse_files
 ```
 
-*BEHOLD!* A four-lecture audio course about ASI by AI, complete with AI-generated album art (the two **I**s in *SERIIES* must be for a double dose of intelligence):
+*BEHOLD!* A four-lecture audio course about Artificial Super Intelligence by Artificial Not-So-Super Intelligence, complete with AI-generated album art with misspellings (the two **I**s in *SERIIES* must be for a double dose of intelligence):
 
 ![Screenshot of Apple's Music app interface showing album 'OK Courses' by Nova @ OpenAI, categorized as Books & Spoken from 2024. The cover art features a stylized illustration of technology components, paperclips, and a robotic hand. The selected track, 'Artificial Super Intelligence: Paperclips All The Way Down,' is 17 minutes and 42 seconds long.](./images/media-player-02.png)
