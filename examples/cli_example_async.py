@@ -2,7 +2,7 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #     "questionary>=2.1.0",
-#     "okcourse@git+https://github.com/mmacy/okcourse",
+#     "okcourse",
 # ]
 # ///
 import asyncio

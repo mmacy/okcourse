@@ -13,10 +13,10 @@ ___
     - [x] Generate course audio (MP3) from lectures
     - [x] Remove `FFmpeg` dependency
     - [ ] Remove `nltk` dependency
-    - [ ] Generator progress monitoring (callback-based)
-    - [ ] Anthropic-based generator
-    - [ ] Local TTS model option
+    - [ ] Report generator progress
     - [ ] Tests for course generation and audio utils
+    - [ ] Anthropic-based generator
+    - [ ] Support locally hosted TTS model
 - [ ] Docs
     - [x] mkdocs-material site on GitHub Pages
     - [x] README
@@ -32,5 +32,6 @@ ___
     - [ ] CLI - sync
     - [ ] Course MP3 examples for streaming
 - [ ] Package dist / Infrastructure
-    - [ ] Publish `okcourse` package on PyPi
+    - [x] Publish `okcourse` package on PyPi
+    - [ ] Automate build + release pipeline
     - [ ] Automate tests
