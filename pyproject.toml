@@ -1,8 +1,9 @@
 [project]
 name = "okcourse"
-version = "0.1.9"
-description = "Generate audiobook-style courses in MP3 format with lectures on any topic using Python and the OpenAI API."
+version = "0.1.10"
+description = "Generate audiobook-style courses with lectures on any topic using Python and AI."
 readme = "README.md"
+license = { text = "CC0 1.0 Universal" }
 authors = [
     { name = "Marsh Macy", email = "mmacy@users.noreply.github.com" }
 ]
@@ -13,6 +14,11 @@ dependencies = [
     "openai>=1.57.2",
 ]
 
+[project.urls]
+Homepage = "https://github.com/mmacy/okcourse/"
+Documentation = "https://mmacy.github.io/okcourse"
+Repository = "https://github.com/mmacy/okcourse/"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -20,6 +26,7 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "aiofiles>=24.1.0",
+    "hatchling>=1.27.0",
     "pytest>=8.3.4",
     "questionary>=2.0.1",
     "streamlit>=1.41.0",
@@ -38,3 +45,16 @@ docs = [
 
 [tool.uv.sources]
 okcourse = { workspace = true }
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.github",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/okcourse"]
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/okcourse/"
+publish-url = "https://test.pypi.org/legacy/"

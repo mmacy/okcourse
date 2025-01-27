@@ -2,8 +2,8 @@
 
 Features that have been or that might be implemented in the `okcourse` library project.
 
-- [ ] Not yet implemented
-- [x] implemented
+- [ ] Not implemented
+- [x] Implemented
 ___
 
 - [ ] Library

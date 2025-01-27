@@ -5,13 +5,14 @@ site_url: https://mmacy.github.io/okcourse/
 repo_name: okcourse
 repo_url: https://github.com/mmacy/okcourse
 edit_uri: edit/main/docs/
-watch: [README.md, src/okcourse, examples]
+watch: [CONTRIBUTE.md, LICENSE, README.md, src/okcourse, examples]
 
 theme:
   name: material
   icon:
     logo: material/lectern
     repo: fontawesome/brands/git-alt
+    icon: material/lectern
 
   palette:
     - media: "(prefers-color-scheme: light)"
@@ -69,60 +70,64 @@ markdown_extensions:
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tasklist:
       custom_checkbox: true
 
 plugins:
-- search
-- gen-files:
+  - search
+  - gen-files:
       scripts:
         - scripts/gen_ref_docs.py
-- literate-nav:
-    nav_file: SUMMARY.md
-- git-revision-date-localized:
+  - literate-nav:
+      nav_file: SUMMARY.md
+  - git-revision-date-localized:
       enable_creation_date: true
-- git-committers:
+  - git-committers:
       repository: mmacy/okcourse
       branch: main
-- mkdocstrings:
-    handlers:
-      python:
-        paths: [src]
-        import:
-          - https://docs.python.org/3/objects.inv
-          - https://docs.pydantic.dev/2.10/objects.inv
-          - https://mmacy.github.io/openai-python/latest/objects.inv
-        options:
-          extensions:
-            - griffe_pydantic:
-                schema: true
-          docstring_options:
-            ignore_init_summary: true
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          import:
+            - https://docs.python.org/3/objects.inv
+            - https://docs.pydantic.dev/2.10/objects.inv
+            - https://mmacy.github.io/openai-python/latest/objects.inv
+          options:
+            extensions:
+              - griffe_pydantic:
+                  schema: true
+            docstring_options:
+              ignore_init_summary: true
+              summary: true
+            docstring_section_style: table
+            docstring_style: google
+            filters: ["!^_"]
+            heading_level: 3
+            inherited_members: false
+            merge_init_into_class: true
+            separate_signature: true
+            show_bases: false
+            show_if_no_docstring: true
+            show_root_full_path: false
+            show_root_heading: false
+            show_signature_annotations: true
+            show_source: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            signature_crossrefs: true
             summary: true
-          docstring_section_style: table
-          docstring_style: google
-          filters: ["!^_"]
-          heading_level: 3
-          inherited_members: false
-          merge_init_into_class: true
-          separate_signature: true
-          show_bases: false
-          show_if_no_docstring: true
-          show_root_full_path: false
-          show_root_heading: false
-          show_signature_annotations: true
-          show_source: false
-          show_symbol_type_heading: true
-          show_symbol_type_toc: true
-          signature_crossrefs: true
-          summary: true
-          unwrap_annotated: true
+            unwrap_annotated: true
 
 extra:
   social:
-  - icon: fontawesome/brands/github
-    link: https://github.com/mmacy
+    - icon: fontawesome/brands/github
+      link: https://github.com/mmacy
   analytics:
     provider: google
     property: G-C3097XSQHR
@@ -130,22 +135,24 @@ extra:
       title: Was this doc helpful?
       ratings:
         - icon: material/emoticon-happy-outline
-          name: This doc is helpful
+          name: This is a good doc
           data: 1
           note: >-
             Yay! Thanks.
         - icon: material/emoticon-sad-outline
-          name: This doc needs improvement
+          name: This doc needs work
           data: 0
           note: >-
             Oh no! <a href="https://github.com/mmacy/okcourse/issues/new/?title=[doc-feedback]%20{title}%20-%20https://mmacy.github.io/okcourse{url}&body=%3C!--%20Tell%20us%20about%20your%20doc%20issue%20here%20-%20the%20more%20detail%20the%20better!%20--%3E" target="_blank" rel="noopener">What's wrong with it?</a>
 
 nav:
   - Introduction:
-    - index.md
-    - Get started: get-started.md
-    - Examples: examples/index.md
-    - API reference: reference/index.md
-    - Roadmap: roadmap.md
+      - index.md
+      - Get started: get-started.md
+      - Examples: examples/index.md
+      - API reference: reference/index.md
+      - Roadmap: roadmap.md
+      - Contribute: contribute.md
+      - License: license.md
   - Examples: examples/
   - API reference: reference/

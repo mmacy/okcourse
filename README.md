@@ -1,86 +1,99 @@
 # okcourse
 
-The `okcourse` Python library generates audiobook-style courses with lectures on any topic by using artificial intelligence (AI).
+The `okcourse` Python library creates audiobook-style courses with lectures on any topic by using text completion, text-to-speech, and image AI models to generate course content.
 
-The async version of the `okcourse` OpenAI generator can produce a **1.5-hour** long audio course with 20 lectures on a topic of your choosing in around **2 minutes**.
+![Screenshot of Apple's Music app interface showing album 'OK Courses' by Nova & o1-preview-2024-09-12 @ OpenAI, categorized as Books & Spoken from 2025. The cover art features a stylized illustration of a Commodore 64 and components and misspelled words resembling the selected track's name, 'Commodore 64 Assembly Programming with KickAssembler and VICE,' which is 3 hours, 14 minutes, and 51 seconds long.](./images/media-player-01.png)
 
 ## Prerequisites
 
 - [Python 3.12+](https://python.org)
-- [OpenAI API key](https://platform.openai.com/docs/quickstart)
+- [OpenAI API key](https://platform.openai.com/docs/quickstart) set in `OPENAI_API_KEY` environment variable
 
-## Install uv (optional)
+## Installation
 
-[Install uv](https://docs.astral.sh/uv/getting-started/installation/) by Astral if you don't already have it.
+### Install from PyPi
 
-Though not strictly required, many people find working with Python projects *much* easier with `uv` than with other tools. In fact, `uv` will even [install Python](https://docs.astral.sh/uv/guides/install-python/) for you!
+Use `pip`, `uv`, Poetry, or another package manager to install the `okcourse` package from PyPi.
 
-If you prefer, you *can* use `python -m venv`, Poetry, or another tool to create and manage your Python environment, but since this project uses `uv`, so will these instructions.
-
-## Install `okcourse` package
-
-To use the `okcourse` library in your Python project, install the package directly from GitHub (it's not yet on PyPi).
-
-For example, to install it with [uv](https://docs.astral.sh/uv/), run the following command in your project directory:
+For example, to  install the package with `pip`:
 
 ```sh
-# Install okcourse package from GitHub repo
-uv add git+https://github.com/mmacy/okcourse.git
+# Install okcourse package from PyPi (recommended)
+pip install okcourse
 ```
 
-## Prepare to contribute
+### Install from GitHub
 
-If you'd like to contribute your awesome code or doc skills to the `okcourse` project or try out an example app, complete the following steps to prepare your environment.
+I recommend installing from PyPi as described above. You can, however, install the latest (and possibly busted) version of the library directly from the `main` branch of the GitHub repo by using [uv](https://docs.astral.sh/uv/):
 
-1. Clone the repo with `git` and enter the project root:
+```sh
+# Install okcourse directly from GitHub
+uv add git+https://github.com/mmacy/okcourse.git # (1)!
+```
 
-    ```sh
-    # Clone repo using SSH
-    git clone git@github.com:mmacy/okcourse.git
-
-    # Enter project root dir
-    cd okcourse
-    ```
-
-2. Run the async CLI example app with `uv run`.
-
-    By running the example app, `uv` will automatically create a virtual environment that includes the required Python version and install the project dependencies.
-
-    ```
-    uv run examples/cli_example_async.py
-    ```
-
-If your OpenAI API key is already available in an environment variable, you can generate your first course now by answering the prompts in the CLI.
-
-If your OpenAI API is *not* available, however, move on to the next section.
-
-## Enable AI API access
-
-The `okcourse` library and example apps look for an environment variable containing an API key when creating the client to interact with the AI service provider's API.
-
-As a friendly reminder, using `okcourse` to generate course content may cost you, your employer, or whomever owns the API key money for API usage.
-
-!!! warning
-
-    The API token owner is responsible for API usage fees incurred by using `okcourse`.
-
-Set the environment variable appropriate for your AI service provider.
-
-| AI provider | Set this environment variable |
-| :---------: | :---------------------------: |
-|   OpenAI    |       `OPENAI_API_KEY`        |
-|  Anthropic  |      *not yet supported*      |
-|   Google    |      *not yet supported*      |
+1. Installing directly from GitHub is the equivalent of installing a nightly dev build and can also be considered risky from a security standpoint—[caveat emptor](https://www.findlaw.com/consumer/consumer-transactions/what-does-caveat-emptor-mean-.html).
 
 ## Generate a course
 
-To see the library in action, generate your first course by running the example CLI application with `uv` and answering the prompts:
+A complete "course" has five components: title, outline, lectures, cover art, and audio file.
+
+To generate an outline, you provide a title. Once you've generated the outline, you can generate the lectures, cover art, and audio.
+
+```mermaid
+graph LR
+    A[Title] --> B[Outline]
+    B --> C[Lectures]
+    C --> D[Cover]
+    D --> E[Audio]
+```
+
+At a minimum, import [`Course`][okcourse.Course] and a generator, like [`OpenAIAsyncGenerator`][okcourse.OpenAIAsyncGenerator], and you can start generating courses.
+
+```python
+import asyncio
+from okcourse import Course, OpenAIAsyncGenerator
+
+async def main() -> None:
+    """Use the OpenAIAsyncGenerator to generate a complete course."""
+
+    # Create a course, configure its settings, and initialize the generator
+    course = Course(title="From AGI to ASI: Paperclips, Gray Goo, and You")
+    generator = OpenAIAsyncGenerator(course)
+
+    # Generate all course content - these call the AI model provider's API
+    course = await generator.generate_outline(course)
+    course = await generator.generate_lectures(course)
+    course = await generator.generate_image(course)
+    course = await generator.generate_audio(course)
+
+    # The course should now be populated with an outline, lectures, and
+    # links to its local cover image (PNG) and audio (MP3) files.
+
+    # The 'Course' object is a Pydantic model, as are its nested models,
+    # so they support (de)serialization out of the box. For example, you
+    # can print the course in JSON format to the console with Pydantic's
+    # BaseModel.model_dump_json() method:
+    print(course.model_dump_json(indent=2))
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+The previous code snippet demonstrates generating a course from only a title, but there are several other settings available for tuning course generation.
+
+[`CourseSettings`][okcourse.CourseSettings] lets you configure the number of lectures, number of subtopics in each lecture, and which AI models to use for generating the course content (lecture text, cover image, and audio file).
+
+## Run an example app
+
+To see the library in action, try generating a course by running an [example app](/okcourse/examples/).
+
+For example, if you've installed [uv](https://docs.astral.sh/uv/), run the CLI script with `uv run`:
 
 ```sh
 uv run examples/cli_example_async.py
 ```
 
-Output from running `cli_example_async.py` using the default  `4` lectures and `INFO` logging level looks similar to the following:
+Output from a successful course generation with `cli_example_async.py` and default settings looks similar to the following:
 
 ```console
 $ uv run examples/cli_example_async.py
@@ -156,8 +169,6 @@ Course JSON file saved to /Users/mmacy/.okcourse_files/artificial_super_intellig
 Done! Course file(s) available in /Users/mmacy/.okcourse_files
 ```
 
-*BEHOLD!* A four-lecture audio course about ASI by AI, complete with AI-generated album art.
+*BEHOLD!* A four-lecture audio course about Artificial Super Intelligence by Artificial Not-So-Super Intelligence, complete with AI-generated album art with misspellings (the two **I**s in *SERIIES* must be for a double dose of intelligence):
 
-I'm guessing the two `I`s in "SERIIES" is for a double dose of intelligence.
-
-![Screenshot Apple's Music app interface showing album 'OK Courses' by Nova @ OpenAI, categorized as Books & Spoken from 2024. The cover art features a stylized illustration of technology components, paperclips, and a robotic hand. The selected track, 'Artificial Super Intelligence: Paperclips All The Way Down,' is 17 minutes and 42 seconds long.](images/media-player-01.png)
+![Screenshot of Apple's Music app interface showing album 'OK Courses' by Nova @ OpenAI, categorized as Books & Spoken from 2024. The cover art features a stylized illustration of technology components, paperclips, and a robotic hand. The selected track, 'Artificial Super Intelligence: Paperclips All The Way Down,' is 17 minutes and 42 seconds long.](./images/media-player-02.png)
