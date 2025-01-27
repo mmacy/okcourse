@@ -41,7 +41,7 @@ Feed nearly any catchy title to `okcourse` and you can fire up the course audio 
 
 Curious about propulsion systems for interstellar space travel?
 
-1. Durations vary, but `okcourse` can generate a **1.5-hour** audio course with 20 lectures in about **2.5 minutes**.
+1. Durations vary, but `okcourse` can generate a **1.5-hour** audio course with 20 lectures in about **2.5 minutes** with OpenAI's `gpt-4o` and `tts-1` models.
 
 ![Screenshot of Plex web player displaying an audio lecture titled 'Interstellar Space Travel: Propulsion Systems from Factual to Fantastical' by Fable @ OpenAI, showing a retro-styled cover illustration of a futuristic spacecraft and technical diagrams with a playback position of 32:18 out of 49:29.](images/plex-01-interstellar.png)
 
