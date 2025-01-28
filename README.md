@@ -171,7 +171,7 @@ Done! Course file(s) available in /Users/mmacy/.okcourse_files
 
 *BEHOLD!* A four-lecture audio course about Artificial Super Intelligence by Artificial Not-So-Super Intelligence, with AI-generated album art complete with misspellings (the two **I**s in *SERIIES* are for a double dose of intelligence, I'm guessing):
 
-![Screenshot of Apple's Music app interface showing album 'OK Courses' by Nova @ OpenAI, categorized as Books & Spoken from 2024. The cover art features a stylized illustration of technology components, paperclips, and a robotic hand. The selected track, 'Artificial Super Intelligence: Paperclips All The Way Down,' is 17 minutes and 42 seconds long.][media-player-01]
+![Screenshot of Apple's Music app interface showing album 'OK Courses' by Nova @ OpenAI, categorized as Books & Spoken from 2024. The cover art features a stylized illustration of technology components, paperclips, and a robotic hand. The selected track, 'Artificial Super Intelligence: Paperclips All The Way Down,' is 17 minutes and 42 seconds long.][media-player-02]
 
 [media-player-01]: https://raw.githubusercontent.com/mmacy/okcourse/1467e9366bd996fc6fa76cac941226d56f2a4796/images/media-player-01.png
 [media-player-02]: https://raw.githubusercontent.com/mmacy/okcourse/1467e9366bd996fc6fa76cac941226d56f2a4796/images/media-player-02.png
