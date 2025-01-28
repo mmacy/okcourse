@@ -2,7 +2,7 @@
 
 The `okcourse` Python library creates audiobook-style courses with lectures on any topic by using text completion, text-to-speech, and image AI models to generate course content.
 
-![Screenshot of Apple's Music app interface showing album 'OK Courses' by Nova & o1-preview-2024-09-12 @ OpenAI, categorized as Books & Spoken from 2025. The cover art features a stylized illustration of a Commodore 64 and components and misspelled words resembling the selected track's name, 'Commodore 64 Assembly Programming with KickAssembler and VICE,' which is 3 hours, 14 minutes, and 51 seconds long.](./images/media-player-01.png)
+![Screenshot of Apple's Music app interface showing album 'OK Courses' by Nova & o1-preview-2024-09-12 @ OpenAI, categorized as Books & Spoken from 2025. The cover art features a stylized illustration of a Commodore 64 and components and misspelled words resembling the selected track's name, 'Commodore 64 Assembly Programming with KickAssembler and VICE,' which is 3 hours, 14 minutes, and 51 seconds long.][media-player-01]
 
 ## Prerequisites
 
@@ -24,14 +24,14 @@ pip install okcourse
 
 ### Install from GitHub
 
-I recommend installing from PyPi as described above. You can, however, install the latest (and possibly busted) version of the library directly from the `main` branch of the GitHub repo by using [uv](https://docs.astral.sh/uv/):
+I recommend installing from PyPi as described above. You can, however, install the latest (possibly busted) version of the library directly from the `main` branch of the GitHub repo by using [uv](https://docs.astral.sh/uv/):
 
 ```sh
 # Install okcourse directly from GitHub
 uv add git+https://github.com/mmacy/okcourse.git # (1)!
 ```
 
-1. Installing directly from GitHub is the equivalent of installing a nightly dev build and can also be considered risky from a security standpoint—[caveat emptor](https://www.findlaw.com/consumer/consumer-transactions/what-does-caveat-emptor-mean-.html).
+1. Installing directly from the tip of a GitHub repo's default branch is like installing a nightly dev build and can also be considered risky from a security standpoint—[caveat emptor](https://www.findlaw.com/consumer/consumer-transactions/what-does-caveat-emptor-mean-.html).
 
 ## Generate a course
 
@@ -67,7 +67,7 @@ async def main() -> None:
     course = await generator.generate_audio(course)
 
     # The course should now be populated with an outline, lectures, and
-    # links to its local cover image (PNG) and audio (MP3) files.
+    # links to its cover image (PNG) and audio (MP3) files.
 
     # The 'Course' object is a Pydantic model, as are its nested models,
     # so they support (de)serialization out of the box. For example, you
@@ -169,6 +169,9 @@ Course JSON file saved to /Users/mmacy/.okcourse_files/artificial_super_intellig
 Done! Course file(s) available in /Users/mmacy/.okcourse_files
 ```
 
-*BEHOLD!* A four-lecture audio course about Artificial Super Intelligence by Artificial Not-So-Super Intelligence, complete with AI-generated album art with misspellings (the two **I**s in *SERIIES* must be for a double dose of intelligence):
+*BEHOLD!* A four-lecture audio course about Artificial Super Intelligence by Artificial Not-So-Super Intelligence, with AI-generated album art complete with misspellings (the two **I**s in *SERIIES* are for a double dose of intelligence, I'm guessing):
 
-![Screenshot of Apple's Music app interface showing album 'OK Courses' by Nova @ OpenAI, categorized as Books & Spoken from 2024. The cover art features a stylized illustration of technology components, paperclips, and a robotic hand. The selected track, 'Artificial Super Intelligence: Paperclips All The Way Down,' is 17 minutes and 42 seconds long.](./images/media-player-02.png)
+![Screenshot of Apple's Music app interface showing album 'OK Courses' by Nova @ OpenAI, categorized as Books & Spoken from 2024. The cover art features a stylized illustration of technology components, paperclips, and a robotic hand. The selected track, 'Artificial Super Intelligence: Paperclips All The Way Down,' is 17 minutes and 42 seconds long.][media-player-01]
+
+[media-player-01]: https://raw.githubusercontent.com/mmacy/okcourse/1467e9366bd996fc6fa76cac941226d56f2a4796/images/media-player-01.png
+[media-player-02]: https://raw.githubusercontent.com/mmacy/okcourse/1467e9366bd996fc6fa76cac941226d56f2a4796/images/media-player-02.png

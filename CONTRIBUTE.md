@@ -10,7 +10,7 @@ You're encouraged to contribute your awesome code and doc skills to the `okcours
 
 - Credentials for an AI model service provider's API.
 
-    [OpenAI](https://platform.openai.com/docs/quickstart) is the first provider supported by `okcourse`, so that's a good one to start with.
+    [OpenAI](https://platform.openai.com/docs/quickstart) is the first provider supported by `okcourse`, so that's a good one to start with unless you're adding support for a new model provider.
 
 ## Install uv
 
@@ -107,9 +107,9 @@ Start the local hot reload-enabled web server:
 uv run mkdocs serve
 ```
 
-And finally, navigate to the `Serving on ...` URL in the output and add or edit docs and verify they look as you intended.
+And finally, navigate to the `Serving on ...` URL in the output and add or edit docs, verifying they look OK along the way.
 
-```console
+```console hl_lines="10"
 $ uv run mkdocs serve
 INFO    -  Building documentation...
 INFO    -  git-committers plugin ENABLED
@@ -124,4 +124,6 @@ INFO    -  [16:28:08] Serving on http://127.0.0.1:8000/okcourse/
 
 The documentation should appear in your browser, similar to the following:
 
-![A screenshot of the okcourse documentation homepage as rendered locally in a web browser. The page includes navigation links to sections like 'Examples' and 'API Reference,' a table of contents sidebar, and sample code demonstrating how to generate course content. The design features a clean layout with a dark theme.](./images/docs-staging-local-01.png)
+![A screenshot of the okcourse documentation homepage as rendered locally in a web browser. The page includes navigation links to sections like 'Examples' and 'API Reference,' a table of contents sidebar, and sample code demonstrating how to generate course content. The design features a clean layout with a dark theme.][docs-staging-local-01]
+
+[docs-staging-local-01]: https://raw.githubusercontent.com/mmacy/okcourse/1467e9366bd996fc6fa76cac941226d56f2a4796/images/docs-staging-local-01.png
