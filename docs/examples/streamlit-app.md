@@ -4,7 +4,7 @@ The [`streamlit_example.py`](https://github.com/mmacy/okcourse/blob/main/example
 
 ![A screenshot of a Streamlit application titled "OK Courses Course Generator." The interface allows users to enter the course topic, specify the number of lectures and subtopics per lecture, and configure options such as generating MP3 audio files and cover images for the course. A dropdown menu allows selecting a voice for the course lecturer, and an output directory path is specified. A button labeled "Generate outline" is shown, and a green notification box states, "Course outline generated and ready for review." Below, a course outline is displayed, including the title "Intelligence Explosion To ASI: A Hypothetical Play-By-Play" and the first lecture with subtopics like "Historical Development of AI Systems" and "Human vs Machine Learning Capabilities.](../images/streamlit-example-01.png)
 
-## Run the example app
+## Run the app
 
 To run the Streamlit app locally:
 

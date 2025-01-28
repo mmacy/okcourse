@@ -132,7 +132,7 @@ extra:
     provider: google
     property: G-C3097XSQHR
     feedback:
-      title: Was this doc helpful?
+      title: Is this doc helpful?
       ratings:
         - icon: material/emoticon-happy-outline
           name: This is a good doc
