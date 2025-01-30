@@ -16,16 +16,12 @@ theme:
 
   palette:
     - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: grey
-      accent: orange
+      scheme: okcourse-light
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: grey
-      accent: orange
+      scheme: okcourse-dark
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
@@ -54,6 +50,9 @@ theme:
     - navigation.tabs.sticky
     - navigation.top
     - navigation.tracking
+
+extra_css:
+  - stylesheets/extra.css
 
 markdown_extensions:
   - admonition
