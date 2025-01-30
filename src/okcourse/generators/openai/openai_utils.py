@@ -100,12 +100,14 @@ async def _get_usable_models(openai_client: AsyncOpenAI) -> AIModels:
         else:
             other_models.append(model.id)
 
-    return AIModels(
+    usable_models = AIModels(
         image_models=image_models,
         text_models=text_models,
         speech_models=speech_models,
         other_models=other_models,
     )
+
+    return usable_models
 
 
 # Cache the available models to avoid redundant API calls
@@ -116,7 +118,7 @@ async def get_usable_models_async() -> AIModels:
     """Asynchronously get the usable models, fetching them if not already cached."""
     global _usable_models
     if _usable_models is None:
-        _usable_models = await _get_usable_models()
+        _usable_models = await _get_usable_models(AsyncOpenAI())
     return _usable_models
 
 
@@ -148,14 +150,13 @@ def _get_retry_after(error: RateLimitError) -> int | None:
 T = TypeVar("T")
 
 
-async def _retry_with_exponential_backoff(
+async def execute_request_with_retry(
     func: Callable[..., Awaitable[T]],
     *args: Any,
     max_retries: int = 6,
     initial_delay_ms: float = 1000,
     exponential_base: float = 2,
     jitter: bool = True,
-    logger: Any = None,
     **kwargs: Any,
 ) -> T:
     """Calls an async function and retries with exponential backoff on RateLimitError.
@@ -170,7 +171,6 @@ async def _retry_with_exponential_backoff(
         initial_delay_ms: The initial delay in milliseconds before the first retry.
         exponential_base: The exponential growth factor for delay intervals.
         jitter: Whether to apply random jitter to the delay interval.
-        logger: A logger instance for logging retries and warnings.
         **kwargs: Keyword arguments to pass to the function.
 
     Returns:
@@ -198,9 +198,9 @@ async def _retry_with_exponential_backoff(
             # Add exponential backoff
             if jitter:
                 # Multiply delay by random factor in [1, 2) to spread out bursts
-                delay_ms *= exponential_base * (1 + random.random())
+                delay_ms *= exponential_base * (1 + random.random()) / 1000
             else:
-                delay_ms *= exponential_base
+                delay_ms *= exponential_base / 1000
 
-            _log.warning(f"Will retry in {round(delay_ms, 2) / 1000} seconds (attempt {attempt}/{max_retries})...")
+            _log.warning(f"Will retry in {round(delay_ms, 2)} seconds (attempt {attempt}/{max_retries})...")
             await asyncio.sleep(delay_ms)

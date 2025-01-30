@@ -107,19 +107,20 @@ async def main():
             except Exception as e:
                 st.error(f"Failed to generate outline: {e}")
                 log.error(f"Failed to generate outline: {e}")
-                return
+                raise e
 
     # Display outline for review and allow regeneration
     if course.outline:
         st.write("## Course outline")
         st.write(str(course.outline))
 
-        if st.button("Generate another outline"):
+        col_outline_regen, col_outline_ok = st.columns(2)
+        if col_outline_regen.button("Regenerate outline"):
             course.outline = None
             st.session_state.do_generate_outline = True
             st.rerun()
 
-        if st.button("Proceed with course generation"):
+        if col_outline_ok.button("Use this outline"):
             # Reset all acceptance flags and start the generation process
             st.session_state.do_generate_course = True
             st.session_state.lectures_done = False
@@ -147,11 +148,11 @@ async def main():
                 st.write(f"### Lecture {lecture.number}: {lecture.title}")
                 st.write(lecture.text)
 
-            col_lect1, col_lect2 = st.columns(2)
-            if col_lect1.button("Regenerate Lectures"):
+            col_lecture_regen, col_lecture_ok = st.columns(2)
+            if col_lecture_regen.button("Regenerate lectures"):
                 course.lectures = []
                 st.rerun()
-            if col_lect2.button("Accept Lectures"):
+            if col_lecture_ok.button("Use these lectures"):
                 st.session_state.lectures_done = True
                 st.rerun()
 

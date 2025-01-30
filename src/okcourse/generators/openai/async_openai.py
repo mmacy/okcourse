@@ -3,17 +3,16 @@
 import asyncio
 import base64
 import io
-import random
-import re
 import time
 from pathlib import Path
 from string import Template
-from typing import Any, Awaitable, Callable, TypeVar
 
 from openai import APIError, APIStatusError, AsyncOpenAI, OpenAIError, RateLimitError
+from openai.types.images_response import ImagesResponse
 
 from okcourse.constants import AI_DISCLOSURE, MAX_LECTURES
 from okcourse.generators.base import CourseGenerator
+from okcourse.generators.openai.openai_utils import execute_request_with_retry
 from okcourse.models import Course, CourseLecture, CourseOutline
 from okcourse.utils.audio_utils import combine_mp3_buffers
 from okcourse.utils.log_utils import get_top_level_version, time_tracker
@@ -87,7 +86,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         self.log.info(f"Requesting outline for course '{course.title}'...")
         with time_tracker(course.generation_info, "outline_gen_elapsed_seconds"):
-            outline_completion = await _retry_with_exponential_backoff(
+            outline_completion = await execute_request_with_retry(
                 self.client.beta.chat.completions.parse,
                 model=course.settings.text_model_outline,
                 messages=[
@@ -95,7 +94,6 @@ class OpenAIAsyncGenerator(CourseGenerator):
                     {"role": "user", "content": outline_prompt},
                 ],
                 response_format=CourseOutline,
-                logger=self.log,
             )
         self.log.info(f"Received outline for course '{course.title}'...")
 
@@ -144,12 +142,11 @@ class OpenAIAsyncGenerator(CourseGenerator):
             f"Requesting lecture text for topic {topic.number}/{len(course.outline.topics)}: {topic.title}..."
         )
 
-        response = await _retry_with_exponential_backoff(
+        response = await execute_request_with_retry(
             self.client.chat.completions.create,
             model=course.settings.text_model_lecture,
             messages=messages,
             max_completion_tokens=16000,
-            logger=self.log,
             initial_delay_ms=1,
             exponential_base=1.5,
             jitter=True,
@@ -209,16 +206,17 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         try:
             with time_tracker(course.generation_info, "image_gen_elapsed_seconds"):
-                image_response = await _retry_with_exponential_backoff(
+                image_prompt_sent = Template(course.settings.prompts.image).substitute(course_title=course.title)
+                self.log.info("Requesting cover image...")
+                image_response = await execute_request_with_retry(
                     self.client.images.generate,
                     model=course.settings.image_model,
-                    prompt=Template(course.settings.prompts.image).substitute(course_title=course.title),
+                    prompt=image_prompt_sent,
                     n=1,
                     size="1024x1024",
                     response_format="b64_json",
                     quality="standard",
                     style="vivid",
-                    logger=self.log,
                 )
 
             if not image_response.data:
@@ -228,6 +226,12 @@ class OpenAIAsyncGenerator(CourseGenerator):
             course.generation_info.num_images_generated += 1
             image = image_response.data[0]
             image_bytes = base64.b64decode(image.b64_json)
+
+            if image.revised_prompt:
+                self.log.warning(
+                    f"Image prompt was revised by model - prompt used was: "
+                    f"{image.revised_prompt}"
+                )
 
             course.generation_info.image_file_path = course.settings.output_directory / Path(
                 sanitize_filename(course.title)
