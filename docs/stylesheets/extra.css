@@ -1,16 +1,16 @@
 :root {
     --black: #261230;
     --white: #ffffff;
-
+    /*
     --flare: #d46042;
     --rock: #78876e;
-
-    --bgdarker: #3d3d3d;
-    --bgdark: #242520;
+*/
+    --bgdark: #3d3d3d;
+    --bgdarker: #242520;
     --hover: #f88d45;
-    --radiate: #6edc2e;
+    --focus: #6edc2e;
     --supernova: #f56a3c;
-
+    /*
     --constellation: #5f6de9;
     --comet: #6f5d6f;
     --sun: #ffac2f;
@@ -23,42 +23,58 @@
     --lunar: #fbf2fc;
     --asteroid: #e3cee3;
     --crater: #f0dfdf;
+*/
+
+
+    --doc-symbol-attribute-bg-color: #3d3d3d;
+    --doc-symbol-attribute-fg-color: #d6d5a3;
+    --doc-symbol-class-bg-color: #d1b6191a;
+    --doc-symbol-class-fg-color: #d1b619;
+    --doc-symbol-function-bg-color: #00dfa21a;
+    --doc-symbol-function-fg-color: #f69071;
+    --doc-symbol-method-bg-color: #00dfa21a;
+    --doc-symbol-method-fg-color: #f69071;
+    --doc-symbol-module-bg-color: #242520;
+    --doc-symbol-module-fg-color: #959d42;
+    --doc-symbol-parameter-bg-color: #df50af1a;
+    --doc-symbol-parameter-fg-color: #df50af;
+
 }
 
 [data-md-color-scheme="okcourse-light"] {
     --md-default-bg-color--dark: var(--black);
-    --md-primary-fg-color: var(--bgdarker);
+    --md-primary-fg-color: var(--bgdark);
     --md-typeset-a-color: var(--flare);
     --md-accent-fg-color: var(--hover);
 }
 
 [data-md-color-scheme="okcourse-dark"] {
-    --md-default-bg-color: var(--bgdarker);
+    --md-default-bg-color: var(--bgdark);
     --md-default-fg-color: var(--white);
     --md-default-fg-color--light: var(--white);
     --md-default-fg-color--lighter: var(--white);
-    --md-primary-fg-color: var(--bgdark);
+    --md-primary-fg-color: var(--bgdarker);
     --md-primary-bg-color: var(--white);
     --md-accent-fg-color: var(--hover);
 
     --md-typeset-color: var(--white);
-    --md-typeset-a-color: var(--radiate);
+    --md-typeset-a-color: var(--focus);
     --md-typeset-mark-color: var(--sun);
 
     --md-code-fg-color: var(--white);
-    --md-code-bg-color: var(--bgdark);
+    --md-code-bg-color: var(--bgdarker);
 
     --md-code-hl-comment-color: var(--asteroid);
     --md-code-hl-punctuation-color: var(--asteroid);
     --md-code-hl-generic-color: var(--supernova);
     --md-code-hl-variable-color: var(--starlight);
-    --md-code-hl-string-color: var(--radiate);
+    --md-code-hl-string-color: var(--focus);
     --md-code-hl-keyword-color: var(--supernova);
     --md-code-hl-operator-color: var(--supernova);
     --md-code-hl-number-color: var(--electron);
     --md-code-hl-special-color: var(--electron);
     --md-code-hl-function-color: var(--neutron);
-    --md-code-hl-constant-color: var(--radiate);
+    --md-code-hl-constant-color: var(--focus);
     --md-code-hl-name-color: var(--md-code-fg-color);
 
     --md-typeset-del-color: hsla(6, 90%, 60%, 0.15);
@@ -66,4 +82,5 @@
 
     --md-typeset-table-color: hsla(0, 0%, 100%, 0.12);
     --md-typeset-table-color--light: hsla(0, 0%, 100%, 0.035);
+    */
 }
