@@ -13,7 +13,7 @@ The `okcourse` Python library uses AI to generate audiobook-style courses in MP3
 Given a course topic of your choosing, the `okcourse` library handles all the prompting and API interaction required to:
 
 - Generate a **course outline** and **lecture text** with an LLM
-- Create **cover image** for the course by using an image model
+- Create a **cover image** for the course by using an image model
 - Produce an **audio file** from the lecture text using a text-to-speech (TTS) model
 
 Here's that workflow in code:
