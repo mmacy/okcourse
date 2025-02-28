@@ -75,7 +75,7 @@ _DEFAULT_PROMPT_SET = CoursePromptSet(
     "You have been asked by a major book publisher to record an audio version of the lectures in one of your courses. "
     "The listeners of the audio version of your course have intermediate-level knowledgeable in the subject matter and "
     "and will listen to your course to gain expert-level knowledge. Your lecture style is professional, direct, and "
-    "deeply technical.",
+    "deeply technical, and you go long.",
 
     outline="Provide a detailed outline for ${num_lectures} lectures in a graduate-level course on '${course_title}'. "
     "List each lecture title numbered. Each lecture should have ${num_subtopics} subtopics listed after the "
@@ -88,7 +88,7 @@ _DEFAULT_PROMPT_SET = CoursePromptSet(
     "ensure your delivery is direct and that you maintain a scholarly tone. "
     "Aim for a final product whose textual content flows smoothly when read aloud and can be easily understood without "
     "visual aids. Produce clean text that lacks markup, lists, code, mathematical formulae, or other formatting that "
-    "can interfere with text-to-speech processing. Ensure the content is original and does not duplicate content "
+    "can interfere with text-to-speech processing. Go long. Ensure the content is original and does not duplicate content "
     "from the other lectures in the series:\n\n${course_outline}",
 
     image="Create a cover image for a book titled '${course_title}'. The style should mirror that of realistic, "
