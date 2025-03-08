@@ -84,7 +84,7 @@ TECHNICAL = CoursePromptSet(
     "scholarly and focused, delivering a continuous narrative suitable for a text-to-speech environment. "
     "Use unadorned text without lists, code, formulas, or symbols that may disrupt an audio rendering. Go long. "
     "Ensure originality and avoid overlapping content from other lectures in the series:\n\n${course_outline}",
-    image="Devise a cover image for a technical reference titled '${course_title}'. The style should draw on early "
+    image="Create the cover image for a course titled '${course_title}'. The style should draw on early "
     "NASA-era mission diagrams and schematic aesthetics, employing subdued tones and subtle texturing. Include "
     "visual nods to modern technical themes—such as computer circuitry, network structures, or cloud infrastructure—"
     "blended with mid-20th-century space exploration imagery such as rocket silhouettes or capsule schematics. "
@@ -104,7 +104,7 @@ BUSINESS = CoursePromptSet(
     "'${course_title}'. Present the content in a straightforward manner suitable for listening, without "
     "addressing or referencing an audience. Keep the style scholarly and ensure no lists, bullet points, or "
     "other formatting disrupt the audio flow. Go long. Avoid repeated content from other lectures:\n\n${course_outline}",
-    image="Design a cover image for a business textbook titled '${course_title}'. The image should evoke a modern "
+    image="Create the cover image for a course titled '${course_title}'. The image should evoke a modern "
     "corporate setting, incorporating elements like skyscrapers, conference tables, or abstract leadership icons. "
     "Use a sleek contemporary design with refined color schemes, featuring a distinct but professional font for "
     "the title.",
@@ -123,7 +123,7 @@ COMPUTER_SCIENCE = CoursePromptSet(
     "fundamental computing concepts, so go straight into higher-level discussions. Maintain a professional, "
     "scholarly tone suitable for an audio format, using only plain text without lists or symbolic notation. "
     "Go long. Avoid repeating material from other lectures:\n\n${course_outline}",
-    image="Generate a cover image for the reference guide titled '${course_title}'. Use a modern, tech-oriented design "
+    image="Create the cover image for a course titled '${course_title}'. Use a modern, tech-oriented design "
     "featuring circuit board patterns, abstract computing shapes, or data flow representations. Keep the colors "
     "vibrant but balanced, and place the course title in a sharp, modern typeface that complements the theme.",
 )
@@ -141,7 +141,7 @@ PSYCHOLOGY = CoursePromptSet(
     "that thoroughly covers the designated topic, assuming the audience has basic grounding in psychological "
     "terms. Use plain text exclusively, avoiding bullet points or special symbols, and ensure the narrative "
     "flows naturally for audio. Go long. Prevent duplication of content from the other lectures:\n\n${course_outline}",
-    image="Create a cover image for a textbook titled '${course_title}'. Incorporate elements reflecting modern "
+    image="Create the cover image for a course titled '${course_title}'. Incorporate elements reflecting modern "
     "psychological study—brain imagery, abstract patterns of thought, or conceptual representations of cognition. "
     "Use a calm, professional color palette. The title should be clearly visible in a clean, scholarly font.",
 )
@@ -158,8 +158,8 @@ BIOLOGY = CoursePromptSet(
     "course '${course_title}'. Engage the subject in detail, maintaining a scholarly tone that is suitable "
     "for an audio recording. Use direct, plain text with no lists or special formatting that would disrupt "
     "audio flow. Go long. Do not repeat material from other lectures:\n\n${course_outline}",
-    image="Render a cover image for a biology-focused textbook called '${course_title}'. Depict scientific imagery "
-    "such as cell structures, DNA helixes, or ecological systems in a contemporary and precise style. Favor "
+    image="Create a cover image for a biology course titled '${course_title}'. Fill the entire canvas with scientific "
+    "imagery such as cell structures, DNA helixes, or ecological systems in a contemporary and precise style. Favor "
     "subtle natural tones, and place the title in a refined, readable typeface.",
 )
 
@@ -171,13 +171,13 @@ HISTORY = CoursePromptSet(
     "oral narration.",
     outline="Produce a thorough outline for ${num_lectures} lectures on '${course_title}'. Number the lectures and "
     "indicate ${num_subtopics} core subtopics for each. No extra remarks should be included.",
-    lecture="Author a full-length spoken-text lecture titled '${lecture_title}' for the advanced-level history course "
+    lecture="Create the full text for the lecture '${lecture_title}' within advanced-level history course "
     "'${course_title}'. Present the content with academic rigor, avoiding references to an audience or "
     "discussion format. Maintain a continuous narrative style that can be clearly followed through audio "
     "alone. Go long. Use clean, unadorned text and do not repeat the content of other lectures:\n\n${course_outline}",
-    image="Design a cover image for the history volume '${course_title}'. Use a muted, scholarly palette, incorporating "
-    "symbolic artifacts or landmarks indicative of major world civilizations—such as classical columns, medieval "
-    "architecture, or iconic skyline silhouettes. Display the title in a traditional, enduring font that "
+    image="Design a cover image for the history course titled '${course_title}'. Use a muted, scholarly palette, "
+    "incorporating symbolic artifacts or landmarks indicative of major world civilizations—such as classical columns, "
+    "medieval architecture, or iconic skyline silhouettes. Display the title in a traditional, enduring font that "
     "emphasizes academic gravitas.",
 )
 
@@ -204,7 +204,7 @@ PHYSICS = CoursePromptSet(
         "${course_outline}"
     ),
     image=(
-        "Design a cover image for the physics reference titled '${course_title}'. Emulate a mid-20th century NASA or "
+        "Design a cover image for a physics course titled '${course_title}'. Emulate a mid-20th century NASA or "
         "atomic-age aesthetic, using subtle tones and minimalistic schematic diagrams—such as orbital paths, satellite "
         "trajectories, or particle tracks. Include the course title in a refined, slightly retro futuristic font, "
         "conveying the rigor and forward-thinking spirit of modern physics."
@@ -232,7 +232,7 @@ CHEMISTRY = CoursePromptSet(
         "repeating content from other lectures:\n\n${course_outline}"
     ),
     image=(
-        "Create a cover image for the chemistry resource '${course_title}'. Incorporate a mid-century scientific "
+        "Create a cover image for a chemistry course titled '${course_title}'. Incorporate a mid-century scientific "
         "illustration style reminiscent of early NASA mission outlines, but adapted to depict chemical apparatus or "
         "molecular structures in subdued, precise line art. Subtle colors, reminiscent of laboratory backgrounds, are "
         "preferred. Use a refined sans-serif or lightly stylized font for the course title."
@@ -244,24 +244,26 @@ ASTRONOMY = CoursePromptSet(
     system=(
         "You are an eminent astronomer tasked by a leading academic publisher to craft an in-depth audio course. "
         "Your audience has a strong background in astronomy and astrophysics and seeks expert-level insights from "
-        "your lectures. Engage them with complex analyses, referencing current research and theoretical frameworks, "
-        "while keeping the content accessible in purely spoken form."
+        "your lectures. Engage them with complex analyses and examples, referencing current research and theoretical "
+        "frameworks, while keeping the content accessible in purely spoken form."
     ),
     outline=(
         "Outline ${num_lectures} lectures for an advanced astronomy course called '${course_title}'. Number each "
         "lecture and name ${num_subtopics} focus points. Respond with just this outline, no extraneous commentary."
     ),
     lecture=(
-        "Produce a fully realized audio lecture script for '${lecture_title}' in the astronomy course named "
-        "'${course_title}'. The text should read naturally as a narrated piece, avoiding audience address and any "
-        "lists, formulas, or references to visual aids. Go long. Provide thorough detail to satisfy advanced listeners without "
-        "overlapping previously covered topics:\n\n${course_outline}"
+        "Create the full text for the lecture '${lecture_title}' within the course '${course_title}'. The lecture "
+        "should be detailed, covering advanced topics in astronomy and astrophysics. The audience is familiar with "
+        "fundamental concepts, so go straight into higher-level discussions. Maintain a professional, scholarly tone "
+        "The text should read naturally as a narrated piece, avoiding audience address and any lists, formulas, or "
+        "references to visual aids. Go long. Provide thorough detail to satisfy advanced listeners without overlapping "
+        "previously covered topics:\n\n${course_outline}"
     ),
     image=(
-        "Devise a cover image for the astronomy handbook '${course_title}'. Use a blend of vintage space-race era "
-        "aesthetics and subtle nods to modern astrophysics—such as black hole silhouettes, starfield diagrams, or "
-        "planetary schematics. Employ muted cosmic blues and grays, pairing them with clean typography reminiscent "
-        "of mid-20th-century engineering documents."
+        "Devise a cover image for a course titled '${course_title}'. Fill the entire canvas with a blend of vintage "
+        "space-race era aesthetics and subtle nods to modern astrophysics—such as black hole silhouettes, starfield "
+        "diagrams, or planetary schematics. Employ muted cosmic blues and grays, pairing them with clean typography "
+        "reminiscent of mid-20th-century engineering documents."
     ),
 )
 
@@ -308,7 +310,7 @@ GEOLOGY = CoursePromptSet(
         "holding a scholarly tone and avoiding overlap with other lectures:\n\n${course_outline}"
     ),
     image=(
-        "Create a cover image for the geological reference called '${course_title}'. Combine a retro NASA-style layout "
+        "Create a cover image for a geology course titled '${course_title}'. Combine a retro NASA-style layout "
         "with imagery of terrain cross-sections, seismic graphs, or tectonic plates. Use earthy, subdued tones for the "
         "visuals and render the title in a clean, semi-industrial font that aligns with the mid-century aesthetic."
     ),
@@ -334,7 +336,7 @@ ANTHROPOLOGY = CoursePromptSet(
         "covered in other lectures:\n\n${course_outline}"
     ),
     image=(
-        "Generate a cover image for an anthropology reference titled '${course_title}'. Infuse subtle references to "
+        "Generate a cover image for an anthropology course titled '${course_title}'. Infuse subtle references to "
         "human evolution, cultural artifacts, or global societal motifs. Incorporate a vintage, exploratory style, "
         "reminiscent of mid-20th-century field research visuals, while preserving a modern academic aesthetic. Use "
         "refined typography with a slightly retro feel for the course title."
@@ -360,10 +362,10 @@ BOTANY = CoursePromptSet(
         "solid prior knowledge. Ensure there is no overlap with other lectures:\n\n${course_outline}"
     ),
     image=(
-        "Devise a cover image for the botanical resource '${course_title}'. Utilize a mid-century scientific "
+        "Devise a cover image for a botany course titled '${course_title}'. Utilize a mid-century scientific "
         "illustration vibe, perhaps incorporating stylized leaves, plant structures, or subtle nods to cellular "
-        "anatomy. Keep the color palette calm and natural, with a neat, slightly retro font for the title that "
-        "reinforces an academic tone."
+        "anatomy. Fill the entire canvas, keeping the color palette calm and natural, with a neat, slightly retro font "
+        "for the title that reinforces an academic tone."
     ),
 )
 

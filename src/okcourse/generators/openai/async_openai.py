@@ -7,12 +7,11 @@ import time
 from pathlib import Path
 from string import Template
 
-from openai import APIError, APIStatusError, AsyncOpenAI, OpenAIError, RateLimitError
-from openai.types.images_response import ImagesResponse
+from openai import APIError, APIStatusError, AsyncOpenAI, OpenAIError
 
 from okcourse.constants import AI_DISCLOSURE, MAX_LECTURES
 from okcourse.generators.base import CourseGenerator
-from okcourse.generators.openai.openai_utils import execute_request_with_retry
+from okcourse.generators.openai.openai_utils import execute_request_with_retry, reasoning_models
 from okcourse.models import Course, CourseLecture, CourseOutline
 from okcourse.utils.audio_utils import combine_mp3_buffers
 from okcourse.utils.log_utils import get_top_level_version, time_tracker
@@ -142,14 +141,18 @@ class OpenAIAsyncGenerator(CourseGenerator):
             f"Requesting lecture text for topic {topic.number}/{len(course.outline.topics)}: {topic.title}..."
         )
 
+        kwargs = {}
+        if course.settings.text_model_lecture in reasoning_models:
+            kwargs["reasoning_effort"] = "high"
+            kwargs["max_completion_tokens"] = 100000
+        else:
+            kwargs["max_completion_tokens"] = 16000
+
         response = await execute_request_with_retry(
             self.client.chat.completions.create,
             model=course.settings.text_model_lecture,
             messages=messages,
-            max_completion_tokens=16000,
-            initial_delay_ms=1,
-            exponential_base=1.5,
-            jitter=True,
+            **kwargs,
         )
 
         if response.usage:
@@ -228,10 +231,7 @@ class OpenAIAsyncGenerator(CourseGenerator):
             image_bytes = base64.b64decode(image.b64_json)
 
             if image.revised_prompt:
-                self.log.warning(
-                    f"Image prompt was revised by model - prompt used was: "
-                    f"{image.revised_prompt}"
-                )
+                self.log.warning(f"Image prompt was revised by model - prompt used was: {image.revised_prompt}")
 
             course.generation_info.image_file_path = course.settings.output_directory / Path(
                 sanitize_filename(course.title)
@@ -277,26 +277,26 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         while True:
             try:
-                async with self.client.audio.speech.with_streaming_response.create(
+                response = await execute_request_with_retry(
+                    self.client.audio.speech.create,
+                    input=text_chunk,
                     model=course.settings.tts_model,
                     voice=course.settings.tts_voice,
-                    input=text_chunk,
-                ) as response:
-                    audio_bytes = io.BytesIO()
-                    async for data in response.iter_bytes():
-                        audio_bytes.write(data)
-                    audio_bytes.seek(0)
-                    course.generation_info.tts_character_count += len(text_chunk)
+                )
+
+                audio_bytes = io.BytesIO()
+                for data in response.iter_bytes():
+                    audio_bytes.write(data)
+                audio_bytes.seek(0)
+
+                course.generation_info.tts_character_count += len(text_chunk)
 
                 self.log.info(f"Got TTS audio for text chunk {chunk_num} in voice '{course.settings.tts_voice}'.")
                 return chunk_num, audio_bytes
 
-            except RateLimitError as rle:
-                self.log.warning(f"RateLimitError while generating TTS for chunk {chunk_num}: {rle}")
-                # Leverage the manual approach or the same exponential function for concurrency
-                recommended_wait = _parse_openai_rate_limit_wait_time(str(rle))
-                self.log.warning(f"Retrying TTS chunk {chunk_num} in {recommended_wait} seconds...")
-                await asyncio.sleep(recommended_wait)
+            except Exception as e:
+                self.log.error(f"Error generating TTS audio for text chunk {chunk_num}: {e}")
+                raise e
 
     async def generate_audio(self, course: Course) -> Course:
         """Generates an audio file from the combined text of the lectures in the given course using a TTS AI model.
