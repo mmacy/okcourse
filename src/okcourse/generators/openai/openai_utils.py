@@ -18,11 +18,15 @@ from okcourse.utils.misc_utils import extract_literal_values_from_member, extrac
 _log = get_logger(__name__)
 
 tts_voices: list[str] = extract_literal_values_from_member(SpeechCreateParams, "voice")
+reasoning_models: list[str] = (
+    [model for model in extract_literal_values_from_type(ChatModel) if model.startswith("o")]
+)
 
 
 @dataclass
 class AIModels:
     """The AI models available for use by an OpenAI client, grouped by type."""
+
     image_models: list[str]
     """Image generation or manipulation models."""
     speech_models: list[str]
@@ -31,20 +35,6 @@ class AIModels:
     """Text completion models."""
     other_models: list[str] | None
     """All other model types."""
-
-
-def _get_all_models_known_to_library() -> AIModels:
-    """Gets all the models known to the OpenAI Python library.
-
-    These are *all* the available models the OpenAI library knows about, which might include models not available for
-    use by the client's API key. Not included are any custom models (typically fine-tuned models) in the account
-    represented by the API key.
-
-    Returns:
-        AIModels: All models known to the OpenAI Python library. Excludes custom (user-created) models.
-    """
-
-    return
 
 
 async def _get_usable_models(openai_client: AsyncOpenAI) -> AIModels:
@@ -204,3 +194,6 @@ async def execute_request_with_retry(
 
             _log.warning(f"Will retry in {round(delay_ms, 2)} seconds (attempt {attempt}/{max_retries})...")
             await asyncio.sleep(delay_ms)
+        except Exception as e:
+            _log.error(f"Error occurred during request: {e}")
+            raise e
