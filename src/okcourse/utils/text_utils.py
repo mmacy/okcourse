@@ -156,7 +156,7 @@ def sanitize_filename(name: str) -> str:
     - Strips leading and trailing whitespace
     - Replaces spaces with underscores
     - Removes non-alphanumeric characters except for underscores and hyphens
-    - Tranforms to lowercase
+    - Transforms to lowercase
 
     Args:
         name: The string to sanitize.

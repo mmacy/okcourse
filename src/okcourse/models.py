@@ -30,7 +30,7 @@ class CourseOutline(BaseModel):
 
 
 class CourseLecture(CourseLectureTopic):
-    """A lecture in a [course][okcourse.models.Course], including its title text content."""
+    """A lecture in a [course][okcourse.models.Course], including its title and text content."""
 
     text: str = Field(..., description="The unabridged text content of the lecture.")
 
@@ -117,7 +117,7 @@ class CourseSettings(BaseModel):
         _DEFAULT_PROMPT_SET,
         description="The prompts that guide the AI models in course generation.",
     )
-    num_lectures: int = Field(4, description="The number of lectures that should generated for for the course.")
+    num_lectures: int = Field(4, description="The number of lectures that should be generated for the course.")
     num_subtopics: int = Field(4, description="The number of subtopics that should be generated for each lecture.")
     output_directory: Path = Field(
         Path("~/.okcourse").expanduser(),
@@ -185,8 +185,8 @@ class CourseGenerationInfo(BaseModel):
     )
     lecture_output_token_count: int = Field(
         0,
-        description="The total number of tokens returned by the text completion endpoint is response to lecture "
-        "generation request for the course. This count does NOT include the tokens returned for outline requests.",
+        description="The total number of tokens returned by the text completion endpoint in response to lecture "
+        "generation requests for the course. This count does NOT include the tokens returned for outline requests.",
     )
     outline_input_token_count: int = Field(
         0,
@@ -195,7 +195,7 @@ class CourseGenerationInfo(BaseModel):
     )
     outline_output_token_count: int = Field(
         0,
-        description="The total number of tokens returned by the text completion endpoint is response to outline "
+        description="The total number of tokens returned by the text completion endpoint in response to outline "
         "generation requests for the course. This count does NOT include the tokens returned for lecture requests.",
     )
     tts_character_count: int = Field(
