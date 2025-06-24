@@ -33,7 +33,7 @@ def combine_mp3_buffers(
         album_art_mime: MIME type for the album art (typically 'image/png' or 'image/jpeg').
 
     Raises:
-        ValueError: If no buffers are provided, if buffers are invalid MP3,
+        ValueError: If no buffers are provided, if buffers are invalid MP3s,
                     or if their codec parameters (bitrate, sample rate) differ.
 
     Examples:
@@ -55,7 +55,7 @@ def combine_mp3_buffers(
     with open("cover.png", "rb") as img_file:
         album_art_bytes = io.BytesIO(img_file.read())
 
-    combined_mp3 = await combine_mp3_buffers(
+    combined_mp3 = combine_mp3_buffers(
         [buffer1, buffer2],
         tags=tags,
         album_art=album_art_bytes,
