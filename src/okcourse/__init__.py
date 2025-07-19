@@ -13,6 +13,8 @@ API:
 import logging
 
 from .generators import CourseGenerator, OpenAIAsyncGenerator
+from .memory_backends import FileSystemBackend, InMemoryBackend, StorageBackend
+from .inmemory_zip import InMemoryCoursePack
 from .models import (
     Course,
     CourseGenerationInfo,
@@ -33,6 +35,10 @@ __all__ = [
     "CoursePromptSet",
     "CourseSettings",
     "OpenAIAsyncGenerator",
+    "StorageBackend",
+    "FileSystemBackend",
+    "InMemoryBackend",
+    "InMemoryCoursePack",
 ]
 
 # Avoid "No handler found" warnings

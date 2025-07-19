@@ -159,6 +159,12 @@ class CourseSettings(BaseModel):
             "``output_directory``."
         ),
     )
+    in_memory_output: bool = Field(
+        False,
+        description=(
+            "Store generated artifacts in memory instead of writing them to the filesystem."
+        ),
+    )
 
 
 class CourseGenerationInfo(BaseModel):
@@ -231,6 +237,14 @@ class CourseGenerationInfo(BaseModel):
         None, description="The path to the audio file generated from the course content."
     )
     image_file_path: Path | None = Field(None, description="The path to the cover image generated for the course.")
+    image_bytes: bytes | None = Field(
+        None,
+        description="The generated cover image bytes when `in_memory_output` is used.",
+    )
+    audio_bytes: bytes | None = Field(
+        None,
+        description="The generated MP3 bytes when `in_memory_output` is used.",
+    )
 
 
 class Course(BaseModel):

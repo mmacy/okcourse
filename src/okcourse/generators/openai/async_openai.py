@@ -233,15 +233,18 @@ class OpenAIAsyncGenerator(CourseGenerator):
             if image.revised_prompt:
                 self.log.warning(f"Image prompt was revised by model - prompt used was: {image.revised_prompt}")
 
-            course.generation_info.image_file_path = course.settings.output_directory / Path(
-                sanitize_filename(course.title)
-            ).with_suffix(".png")
-            course.generation_info.image_file_path.parent.mkdir(parents=True, exist_ok=True)
-            self.log.info(f"Saving image to {course.generation_info.image_file_path}")
-            course.generation_info.image_file_path.write_bytes(image_bytes)
+            if course.settings.in_memory_output:
+                course.generation_info.image_bytes = image_bytes
+            else:
+                course.generation_info.image_file_path = course.settings.output_directory / Path(
+                    sanitize_filename(course.title)
+                ).with_suffix(".png")
+                course.generation_info.image_file_path.parent.mkdir(parents=True, exist_ok=True)
+                self.log.info(f"Saving image to {course.generation_info.image_file_path}")
+                course.generation_info.image_file_path.write_bytes(image_bytes)
 
-            # Save the course JSON now that we have the image path
-            course.generation_info.image_file_path.with_suffix(".json").write_text(course.model_dump_json(indent=2))
+                # Save the course JSON now that we have the image path
+                course.generation_info.image_file_path.with_suffix(".json").write_text(course.model_dump_json(indent=2))
 
             return course
 
@@ -330,21 +333,36 @@ class OpenAIAsyncGenerator(CourseGenerator):
             audio_chunks = [task.result()[1] for task in sorted(speech_tasks, key=lambda t: t.result()[0])]
 
             # If the user generated an image for the course, embed it
-            if course.generation_info.image_file_path and course.generation_info.image_file_path.exists():
-                composer_tag = (
-                    f"{course.settings.text_model_lecture} & "
-                    f"{course.settings.tts_model} & "
-                    f"{course.settings.image_model}"
-                )
-                cover_tag = io.BytesIO(course.generation_info.image_file_path.read_bytes())
+            if course.settings.in_memory_output:
+                if course.generation_info.image_bytes:
+                    composer_tag = (
+                        f"{course.settings.text_model_lecture} & "
+                        f"{course.settings.tts_model} & "
+                        f"{course.settings.image_model}"
+                    )
+                    cover_tag = io.BytesIO(course.generation_info.image_bytes)
+                else:
+                    composer_tag = f"{course.settings.text_model_lecture} & {course.settings.tts_model}"
+                    cover_tag = None
             else:
-                composer_tag = f"{course.settings.text_model_lecture} & {course.settings.tts_model}"
-                cover_tag = None
+                if course.generation_info.image_file_path and course.generation_info.image_file_path.exists():
+                    composer_tag = (
+                        f"{course.settings.text_model_lecture} & "
+                        f"{course.settings.tts_model} & "
+                        f"{course.settings.image_model}"
+                    )
+                    cover_tag = io.BytesIO(course.generation_info.image_file_path.read_bytes())
+                else:
+                    composer_tag = f"{course.settings.text_model_lecture} & {course.settings.tts_model}"
+                    cover_tag = None
 
-            course.generation_info.audio_file_path = course.settings.output_directory / Path(
-                sanitize_filename(course.title)
-            ).with_suffix(".mp3")
-            course.generation_info.audio_file_path.parent.mkdir(parents=True, exist_ok=True)
+            if course.settings.in_memory_output:
+                course.generation_info.audio_file_path = None
+            else:
+                course.generation_info.audio_file_path = course.settings.output_directory / Path(
+                    sanitize_filename(course.title)
+                ).with_suffix(".mp3")
+                course.generation_info.audio_file_path.parent.mkdir(parents=True, exist_ok=True)
 
             version_string = get_top_level_version("okcourse")
             tags: dict[str, str] = {
@@ -365,11 +383,15 @@ class OpenAIAsyncGenerator(CourseGenerator):
                 album_art_mime="image/png",
             )
 
-            self.log.info(f"Saving audio to {course.generation_info.audio_file_path}")
-            course.generation_info.audio_file_path.write_bytes(combined_mp3.getvalue())
+            if course.settings.in_memory_output:
+                course.generation_info.audio_bytes = combined_mp3.getvalue()
+            else:
+                self.log.info(f"Saving audio to {course.generation_info.audio_file_path}")
+                course.generation_info.audio_file_path.write_bytes(combined_mp3.getvalue())
 
         # Save the course JSON now that we have the audio path
-        course.generation_info.audio_file_path.with_suffix(".json").write_text(course.model_dump_json(indent=2))
+        if not course.settings.in_memory_output and course.generation_info.audio_file_path:
+            course.generation_info.audio_file_path.with_suffix(".json").write_text(course.model_dump_json(indent=2))
 
         return course
 
