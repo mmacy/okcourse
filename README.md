@@ -83,7 +83,7 @@ The previous code snippet demonstrates generating a course from only a title, bu
 
 [`CourseSettings`][okcourse.CourseSettings] lets you configure the number of lectures, number of subtopics in each lecture, and which AI models to use for generating the course content (lecture text, cover image, and audio file).
 
-If you want to run `okcourse` in an environment without write access to the filesystem, set `in_memory_output` on `CourseSettings` to `True`. When enabled, generated images and audio are stored in memory on the `Course` object rather than written to disk.
+If you run `okcourse` in an environment without write access to the filesystem, set `in_memory_output` on `CourseSettings` to `True`. When enabled, generated images and audio are stored in memory on the `Course` object rather than written to disk.
 
 ## Run an example app
 
