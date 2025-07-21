@@ -6,11 +6,16 @@ A modern web application built with FastAPI that provides a REST API and web int
 
 - **REST API**: Complete HTTP API for course generation workflow
 - **Web Interface**: Clean, responsive web UI for course creation
-- **Real-time Progress**: Step-by-step progress tracking during generation
+- **Automatic Progression**: Smart workflow that automatically flows through generation stages
+- **Markdown Content**: Rich text display for course outlines and lectures with proper formatting
+- **Media Integration**: Full-width image display and embedded audio player with download options
+- **Loading Indicators**: Kinetic visual feedback with animated spinners for all operations
+- **Manual Mode**: Optional checkbox to enable step-by-step manual control
+- **Real-time Progress**: Visual step-by-step progress tracking during generation
 - **Async Processing**: Efficient handling of AI API calls with async support
 - **Interactive Documentation**: Auto-generated OpenAPI/Swagger docs
 
-## Quick Start
+## Quick start
 
 ### Prerequisites
 
@@ -30,7 +35,7 @@ A modern web application built with FastAPI that provides a REST API and web int
    export OPENAI_API_KEY="your-api-key-here"
    ```
 
-### Running the Application
+### Running the application
 
 1. Start the FastAPI server:
    ```bash
@@ -44,33 +49,59 @@ A modern web application built with FastAPI that provides a REST API and web int
 
 ## Usage
 
-### Web Interface
+### Web interface
+
+#### Automatic mode (default)
 
 1. **Configure Course**: Enter course title, select models, and set generation options
-2. **Generate Outline**: Create a structured course outline with lectures and subtopics
-3. **Generate Lectures**: Produce full lecture content based on the outline
-4. **Generate Image** (optional): Create a course cover image
-5. **Generate Audio** (optional): Convert text to speech for the entire course
+2. **Create Course**: Click "Create course" and watch the automatic workflow:
+   - Course outline generates automatically
+   - Lectures generate automatically after outline completion
+   - Cover image generates automatically (if selected)
+   - Audio generates automatically (if selected)
+3. **Review Results**: View rich markdown-formatted content, full-width images, and embedded audio player
 
-### REST API Endpoints
+#### Manual mode
 
-#### Course Management
+1. **Enable Manual Mode**: Check "Manual stage initiation" checkbox before creating course
+2. **Step-by-Step Control**: Click each generation button individually:
+   - "Generate outline" → Review → "Generate lectures" → Review → etc.
+3. **Full Control**: Review each stage before proceeding to the next
+
+### Content display features
+
+- **Markdown Rendering**: Course outlines and lectures display with rich formatting including headers, lists, and emphasis
+- **Full-Width Images**: Cover images scale to fill the container width for maximum visual impact
+- **Embedded Audio**: HTML5 audio player with standard controls for course playback
+- **Download Options**: One-click download buttons for both images (PNG) and audio (MP3) files
+- **Loading Indicators**: Animated spinners provide visual feedback during all operations
+
+### REST API endpoints
+
+#### Course management
 - `POST /api/courses` - Create a new course
 - `GET /api/courses/{course_id}` - Get course details
 - `DELETE /api/courses/{course_id}` - Delete a course
 
-#### Generation Steps
+#### Generation steps
+
 - `POST /api/courses/{course_id}/generate-outline` - Generate course outline
 - `POST /api/courses/{course_id}/generate-lectures` - Generate lectures
 - `POST /api/courses/{course_id}/generate-image` - Generate cover image
 - `POST /api/courses/{course_id}/generate-audio` - Generate audio
 
+#### File serving
+
+- `GET /api/courses/{course_id}/image` - Serve generated course cover image
+- `GET /api/courses/{course_id}/audio` - Serve generated course audio file
+
 #### Configuration
+
 - `GET /api/models` - List available AI models
 - `GET /api/voices` - List available TTS voices
 - `GET /api/prompt-styles` - List available course styles
 
-### Example API Usage
+### Example API usage
 
 ```python
 import httpx
@@ -106,9 +137,13 @@ async with httpx.AsyncClient() as client:
 - **Error Handling**: Comprehensive error handling with proper HTTP status codes
 
 ### Frontend
+
 - **Vanilla JavaScript**: No framework dependencies for simplicity
+- **Markdown Rendering**: Client-side markdown parsing using marked.js library
 - **Responsive Design**: Mobile-friendly CSS with flexbox and grid
-- **Progress Tracking**: Visual step-by-step progress indicators
+- **Progress Tracking**: Visual step-by-step progress indicators with loading spinners
+- **Automatic Workflow**: Smart progression through generation stages with manual override
+- **Media Display**: Full-width image display and embedded audio player
 - **Error Handling**: User-friendly error messages and recovery
 
 ### Integration
@@ -118,10 +153,10 @@ async with httpx.AsyncClient() as client:
 
 ## Configuration
 
-### Environment Variables
+### Environment variables
 - `OPENAI_API_KEY`: Required for OpenAI API access
 
-### Default Settings
+### Default settings
 - **Server**: localhost:8000
 - **Output Directory**: ~/courses
 - **Default Models**: gpt-4o-mini for both outline and lectures
@@ -129,7 +164,7 @@ async with httpx.AsyncClient() as client:
 
 ## Troubleshooting
 
-### Common Issues
+### Common issues
 
 1. **"Course not found" errors**: Course data is stored in memory and will be lost when the server restarts
 2. **Model availability**: Not all OpenAI models may be available depending on your API plan
@@ -143,7 +178,7 @@ For development with auto-reload:
 uv run uvicorn examples.web_app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Production Considerations
+### Production considerations
 
 - Use a production WSGI server like Gunicorn
 - Implement persistent storage instead of in-memory course storage
