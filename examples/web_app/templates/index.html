@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OKCourse - AI Course Generator</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎓 OKCourse Generator</h1>
+            <p>Generate audiobook-style courses with lectures on any topic using AI</p>
+        </header>
+
+        <div class="form-section">
+            <form id="course-form">
+                <div class="form-group">
+                    <label for="title">Course Title</label>
+                    <input type="text" id="title" name="title" placeholder="Artificial Super Intelligence: Paperclips, Gray Goo, And You" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="num_lectures">Number of Lectures</label>
+                        <input type="number" id="num_lectures" name="num_lectures" min="1" max="20" value="4">
+                    </div>
+                    <div class="form-group">
+                        <label for="num_subtopics">Subtopics per Lecture</label>
+                        <input type="number" id="num_subtopics" name="num_subtopics" min="1" max="10" value="4">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="prompt_style">Course Style</label>
+                    <select id="prompt_style" name="prompt_style">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="text_model_outline">Outline Model</label>
+                        <select id="text_model_outline" name="text_model_outline">
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="text_model_lecture">Lecture Model</label>
+                        <select id="text_model_lecture" name="text_model_lecture">
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="generate_image" name="generate_image">
+                            Generate course image (PNG)
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="generate_audio" name="generate_audio">
+                            Generate course audio (MP3)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group" id="voice-group" style="display: none;">
+                    <label for="tts_voice">Voice for Lecturer</label>
+                    <select id="tts_voice" name="tts_voice">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="output_directory">Output Directory</label>
+                    <input type="text" id="output_directory" name="output_directory" value="~/courses">
+                </div>
+
+                <button type="submit" id="submit-btn" class="btn-primary">Create Course</button>
+            </form>
+        </div>
+
+        <div id="progress-section" class="progress-section" style="display: none;">
+            <h2>Course Generation Progress</h2>
+            <div class="progress-steps">
+                <div class="step" id="step-outline">
+                    <div class="step-icon">1</div>
+                    <div class="step-content">
+                        <div class="step-title">Generate Outline</div>
+                        <div class="step-status">Waiting...</div>
+                    </div>
+                </div>
+                <div class="step" id="step-lectures">
+                    <div class="step-icon">2</div>
+                    <div class="step-content">
+                        <div class="step-title">Generate Lectures</div>
+                        <div class="step-status">Waiting...</div>
+                    </div>
+                </div>
+                <div class="step" id="step-image">
+                    <div class="step-icon">3</div>
+                    <div class="step-content">
+                        <div class="step-title">Generate Image</div>
+                        <div class="step-status">Waiting...</div>
+                    </div>
+                </div>
+                <div class="step" id="step-audio">
+                    <div class="step-icon">4</div>
+                    <div class="step-content">
+                        <div class="step-title">Generate Audio</div>
+                        <div class="step-status">Waiting...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button id="btn-generate-outline" class="btn-secondary" onclick="generateOutline()">Generate Outline</button>
+                <button id="btn-generate-lectures" class="btn-secondary" onclick="generateLectures()" style="display: none;">Generate Lectures</button>
+                <button id="btn-generate-image" class="btn-secondary" onclick="generateImage()" style="display: none;">Generate Image</button>
+                <button id="btn-generate-audio" class="btn-secondary" onclick="generateAudio()" style="display: none;">Generate Audio</button>
+                <button id="btn-new-course" class="btn-primary" onclick="resetForm()" style="display: none;">Create New Course</button>
+            </div>
+        </div>
+
+        <div id="results-section" class="results-section" style="display: none;">
+            <div id="outline-result" class="result-card" style="display: none;">
+                <h3>Course Outline</h3>
+                <div id="outline-content"></div>
+            </div>
+
+            <div id="lectures-result" class="result-card" style="display: none;">
+                <h3>Generated Lectures</h3>
+                <div id="lectures-content"></div>
+            </div>
+
+            <div id="image-result" class="result-card" style="display: none;">
+                <h3>Course Cover Image</h3>
+                <div id="image-content"></div>
+            </div>
+
+            <div id="audio-result" class="result-card" style="display: none;">
+                <h3>Course Audio</h3>
+                <div id="audio-content"></div>
+            </div>
+
+            <div id="generation-info" class="result-card" style="display: none;">
+                <h3>Generation Details</h3>
+                <div id="generation-info-content"></div>
+            </div>
+        </div>
+
+        <div id="error-section" class="error-section" style="display: none;">
+            <div class="error-message">
+                <h3>Error</h3>
+                <div id="error-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
