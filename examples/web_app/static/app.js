@@ -2,6 +2,7 @@
 
 let currentCourseId = null;
 let progressEventSource = null;
+let isManualMode = false;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -79,7 +80,15 @@ async function handleFormSubmit(event) {
         tts_voice: formData.get('tts_voice'),
         output_directory: formData.get('output_directory')
     };
+    
+    // Capture manual mode setting
+    isManualMode = formData.has('manual_mode');
 
+    // Add loading state to submit button
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+    
     try {
         const response = await fetch('/api/courses', {
             method: 'POST',
@@ -96,6 +105,10 @@ async function handleFormSubmit(event) {
         const result = await response.json();
         currentCourseId = result.course_id;
         
+        // Remove loading state
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
+        
         // Hide form and show progress
         document.querySelector('.form-section').style.display = 'none';
         document.getElementById('progress-section').style.display = 'block';
@@ -108,6 +121,11 @@ async function handleFormSubmit(event) {
         
     } catch (error) {
         console.error('Error creating course:', error);
+        
+        // Remove loading state on error
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
+        
         showError('Failed to create course: ' + error.message);
     }
 }
@@ -146,10 +164,13 @@ function startProgressMonitoring() {
         progressEventSource.close();
     }
     
-    // Note: This is a simplified progress monitoring
-    // In a real implementation, you might use Server-Sent Events
-    // For now, we'll just enable the first button
-    document.getElementById('btn-generate-outline').style.display = 'inline-block';
+    if (isManualMode) {
+        // Manual mode: show first button
+        document.getElementById('btn-generate-outline').style.display = 'inline-block';
+    } else {
+        // Automatic mode: start with outline generation
+        setTimeout(() => generateOutline(), 1000);
+    }
 }
 
 // Generate course outline
@@ -157,7 +178,7 @@ async function generateOutline() {
     if (!currentCourseId) return;
     
     setStepStatus('step-outline', 'active', 'Generating...');
-    disableButton('btn-generate-outline');
+    setButtonLoading('btn-generate-outline', true);
     
     try {
         const response = await fetch(`/api/courses/${currentCourseId}/generate-outline`, {
@@ -171,14 +192,20 @@ async function generateOutline() {
         const result = await response.json();
         
         setStepStatus('step-outline', 'completed', 'Completed');
+        setButtonLoading('btn-generate-outline', false);
         displayOutline(result.outline);
         
-        // Enable next step
-        document.getElementById('btn-generate-lectures').style.display = 'inline-block';
+        // Progress to next step
+        if (isManualMode) {
+            document.getElementById('btn-generate-lectures').style.display = 'inline-block';
+        } else {
+            setTimeout(() => generateLectures(), 1000);
+        }
         
     } catch (error) {
         console.error('Error generating outline:', error);
         setStepStatus('step-outline', 'error', 'Failed: ' + error.message);
+        setButtonLoading('btn-generate-outline', false);
         showError('Failed to generate outline: ' + error.message);
     }
 }
@@ -188,7 +215,7 @@ async function generateLectures() {
     if (!currentCourseId) return;
     
     setStepStatus('step-lectures', 'active', 'Generating lectures...');
-    disableButton('btn-generate-lectures');
+    setButtonLoading('btn-generate-lectures', true);
     
     try {
         const response = await fetch(`/api/courses/${currentCourseId}/generate-lectures`, {
@@ -202,16 +229,25 @@ async function generateLectures() {
         const result = await response.json();
         
         setStepStatus('step-lectures', 'completed', 'Completed');
+        setButtonLoading('btn-generate-lectures', false);
         displayLectures(result.lectures);
         
-        // Enable next steps based on user selections
+        // Progress to next step
         const imageStep = document.getElementById('step-image');
         const audioStep = document.getElementById('step-audio');
         
         if (imageStep.style.display !== 'none') {
-            document.getElementById('btn-generate-image').style.display = 'inline-block';
+            if (isManualMode) {
+                document.getElementById('btn-generate-image').style.display = 'inline-block';
+            } else {
+                setTimeout(() => generateImage(), 1000);
+            }
         } else if (audioStep.style.display !== 'none') {
-            document.getElementById('btn-generate-audio').style.display = 'inline-block';
+            if (isManualMode) {
+                document.getElementById('btn-generate-audio').style.display = 'inline-block';
+            } else {
+                setTimeout(() => generateAudio(), 1000);
+            }
         } else {
             // If no image or audio, show completion
             showCompletion();
@@ -220,6 +256,7 @@ async function generateLectures() {
     } catch (error) {
         console.error('Error generating lectures:', error);
         setStepStatus('step-lectures', 'error', 'Failed: ' + error.message);
+        setButtonLoading('btn-generate-lectures', false);
         showError('Failed to generate lectures: ' + error.message);
     }
 }
@@ -229,7 +266,7 @@ async function generateImage() {
     if (!currentCourseId) return;
     
     setStepStatus('step-image', 'active', 'Generating image...');
-    disableButton('btn-generate-image');
+    setButtonLoading('btn-generate-image', true);
     
     try {
         const response = await fetch(`/api/courses/${currentCourseId}/generate-image`, {
@@ -243,12 +280,17 @@ async function generateImage() {
         const result = await response.json();
         
         setStepStatus('step-image', 'completed', 'Completed');
+        setButtonLoading('btn-generate-image', false);
         displayImage(result);
         
-        // Enable audio step or show completion
+        // Progress to audio step or show completion
         const audioStep = document.getElementById('step-audio');
         if (audioStep.style.display !== 'none') {
-            document.getElementById('btn-generate-audio').style.display = 'inline-block';
+            if (isManualMode) {
+                document.getElementById('btn-generate-audio').style.display = 'inline-block';
+            } else {
+                setTimeout(() => generateAudio(), 1000);
+            }
         } else {
             showCompletion();
         }
@@ -256,6 +298,7 @@ async function generateImage() {
     } catch (error) {
         console.error('Error generating image:', error);
         setStepStatus('step-image', 'error', 'Failed: ' + error.message);
+        setButtonLoading('btn-generate-image', false);
         showError('Failed to generate image: ' + error.message);
     }
 }
@@ -265,7 +308,7 @@ async function generateAudio() {
     if (!currentCourseId) return;
     
     setStepStatus('step-audio', 'active', 'Generating audio...');
-    disableButton('btn-generate-audio');
+    setButtonLoading('btn-generate-audio', true);
     
     try {
         const response = await fetch(`/api/courses/${currentCourseId}/generate-audio`, {
@@ -279,6 +322,7 @@ async function generateAudio() {
         const result = await response.json();
         
         setStepStatus('step-audio', 'completed', 'Completed');
+        setButtonLoading('btn-generate-audio', false);
         displayAudio(result);
         
         showCompletion();
@@ -286,6 +330,7 @@ async function generateAudio() {
     } catch (error) {
         console.error('Error generating audio:', error);
         setStepStatus('step-audio', 'error', 'Failed: ' + error.message);
+        setButtonLoading('btn-generate-audio', false);
         showError('Failed to generate audio: ' + error.message);
     }
 }
@@ -298,12 +343,33 @@ function setStepStatus(stepId, statusClass, statusText) {
     
     const status = step.querySelector('.step-status');
     status.textContent = statusText;
+    
+    // Show/hide spinner based on status
+    const spinner = step.querySelector('.step-spinner');
+    if (statusClass === 'active') {
+        spinner.style.display = 'block';
+    } else {
+        spinner.style.display = 'none';
+    }
 }
 
-// Disable button
-function disableButton(buttonId) {
+// Set button loading state
+function setButtonLoading(buttonId, isLoading) {
     const button = document.getElementById(buttonId);
-    button.disabled = true;
+    if (isLoading) {
+        button.classList.add('loading');
+        button.disabled = true;
+    } else {
+        button.classList.remove('loading');
+        button.disabled = false;
+        button.style.display = 'none'; // Hide after completion
+    }
+}
+
+// Disable button (legacy function)
+function disableButton(buttonId) {
+    setButtonLoading(buttonId, false);
+    const button = document.getElementById(buttonId);
     button.style.display = 'none';
 }
 
@@ -314,16 +380,22 @@ function displayOutline(outline) {
     const outlineCard = document.getElementById('outline-result');
     const outlineContent = document.getElementById('outline-content');
     
-    let outlineText = `Course Title: ${outline.title}\n\n`;
+    // Convert outline to markdown
+    let markdownText = `# ${outline.title}\n\n`;
     outline.topics.forEach(topic => {
-        outlineText += `Lecture ${topic.number}: ${topic.title}\n`;
-        topic.subtopics.forEach(subtopic => {
-            outlineText += `  - ${subtopic}\n`;
-        });
-        outlineText += '\n';
+        markdownText += `## Lecture ${topic.number}: ${topic.title}\n\n`;
+        if (topic.subtopics && topic.subtopics.length > 0) {
+            topic.subtopics.forEach(subtopic => {
+                markdownText += `- ${subtopic}\n`;
+            });
+            markdownText += '\n';
+        }
     });
     
-    outlineContent.textContent = outlineText;
+    // Render markdown to HTML
+    outlineContent.innerHTML = marked.parse(markdownText);
+    outlineContent.className = 'markdown-content';
+    
     outlineCard.style.display = 'block';
     document.getElementById('results-section').style.display = 'block';
 }
@@ -341,16 +413,14 @@ function displayLectures(lectures) {
         const lectureDiv = document.createElement('div');
         lectureDiv.className = 'lecture-item';
         
-        const titleDiv = document.createElement('div');
-        titleDiv.className = 'lecture-title';
-        titleDiv.textContent = `Lecture ${lecture.number}: ${lecture.title}`;
+        // Convert lecture to markdown
+        let markdownText = `## Lecture ${lecture.number}: ${lecture.title}\n\n`;
+        markdownText += lecture.text;
         
-        const textDiv = document.createElement('div');
-        textDiv.className = 'lecture-text';
-        textDiv.textContent = lecture.text;
+        // Render markdown to HTML
+        lectureDiv.innerHTML = marked.parse(markdownText);
+        lectureDiv.className = 'lecture-item markdown-content';
         
-        lectureDiv.appendChild(titleDiv);
-        lectureDiv.appendChild(textDiv);
         lecturesContent.appendChild(lectureDiv);
     });
     
@@ -360,15 +430,33 @@ function displayLectures(lectures) {
 // Display course image
 function displayImage(imageResult) {
     const imageCard = document.getElementById('image-result');
-    const imageContent = document.getElementById('image-content');
+    const courseImage = document.getElementById('course-image');
+    const downloadBtn = document.getElementById('btn-download-image');
     
     if (imageResult.image_exists && imageResult.image_path) {
-        imageContent.innerHTML = `
-            <p>Cover image generated successfully!</p>
+        // Set image source to API endpoint
+        courseImage.src = `/api/courses/${currentCourseId}/image`;
+        courseImage.style.display = 'block';
+        
+        // Setup download button
+        downloadBtn.onclick = () => downloadFile(`/api/courses/${currentCourseId}/image`, 'course_cover.png');
+        downloadBtn.style.display = 'inline-flex';
+        
+        // Add status message
+        const statusDiv = document.createElement('div');
+        statusDiv.innerHTML = `
+            <p>✅ Cover image generated successfully!</p>
             <p><strong>Location:</strong> ${imageResult.image_path}</p>
         `;
+        statusDiv.style.marginBottom = '1rem';
+        
+        // Insert status before media container
+        const mediaContainer = courseImage.parentElement;
+        mediaContainer.parentElement.insertBefore(statusDiv, mediaContainer);
     } else {
-        imageContent.innerHTML = '<p>Image generation completed but file not found.</p>';
+        const statusDiv = document.createElement('div');
+        statusDiv.innerHTML = '<p>❌ Image generation completed but file not found.</p>';
+        courseImage.parentElement.parentElement.appendChild(statusDiv);
     }
     
     imageCard.style.display = 'block';
@@ -377,15 +465,33 @@ function displayImage(imageResult) {
 // Display course audio
 function displayAudio(audioResult) {
     const audioCard = document.getElementById('audio-result');
-    const audioContent = document.getElementById('audio-content');
+    const courseAudio = document.getElementById('course-audio');
+    const downloadBtn = document.getElementById('btn-download-audio');
     
     if (audioResult.audio_exists && audioResult.audio_path) {
-        audioContent.innerHTML = `
-            <p>Course audio generated successfully!</p>
+        // Set audio source to API endpoint
+        courseAudio.src = `/api/courses/${currentCourseId}/audio`;
+        courseAudio.style.display = 'block';
+        
+        // Setup download button
+        downloadBtn.onclick = () => downloadFile(`/api/courses/${currentCourseId}/audio`, 'course_audio.mp3');
+        downloadBtn.style.display = 'inline-flex';
+        
+        // Add status message
+        const statusDiv = document.createElement('div');
+        statusDiv.innerHTML = `
+            <p>✅ Course audio generated successfully!</p>
             <p><strong>Location:</strong> ${audioResult.audio_path}</p>
         `;
+        statusDiv.style.marginBottom = '1rem';
+        
+        // Insert status before media container
+        const mediaContainer = courseAudio.parentElement;
+        mediaContainer.parentElement.insertBefore(statusDiv, mediaContainer);
     } else {
-        audioContent.innerHTML = '<p>Audio generation completed but file not found.</p>';
+        const statusDiv = document.createElement('div');
+        statusDiv.innerHTML = '<p>❌ Audio generation completed but file not found.</p>';
+        courseAudio.parentElement.parentElement.appendChild(statusDiv);
     }
     
     audioCard.style.display = 'block';
@@ -448,6 +554,7 @@ function resetForm() {
     
     // Reset state
     currentCourseId = null;
+    isManualMode = false;
     
     // Close progress monitoring
     if (progressEventSource) {
@@ -472,6 +579,17 @@ function resetForm() {
     
     // Reload dropdown options
     loadDropdownOptions();
+}
+
+// Download file helper function
+function downloadFile(url, filename) {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 // Show error message
