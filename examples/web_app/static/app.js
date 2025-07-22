@@ -3,6 +3,7 @@
 let currentCourseId = null;
 let progressEventSource = null;
 let isManualMode = false;
+let isAutoScrollEnabled = true;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -61,6 +62,13 @@ function setupEventListeners() {
         const voiceGroup = document.getElementById('voice-group');
         voiceGroup.style.display = this.checked ? 'block' : 'none';
     });
+    
+    // Autoscroll toggle
+    document.addEventListener('change', function(event) {
+        if (event.target.id === 'autoscroll-enabled') {
+            isAutoScrollEnabled = event.target.checked;
+        }
+    });
 }
 
 // Handle form submission
@@ -112,6 +120,9 @@ async function handleFormSubmit(event) {
         // Hide form and show progress
         document.querySelector('.form-section').style.display = 'none';
         document.getElementById('progress-section').style.display = 'block';
+        
+        // Debug: Log that progress section is shown
+        console.log('Progress section shown, generation-layout should be visible');
         
         // Initialize progress tracking
         initializeProgressSteps(courseData);
@@ -397,7 +408,15 @@ function displayOutline(outline) {
     outlineContent.className = 'markdown-content';
     
     outlineCard.style.display = 'block';
-    document.getElementById('results-section').style.display = 'block';
+    
+    // Hide the placeholder content
+    const placeholder = document.querySelector('.content-placeholder');
+    if (placeholder) {
+        placeholder.style.display = 'none';
+    }
+    
+    // Auto-scroll to the new content
+    autoScrollToContent('outline-result');
 }
 
 // Display course lectures
@@ -425,6 +444,9 @@ function displayLectures(lectures) {
     });
     
     lecturesCard.style.display = 'block';
+    
+    // Auto-scroll to the new content
+    autoScrollToContent('lectures-result');
 }
 
 // Display course image
@@ -460,6 +482,9 @@ function displayImage(imageResult) {
     }
     
     imageCard.style.display = 'block';
+    
+    // Auto-scroll to the new content
+    autoScrollToContent('image-result');
 }
 
 // Display course audio
@@ -495,6 +520,9 @@ function displayAudio(audioResult) {
     }
     
     audioCard.style.display = 'block';
+    
+    // Auto-scroll to the new content
+    autoScrollToContent('audio-result');
 }
 
 // Show completion
@@ -531,6 +559,9 @@ async function showCompletion() {
             `;
             
             infoCard.style.display = 'block';
+            
+            // Auto-scroll to the completion info
+            autoScrollToContent('generation-info');
         }
         
     } catch (error) {
@@ -546,7 +577,6 @@ function resetForm() {
     // Reset all sections
     document.querySelector('.form-section').style.display = 'block';
     document.getElementById('progress-section').style.display = 'none';
-    document.getElementById('results-section').style.display = 'none';
     document.getElementById('error-section').style.display = 'none';
     
     // Reset form
@@ -555,6 +585,19 @@ function resetForm() {
     // Reset state
     currentCourseId = null;
     isManualMode = false;
+    isAutoScrollEnabled = true;
+    
+    // Reset autoscroll checkbox
+    const autoscrollCheckbox = document.getElementById('autoscroll-enabled');
+    if (autoscrollCheckbox) {
+        autoscrollCheckbox.checked = true;
+    }
+    
+    // Show placeholder content again
+    const placeholder = document.querySelector('.content-placeholder');
+    if (placeholder) {
+        placeholder.style.display = 'block';
+    }
     
     // Close progress monitoring
     if (progressEventSource) {
@@ -590,6 +633,33 @@ function downloadFile(url, filename) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+// Auto-scroll to new content
+function autoScrollToContent(elementId) {
+    if (!isAutoScrollEnabled) return;
+    
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    // Add a small delay to allow content to render
+    setTimeout(() => {
+        const contentColumn = document.getElementById('content-column');
+        if (contentColumn) {
+            // Calculate the position relative to the content column
+            const contentColumnRect = contentColumn.getBoundingClientRect();
+            const elementRect = element.getBoundingClientRect();
+            const relativeTop = elementRect.top - contentColumnRect.top + contentColumn.scrollTop;
+            
+            contentColumn.scrollTo({
+                top: relativeTop - 20, // Small offset for better visual
+                behavior: 'smooth'
+            });
+        } else {
+            // Fallback to regular scroll if content column not found
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 300);
 }
 
 // Show error message

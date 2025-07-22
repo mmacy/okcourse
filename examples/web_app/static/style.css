@@ -143,23 +143,56 @@ input[type="checkbox"] {
 }
 
 .progress-section {
-    background: var(--surface);
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: var(--shadow);
     margin-bottom: 2rem;
 }
 
-.progress-section h2 {
-    margin-bottom: 2rem;
-    color: var(--text-primary);
-}
 
 .progress-steps {
     display: flex;
     flex-direction: column;
     gap: 1rem;
     margin-bottom: 2rem;
+}
+
+/* Override progress-steps for status column */
+.status-column .progress-steps {
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.status-column .step {
+    padding: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.status-column .step-icon {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.8rem;
+    margin-right: 0.75rem;
+}
+
+.status-column .step-title {
+    font-size: 0.9rem;
+    margin-bottom: 0.125rem;
+}
+
+.status-column .step-status {
+    font-size: 0.8rem;
+}
+
+/* Compact actions in status column */
+.status-column .actions {
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.status-column .btn-secondary,
+.status-column .btn-primary {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    text-align: center;
 }
 
 .step {
@@ -453,6 +486,146 @@ input[type="checkbox"] {
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* Two-column generation layout */
+.generation-layout {
+    display: flex;
+    gap: 2rem;
+    min-height: 60vh;
+}
+
+.status-column {
+    flex: 0 0 20%;
+    min-width: 200px;
+    background: var(--surface);
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    height: fit-content;
+    position: sticky;
+    top: 2rem;
+}
+
+.status-column h2 {
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+}
+
+.content-column {
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+}
+
+.content-column .results-section {
+    margin-bottom: 0;
+}
+
+/* Autoscroll control styling */
+.autoscroll-control {
+    margin: 1.5rem 0;
+    padding: 1rem 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
+.autoscroll-control label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.autoscroll-control input[type="checkbox"] {
+    margin-right: 0.75rem;
+    margin-left: 0;
+}
+
+
+/* Content column result cards */
+.content-column .result-card {
+    margin-bottom: 1.5rem;
+    animation: slideInFromRight 0.5s ease-out;
+}
+
+@keyframes slideInFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Smooth scroll behavior for content column */
+.content-column {
+    scroll-behavior: smooth;
+}
+
+/* Auto-scroll indicator */
+.content-column.auto-scrolling {
+    scroll-behavior: smooth;
+}
+
+/* Mobile responsive layout */
+@media (max-width: 768px) {
+    .generation-layout {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .status-column {
+        flex: none;
+        position: static;
+        order: -1;
+    }
+    
+    .status-column h2 {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .status-column .progress-steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .status-column .step {
+        padding: 0.5rem;
+    }
+    
+    .status-column .step-icon {
+        width: 1.5rem;
+        height: 1.5rem;
+        font-size: 0.7rem;
+        margin-right: 0.5rem;
+    }
+    
+    .status-column .actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .status-column .btn-secondary,
+    .status-column .btn-primary {
+        width: auto;
+        flex: 1;
+        min-width: 120px;
+    }
+    
+    .autoscroll-control {
+        margin: 1rem 0;
+        padding: 0.75rem 0;
+    }
 }
 
 /* Markdown content styles */

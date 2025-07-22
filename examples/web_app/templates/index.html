@@ -100,129 +100,146 @@
         </div>
 
         <div id="progress-section" class="progress-section" style="display: none;">
-            <h2>Course generation progress</h2>
-            <div class="progress-steps">
-                <div class="step" id="step-outline">
-                    <div class="step-icon">1</div>
-                    <div class="step-content">
-                        <div class="step-title">Generate outline</div>
-                        <div class="step-status">Waiting...</div>
+            <div class="generation-layout">
+                <div class="status-column">
+                    <h2>Progress</h2>
+                    <div class="progress-steps">
+                        <div class="step" id="step-outline">
+                            <div class="step-icon">1</div>
+                            <div class="step-content">
+                                <div class="step-title">Generate outline</div>
+                                <div class="step-status">Waiting...</div>
+                            </div>
+                            <div class="step-spinner" style="display: none;">
+                                <span class="loading-spinner"></span>
+                            </div>
+                        </div>
+                        <div class="step" id="step-lectures">
+                            <div class="step-icon">2</div>
+                            <div class="step-content">
+                                <div class="step-title">Generate lectures</div>
+                                <div class="step-status">Waiting...</div>
+                            </div>
+                            <div class="step-spinner" style="display: none;">
+                                <span class="loading-spinner"></span>
+                            </div>
+                        </div>
+                        <div class="step" id="step-image">
+                            <div class="step-icon">3</div>
+                            <div class="step-content">
+                                <div class="step-title">Generate image</div>
+                                <div class="step-status">Waiting...</div>
+                            </div>
+                            <div class="step-spinner" style="display: none;">
+                                <span class="loading-spinner"></span>
+                            </div>
+                        </div>
+                        <div class="step" id="step-audio">
+                            <div class="step-icon">4</div>
+                            <div class="step-content">
+                                <div class="step-title">Generate audio</div>
+                                <div class="step-status">Waiting...</div>
+                            </div>
+                            <div class="step-spinner" style="display: none;">
+                                <span class="loading-spinner"></span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="step-spinner" style="display: none;">
-                        <span class="loading-spinner"></span>
+                    
+                    <div class="autoscroll-control">
+                        <label>
+                            <input type="checkbox" id="autoscroll-enabled" checked>
+                            Auto-scroll to new content
+                        </label>
+                    </div>
+                    
+                    <div class="actions">
+                        <button id="btn-generate-outline" class="btn-secondary" onclick="generateOutline()">
+                            <span class="btn-text">Generate outline</span>
+                            <span class="btn-loading" style="display: none;">
+                                <span class="loading-spinner"></span>
+                                Generating...
+                            </span>
+                        </button>
+                        <button id="btn-generate-lectures" class="btn-secondary" onclick="generateLectures()" style="display: none;">
+                            <span class="btn-text">Generate lectures</span>
+                            <span class="btn-loading" style="display: none;">
+                                <span class="loading-spinner"></span>
+                                Generating...
+                            </span>
+                        </button>
+                        <button id="btn-generate-image" class="btn-secondary" onclick="generateImage()" style="display: none;">
+                            <span class="btn-text">Generate image</span>
+                            <span class="btn-loading" style="display: none;">
+                                <span class="loading-spinner"></span>
+                                Generating...
+                            </span>
+                        </button>
+                        <button id="btn-generate-audio" class="btn-secondary" onclick="generateAudio()" style="display: none;">
+                            <span class="btn-text">Generate audio</span>
+                            <span class="btn-loading" style="display: none;">
+                                <span class="loading-spinner"></span>
+                                Generating...
+                            </span>
+                        </button>
+                        <button id="btn-new-course" class="btn-primary" onclick="resetForm()" style="display: none;">Create new course</button>
                     </div>
                 </div>
-                <div class="step" id="step-lectures">
-                    <div class="step-icon">2</div>
-                    <div class="step-content">
-                        <div class="step-title">Generate lectures</div>
-                        <div class="step-status">Waiting...</div>
+                
+                <div class="content-column" id="content-column">
+                    <div class="content-placeholder" style="padding: 2rem; color: #64748b; text-align: center;">
+                        Generated content will appear here...
                     </div>
-                    <div class="step-spinner" style="display: none;">
-                        <span class="loading-spinner"></span>
-                    </div>
-                </div>
-                <div class="step" id="step-image">
-                    <div class="step-icon">3</div>
-                    <div class="step-content">
-                        <div class="step-title">Generate image</div>
-                        <div class="step-status">Waiting...</div>
-                    </div>
-                    <div class="step-spinner" style="display: none;">
-                        <span class="loading-spinner"></span>
-                    </div>
-                </div>
-                <div class="step" id="step-audio">
-                    <div class="step-icon">4</div>
-                    <div class="step-content">
-                        <div class="step-title">Generate audio</div>
-                        <div class="step-status">Waiting...</div>
-                    </div>
-                    <div class="step-spinner" style="display: none;">
-                        <span class="loading-spinner"></span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="actions">
-                <button id="btn-generate-outline" class="btn-secondary" onclick="generateOutline()">
-                    <span class="btn-text">Generate outline</span>
-                    <span class="btn-loading" style="display: none;">
-                        <span class="loading-spinner"></span>
-                        Generating...
-                    </span>
-                </button>
-                <button id="btn-generate-lectures" class="btn-secondary" onclick="generateLectures()" style="display: none;">
-                    <span class="btn-text">Generate lectures</span>
-                    <span class="btn-loading" style="display: none;">
-                        <span class="loading-spinner"></span>
-                        Generating...
-                    </span>
-                </button>
-                <button id="btn-generate-image" class="btn-secondary" onclick="generateImage()" style="display: none;">
-                    <span class="btn-text">Generate image</span>
-                    <span class="btn-loading" style="display: none;">
-                        <span class="loading-spinner"></span>
-                        Generating...
-                    </span>
-                </button>
-                <button id="btn-generate-audio" class="btn-secondary" onclick="generateAudio()" style="display: none;">
-                    <span class="btn-text">Generate audio</span>
-                    <span class="btn-loading" style="display: none;">
-                        <span class="loading-spinner"></span>
-                        Generating...
-                    </span>
-                </button>
-                <button id="btn-new-course" class="btn-primary" onclick="resetForm()" style="display: none;">Create new course</button>
-            </div>
-        </div>
+                    <div id="results-section" class="results-section">
+                        <div id="outline-result" class="result-card" style="display: none;">
+                            <h3>Course outline</h3>
+                            <div id="outline-content"></div>
+                        </div>
 
-        <div id="results-section" class="results-section" style="display: none;">
-            <div id="outline-result" class="result-card" style="display: none;">
-                <h3>Course outline</h3>
-                <div id="outline-content"></div>
-            </div>
+                        <div id="lectures-result" class="result-card" style="display: none;">
+                            <h3>Generated lectures</h3>
+                            <div id="lectures-content"></div>
+                        </div>
 
-            <div id="lectures-result" class="result-card" style="display: none;">
-                <h3>Generated lectures</h3>
-                <div id="lectures-content"></div>
-            </div>
+                        <div id="image-result" class="result-card" style="display: none;">
+                            <h3>Course cover image</h3>
+                            <div id="image-content">
+                                <div class="media-container">
+                                    <img id="course-image" style="display: none;" alt="Course cover image">
+                                    <div class="media-actions">
+                                        <button id="btn-download-image" class="btn-download" style="display: none;">
+                                            <span>📥</span> Download image
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-            <div id="image-result" class="result-card" style="display: none;">
-                <h3>Course cover image</h3>
-                <div id="image-content">
-                    <div class="media-container">
-                        <img id="course-image" style="display: none;" alt="Course cover image">
-                        <div class="media-actions">
-                            <button id="btn-download-image" class="btn-download" style="display: none;">
-                                <span>📥</span> Download image
-                            </button>
+                        <div id="audio-result" class="result-card" style="display: none;">
+                            <h3>Course audio</h3>
+                            <div id="audio-content">
+                                <div class="media-container">
+                                    <audio id="course-audio" controls style="display: none;">
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                    <div class="media-actions">
+                                        <button id="btn-download-audio" class="btn-download" style="display: none;">
+                                            <span>📥</span> Download audio
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="generation-info" class="result-card" style="display: none;">
+                            <h3>Generation details</h3>
+                            <div id="generation-info-content"></div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div id="audio-result" class="result-card" style="display: none;">
-                <h3>Course audio</h3>
-                <div id="audio-content">
-                    <div class="media-container">
-                        <audio id="course-audio" controls style="display: none;">
-                            Your browser does not support the audio element.
-                        </audio>
-                        <div class="media-actions">
-                            <button id="btn-download-audio" class="btn-download" style="display: none;">
-                                <span>📥</span> Download audio
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="generation-info" class="result-card" style="display: none;">
-                <h3>Generation details</h3>
-                <div id="generation-info-content"></div>
-            </div>
         </div>
+
 
         <div id="error-section" class="error-section" style="display: none;">
             <div class="error-message">
