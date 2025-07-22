@@ -4,12 +4,53 @@ let currentCourseId = null;
 let progressEventSource = null;
 let isManualMode = false;
 let isAutoScrollEnabled = true;
+let currentTheme = 'light';
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
+    initializeTheme();
     loadDropdownOptions();
     setupEventListeners();
 });
+
+// Theme management
+function initializeTheme() {
+    // Check for saved theme preference or detect system preference
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+        setTheme(savedTheme);
+    } else {
+        // Detect system preference
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setTheme(prefersDark ? 'dark' : 'light');
+    }
+    
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('theme')) {
+            setTheme(e.matches ? 'dark' : 'light');
+        }
+    });
+}
+
+function setTheme(theme) {
+    currentTheme = theme;
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+    
+    // Update theme toggle button aria-label
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.setAttribute('aria-label', 
+            theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+        );
+    }
+}
+
+function toggleTheme() {
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+}
 
 // Load dropdown options from API
 async function loadDropdownOptions() {
@@ -69,6 +110,9 @@ function setupEventListeners() {
             isAutoScrollEnabled = event.target.checked;
         }
     });
+    
+    // Theme toggle
+    document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
 }
 
 // Handle form submission

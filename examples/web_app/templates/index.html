@@ -11,15 +11,26 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎓 OKCourse Generator</h1>
-            <p>Generate audiobook-style courses with lectures on any topic using AI</p>
+            <div class="header-content">
+                <div class="header-text">
+                    <h1>🎓 OKCourse Generator</h1>
+                    <p>Generate audiobook-style courses with lectures on any topic using AI</p>
+                </div>
+                <div class="theme-switcher">
+                    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+                        <span class="theme-icon light-icon">☀️</span>
+                        <span class="theme-icon dark-icon">🌙</span>
+                    </button>
+                </div>
+            </div>
         </header>
 
         <div class="form-section">
             <form id="course-form">
                 <div class="form-group">
                     <label for="title">Course title</label>
-                    <input type="text" id="title" name="title" placeholder="Artificial Super Intelligence: Paperclips, Gray Goo, And You" required>
+                    <input type="text" id="title" name="title" placeholder="Artificial Super Intelligence: Paperclips, Gray Goo, And You" required aria-describedby="title-help">
+                    <small id="title-help" class="form-help">Enter a descriptive title for your course</small>
                 </div>
 
                 <div class="form-row">
@@ -103,14 +114,14 @@
             <div class="generation-layout">
                 <div class="status-column">
                     <h2>Progress</h2>
-                    <div class="progress-steps">
-                        <div class="step" id="step-outline">
-                            <div class="step-icon">1</div>
+                    <div class="progress-steps" role="progressbar" aria-label="Course generation progress">
+                        <div class="step" id="step-outline" role="listitem" aria-describedby="step-outline-status">
+                            <div class="step-icon" aria-hidden="true">1</div>
                             <div class="step-content">
                                 <div class="step-title">Generate outline</div>
-                                <div class="step-status">Waiting...</div>
+                                <div class="step-status" id="step-outline-status">Waiting...</div>
                             </div>
-                            <div class="step-spinner" style="display: none;">
+                            <div class="step-spinner" style="display: none;" aria-hidden="true">
                                 <span class="loading-spinner"></span>
                             </div>
                         </div>
