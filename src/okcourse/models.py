@@ -148,7 +148,7 @@ class CourseSettings(BaseModel):
         "For gpt-4o-mini-tts: all of the above plus ballad, cedar, marin, verse.",
     )
     tts_instructions: str | None = Field(
-        None,
+        "Speak in a relaxed scholarly tone with a subtle emphasis on key terms.",
         description="Optional instructions to control voice behavior. Only works with gpt-4o-mini-tts models.",
     )
     log_level: int | None = Field(

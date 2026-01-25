@@ -91,6 +91,18 @@ async def main():
         course.settings.tts_model = st.selectbox("TTS model", options=tts_models, index=tts_models.index("tts-1") if "tts-1" in tts_models else 0)
         available_voices = get_voices_for_model(course.settings.tts_model)
         course.settings.tts_voice = st.selectbox("Voice", options=available_voices)
+        supports_instructions = course.settings.tts_model.startswith("gpt-4o-mini-tts")
+        instructions_help = (
+            "Only gpt-4o-mini-tts models support custom voice instructions; leave blank to skip."
+        )
+        tts_instructions = st.text_input(
+            "Voice instructions (optional, gpt-4o-mini-tts only)",
+            value=course.settings.tts_instructions or "",
+            help=instructions_help,
+            disabled=not supports_instructions,
+            placeholder="e.g., Speak in a calm, measured tone with slight British cadence",
+        )
+        course.settings.tts_instructions = tts_instructions if supports_instructions and tts_instructions.strip() else None
 
     course.settings.output_directory = (
         Path(st.text_input("Output directory", value=course.settings.output_directory)).expanduser().resolve()
