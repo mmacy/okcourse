@@ -166,3 +166,6 @@ lectures/
 .DS_Store
 generated_okcourses/
 .claude/settings.local.json
+PLAN.md
+REVIEW.md
+UPGRADE.md
