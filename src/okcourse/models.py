@@ -133,15 +133,23 @@ class CourseSettings(BaseModel):
     )
     image_model: str = Field(
         "dall-e-3",
-        description="The ID of the image generation model to use.",
+        description="The ID of the image generation model to use. Available models include: "
+        "dall-e-2, dall-e-3, gpt-image-1, gpt-image-1-mini, gpt-image-1.5.",
     )
     tts_model: str = Field(
         "tts-1",
-        description="The ID of the text-to-speech model to use.",
+        description="The ID of the text-to-speech model to use. Available models include: "
+        "tts-1, tts-1-hd, gpt-4o-mini-tts, gpt-4o-mini-tts-2025-12-15.",
     )
     tts_voice: str = Field(
         "alloy",
-        description="The voice to use for text-to-speech audio generation.",
+        description="The voice to use for text-to-speech audio generation. "
+        "For tts-1 and tts-1-hd: alloy, ash, coral, echo, fable, nova, onyx, sage, shimmer. "
+        "For gpt-4o-mini-tts: all of the above plus ballad, cedar, marin, verse.",
+    )
+    tts_instructions: str | None = Field(
+        None,
+        description="Optional instructions to control voice behavior. Only works with gpt-4o-mini-tts models.",
     )
     log_level: int | None = Field(
         INFO,

@@ -37,6 +37,73 @@ The `ACADEMIC` prompts are a good starting point for creating courses with the s
 subject you're interested in but not entirely familiar with.
 """
 
+LIFELONG_LEARNER: CoursePromptSet = CoursePromptSet(
+    description="Accessible lecture series for curious adults",
+
+    system="You are a gifted professor known for making complex topics accessible and engaging for general audiences. "
+    "You've been invited to record a lecture series for curious adults who are eager to learn but have no specialized "
+    "background in the subject. Your style is warm, conversational, and enthusiastic—like explaining fascinating ideas "
+    "to a bright friend over coffee. You use vivid examples, analogies, and stories to illuminate concepts. You avoid "
+    "jargon, but when technical terms are necessary, you explain them clearly. You connect ideas to broader themes and "
+    "explain why they matter. Your goal is to spark genuine curiosity and leave listeners feeling enriched.",
+
+    outline="Create an outline for ${num_lectures} lectures in a series titled '${course_title}' aimed at curious adults "
+    "with no specialized background. Each lecture should have ${num_subtopics} key topics. Structure the series to build "
+    "understanding progressively, starting with foundational concepts and moving toward more nuanced ideas. "
+    "Respond only with the outline, omitting any other commentary.",
+
+    lecture="Write the complete text for a lecture titled '${lecture_title}' in the series '${course_title}'. "
+    "Your audience is curious adults who are eager to learn but have no specialized background. Be engaging and "
+    "conversational—use vivid examples, stories, and analogies to make concepts memorable. Avoid jargon, but when "
+    "technical terms are needed, explain them clearly. Connect ideas to everyday life and explain why they matter. "
+    "Write for audio delivery: no lists, no markdown, no formatting that would sound awkward when read aloud. "
+    "Ensure this lecture complements but doesn't duplicate content from the other lectures in the series:\n\n"
+    "${course_outline}",
+
+    image="Create a cover image for an educational lecture series titled '${course_title}'. The style should be "
+    "inviting and intellectually stimulating—think of a well-designed popular nonfiction book cover. Use warm, "
+    "approachable colors and imagery that evokes curiosity and discovery. The design should appeal to educated adults "
+    "who enjoy learning for its own sake.",
+)
+"""Prompt set for creating accessible, engaging lecture series aimed at curious adults.
+
+Similar in style to The Great Courses or popular nonfiction audiobooks. Best for topics you want to explore in an
+approachable way without assuming specialized prior knowledge.
+"""
+
+UNDERGRADUATE: CoursePromptSet = CoursePromptSet(
+    description="Introductory college course",
+
+    system="You are an experienced college professor teaching an introductory course to first-year undergraduates. "
+    "Your students are intelligent but new to this field, so you build concepts from the ground up. Your teaching style "
+    "is clear, organized, and encouraging. You define key terms, explain foundational principles, and use concrete "
+    "examples to reinforce understanding. You occasionally reference how topics connect to more advanced study, giving "
+    "students a sense of where the field leads. Your tone is professional but approachable, like a professor who "
+    "genuinely wants students to succeed.",
+
+    outline="Create an outline for ${num_lectures} lectures in an introductory college course titled '${course_title}'. "
+    "Each lecture should cover ${num_subtopics} key topics. Structure the course to build systematically from "
+    "foundational concepts to more complex ideas, as you would for first-year students with no prior background. "
+    "Respond only with the outline, omitting any other commentary.",
+
+    lecture="Write the complete text for a lecture titled '${lecture_title}' in the introductory course "
+    "'${course_title}'. Your audience is first-year college students encountering this material for the first time. "
+    "Define key terms when introducing them. Explain concepts clearly and use concrete examples to reinforce "
+    "understanding. Maintain a clear logical structure and occasionally note how this topic connects to broader themes "
+    "in the field. Write for audio delivery: no lists, no markdown, no formatting. Ensure this lecture complements but "
+    "doesn't duplicate content from the other lectures:\n\n${course_outline}",
+
+    image="Create a cover image for an introductory college course titled '${course_title}'. The style should be "
+    "clean, modern, and academic—similar to a well-designed textbook cover. Use colors and imagery that suggest "
+    "learning, knowledge, and intellectual growth. The design should feel welcoming to students beginning their "
+    "educational journey in this subject.",
+)
+"""Prompt set for creating introductory undergraduate-level courses.
+
+Best for topics where you want a systematic, foundational approach that builds concepts from the ground up,
+suitable for learners new to the subject.
+"""
+
 GAME_MASTER: CoursePromptSet = CoursePromptSet(
     description="Narrated classic adventure module",
 
@@ -73,6 +140,8 @@ popular TTRPG from the late 1970s through the 1980s to early 1990s.
 
 PROMPT_COLLECTION: list = [
     ACADEMIC,
+    LIFELONG_LEARNER,
+    UNDERGRADUATE,
     GAME_MASTER,
 ]
 """List of all the prompts in the library, suitable for presenting to a user for selecting the type of course they'd like to create."""  # noqa: E501

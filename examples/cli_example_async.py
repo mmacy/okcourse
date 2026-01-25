@@ -13,7 +13,7 @@ from pathlib import Path
 import questionary
 
 from okcourse import Course, OpenAIAsyncGenerator
-from okcourse.generators.openai.openai_utils import tts_voices, get_usable_models_async
+from okcourse.generators.openai.openai_utils import tts_models, get_voices_for_model, get_usable_models_async
 from okcourse.prompt_library import PROMPT_COLLECTION
 from okcourse.utils.text_utils import sanitize_filename, get_duration_string_from_seconds
 
@@ -139,11 +139,19 @@ async def main():
         course = await generator.generate_image(course)
 
     if lectures_accepted and await async_prompt(questionary.confirm, "Generate MP3 audio file for course?"):
+        course.settings.tts_model = await async_prompt(
+            questionary.select,
+            "Choose a TTS model",
+            choices=tts_models,
+            default="tts-1",
+        )
+
+        available_voices = get_voices_for_model(course.settings.tts_model)
         course.settings.tts_voice = await async_prompt(
             questionary.select,
             "Choose a voice for the course lecturer",
-            choices=tts_voices,
-            default=tts_voices[0],
+            choices=available_voices,
+            default=available_voices[0],
         )
 
         print("Generating course audio...")

@@ -12,7 +12,7 @@ from openai.types.images_response import ImagesResponse
 
 from okcourse.constants import AI_DISCLOSURE, MAX_LECTURES
 from okcourse.generators.base import CourseGenerator
-from okcourse.generators.openai.openai_utils import execute_request_with_retry
+from okcourse.generators.openai.openai_utils import _get_retry_after, execute_request_with_retry, validate_tts_voice
 from okcourse.models import Course, CourseLecture, CourseOutline
 from okcourse.utils.audio_utils import combine_mp3_buffers
 from okcourse.utils.log_utils import get_top_level_version, time_tracker
@@ -208,15 +208,32 @@ class OpenAIAsyncGenerator(CourseGenerator):
             with time_tracker(course.generation_info, "image_gen_elapsed_seconds"):
                 image_prompt_sent = Template(course.settings.prompts.image).substitute(course_title=course.title)
                 self.log.info("Requesting cover image...")
+
+                # Build image generation kwargs based on model type
+                # GPT image models (gpt-image-*) don't support response_format or style params
+                # and use different quality values than DALL-E models
+                image_model = course.settings.image_model
+                is_gpt_image_model = image_model.startswith("gpt-image")
+
+                image_kwargs = {
+                    "model": image_model,
+                    "prompt": image_prompt_sent,
+                    "n": 1,
+                    "size": "1024x1024",
+                }
+
+                if is_gpt_image_model:
+                    # GPT image models: quality is auto/high/medium/low, no response_format or style
+                    image_kwargs["quality"] = "auto"
+                else:
+                    # DALL-E models: quality is standard/hd, supports response_format and style
+                    image_kwargs["response_format"] = "b64_json"
+                    image_kwargs["quality"] = "standard"
+                    image_kwargs["style"] = "vivid"
+
                 image_response = await execute_request_with_retry(
                     self.client.images.generate,
-                    model=course.settings.image_model,
-                    prompt=image_prompt_sent,
-                    n=1,
-                    size="1024x1024",
-                    response_format="b64_json",
-                    quality="standard",
-                    style="vivid",
+                    **image_kwargs,
                 )
 
             if not image_response.data:
@@ -277,11 +294,16 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
         while True:
             try:
-                async with self.client.audio.speech.with_streaming_response.create(
-                    model=course.settings.tts_model,
-                    voice=course.settings.tts_voice,
-                    input=text_chunk,
-                ) as response:
+                tts_kwargs = {
+                    "model": course.settings.tts_model,
+                    "voice": course.settings.tts_voice,
+                    "input": text_chunk,
+                }
+                # instructions param only works with gpt-4o-mini-tts models, not tts-1 or tts-1-hd
+                if course.settings.tts_instructions and course.settings.tts_model.startswith("gpt-4o-mini-tts"):
+                    tts_kwargs["instructions"] = course.settings.tts_instructions
+
+                async with self.client.audio.speech.with_streaming_response.create(**tts_kwargs) as response:
                     audio_bytes = io.BytesIO()
                     async for data in response.iter_bytes():
                         audio_bytes.write(data)
@@ -293,8 +315,8 @@ class OpenAIAsyncGenerator(CourseGenerator):
 
             except RateLimitError as rle:
                 self.log.warning(f"RateLimitError while generating TTS for chunk {chunk_num}: {rle}")
-                # Leverage the manual approach or the same exponential function for concurrency
-                recommended_wait = _parse_openai_rate_limit_wait_time(str(rle))
+                retry_after_ms = _get_retry_after(rle)
+                recommended_wait = (retry_after_ms / 1000) if retry_after_ms else 5.0
                 self.log.warning(f"Retrying TTS chunk {chunk_num} in {recommended_wait} seconds...")
                 await asyncio.sleep(recommended_wait)
 
@@ -305,6 +327,10 @@ class OpenAIAsyncGenerator(CourseGenerator):
             The `Course` with its `audio_file_path` attribute set, pointing to the TTS-generated file.
         """
         course.settings.output_directory = course.settings.output_directory.expanduser().resolve()
+
+        # Validate voice compatibility before starting TTS generation
+        validate_tts_voice(course.settings.tts_model, course.settings.tts_voice)
+
         if not tokenizer_available():
             download_tokenizer()
 

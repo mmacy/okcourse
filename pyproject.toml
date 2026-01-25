@@ -1,6 +1,6 @@
 [project]
 name = "okcourse"
-version = "0.1.13"
+version = "0.1.14"
 description = "Generate audiobook-style courses with lectures on any topic using Python and AI."
 readme = "README.md"
 license = { text = "CC0 1.0 Universal" }
@@ -11,7 +11,7 @@ requires-python = ">=3.12"
 dependencies = [
     "mutagen>=1.47.0",
     "nltk>=3.9.1",
-    "openai>=1.61.0",
+    "openai>=2.15.0",
 ]
 
 [project.urls]

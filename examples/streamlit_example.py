@@ -12,7 +12,7 @@ from pathlib import Path
 import streamlit as st
 
 from okcourse import Course, OpenAIAsyncGenerator
-from okcourse.generators.openai.openai_utils import AIModels, get_usable_models_async, tts_voices
+from okcourse.generators.openai.openai_utils import AIModels, get_usable_models_async, tts_models, get_voices_for_model
 from okcourse.constants import MAX_LECTURES
 from okcourse.prompt_library import PROMPT_COLLECTION
 from okcourse.utils.log_utils import get_logger
@@ -88,7 +88,9 @@ async def main():
     generator = OpenAIAsyncGenerator(course)
 
     if generate_audio:
-        course.settings.tts_voice = st.selectbox("Choose a voice for the course lecturer", options=tts_voices)
+        course.settings.tts_model = st.selectbox("TTS model", options=tts_models, index=tts_models.index("tts-1") if "tts-1" in tts_models else 0)
+        available_voices = get_voices_for_model(course.settings.tts_model)
+        course.settings.tts_voice = st.selectbox("Voice", options=available_voices)
 
     course.settings.output_directory = (
         Path(st.text_input("Output directory", value=course.settings.output_directory)).expanduser().resolve()
