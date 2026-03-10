@@ -1,0 +1,23 @@
+<div>
+    <h3>Course audio</h3>
+
+    {% if course.generation_info.audio_file_path %}
+    <figure>
+        <audio controls src="/api/download/audio" style="width: 100%;"></audio>
+        <figcaption>
+            Generated in {{ "%.1f"|format(course.generation_info.audio_gen_elapsed_seconds) }}s
+            ({{ course.generation_info.tts_character_count }} characters)
+        </figcaption>
+    </figure>
+
+    <a href="/api/download/audio" download role="button" class="outline">Download MP3</a>
+    {% else %}
+    <p class="secondary">No audio was generated.</p>
+    {% endif %}
+
+    <button hx-post="/htmx/summary"
+            hx-target="#wizard-content"
+            style="margin-top: 1rem;">
+        View summary
+    </button>
+</div>

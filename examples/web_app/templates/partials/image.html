@@ -1,0 +1,38 @@
+<div>
+    <h3>Cover image</h3>
+
+    {% if course.generation_info.image_file_path %}
+    <figure>
+        <img src="/api/download/image" alt="Course cover image" style="max-width: 512px;">
+        <figcaption>Generated in {{ "%.1f"|format(course.generation_info.image_gen_elapsed_seconds) }}s</figcaption>
+    </figure>
+    {% else %}
+    <p class="secondary">No image was generated.</p>
+    {% endif %}
+
+    <div class="grid">
+        <button hx-post="/htmx/generate/image"
+                hx-target="#wizard-content"
+                hx-indicator="#regen-img-ind"
+                class="secondary outline"
+                onclick="startProgress()">
+            <span id="regen-img-ind" class="htmx-indicator" aria-busy="true"></span>
+            Regenerate image
+        </button>
+
+        {% if generate_audio %}
+        <button hx-post="/htmx/generate/audio"
+                hx-target="#wizard-content"
+                hx-indicator="#gen-aud-ind"
+                onclick="startProgress()">
+            <span id="gen-aud-ind" class="htmx-indicator" aria-busy="true"></span>
+            Accept and generate audio
+        </button>
+        {% else %}
+        <button hx-post="/htmx/summary"
+                hx-target="#wizard-content">
+            View summary
+        </button>
+        {% endif %}
+    </div>
+</div>

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid layout-grid" x-data="courseApp()">
+    <!-- Left column: config + progress -->
+    <div class="sidebar">
+        <article>
+            <header>Course settings</header>
+            {% include "partials/config_form.html" %}
+        </article>
+
+        <article id="progress-panel" x-show="showProgress" x-cloak>
+            <header>Progress</header>
+            {% include "partials/progress.html" %}
+        </article>
+    </div>
+
+    <!-- Right column: wizard content area -->
+    <div>
+        <article>
+            <div id="wizard-content">
+                <p class="secondary">Configure your course settings and click <strong>Generate outline</strong> to begin.</p>
+            </div>
+        </article>
+    </div>
+</div>
+{% endblock %}

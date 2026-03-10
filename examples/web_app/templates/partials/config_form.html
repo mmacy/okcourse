@@ -1,0 +1,89 @@
+<form hx-post="/htmx/session/configure"
+      hx-target="#wizard-content"
+      hx-indicator="#generate-indicator"
+      @htmx:before-request="startProgress()"
+      @htmx:after-settle="stopProgress()">
+
+    <label for="course_title">Course title</label>
+    <input type="text" id="course_title" name="course_title"
+           placeholder="e.g. Introduction to Quantum Computing"
+           required value="">
+
+    <label for="prompt_style">Course style</label>
+    <select id="prompt_style" name="prompt_style">
+        {% for style in prompt_styles %}
+        <option value="{{ style.index }}" {% if style.index == 0 %}selected{% endif %}>{{ style.description }}</option>
+        {% endfor %}
+    </select>
+
+    <div class="grid">
+        <div>
+            <label for="num_lectures">Lectures</label>
+            <input type="number" id="num_lectures" name="num_lectures"
+                   value="{{ settings.num_lectures }}" min="1" max="20">
+        </div>
+        <div>
+            <label for="num_subtopics">Subtopics per lecture</label>
+            <input type="number" id="num_subtopics" name="num_subtopics"
+                   value="{{ settings.num_subtopics }}" min="1" max="10">
+        </div>
+    </div>
+
+    <details>
+        <summary>Model settings</summary>
+
+        <label for="text_model">Text model</label>
+        <select id="text_model" name="text_model">
+            {% for model in text_models %}
+            <option value="{{ model }}" {% if model == settings.text_model_outline %}selected{% endif %}>{{ model }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="image_model">Image model</label>
+        <select id="image_model" name="image_model">
+            {% for model in image_models %}
+            <option value="{{ model }}" {% if model == settings.image_model %}selected{% endif %}>{{ model }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="tts_model">TTS model</label>
+        <select id="tts_model" name="tts_model"
+                x-data x-on:change="$dispatch('tts-model-changed', {model: $el.value}); updateVoices($el.value)">
+            {% for model in tts_models %}
+            <option value="{{ model }}" {% if model == settings.tts_model %}selected{% endif %}>{{ model }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="tts_voice">Voice</label>
+        <select id="tts_voice" name="tts_voice">
+            {% for voice in voices %}
+            <option value="{{ voice }}" {% if voice == settings.tts_voice %}selected{% endif %}>{{ voice }}</option>
+            {% endfor %}
+        </select>
+
+        <div x-data="{showInstructions: '{{ settings.tts_model }}'.startsWith('gpt-4o-mini-tts')}"
+             @tts-model-changed.window="showInstructions = $event.detail.model.startsWith('gpt-4o-mini-tts')">
+            <div x-show="showInstructions" x-cloak>
+                <label for="tts_instructions">TTS instructions</label>
+                <textarea id="tts_instructions" name="tts_instructions"
+                          rows="2">{{ settings.tts_instructions or '' }}</textarea>
+            </div>
+        </div>
+    </details>
+
+    <fieldset>
+        <label>
+            <input type="checkbox" name="generate_image" value="true">
+            Generate cover image
+        </label>
+        <label>
+            <input type="checkbox" name="generate_audio" value="true">
+            Generate audio
+        </label>
+    </fieldset>
+
+    <button type="submit" id="generate-btn">
+        <span id="generate-indicator" class="htmx-indicator" aria-busy="true"></span>
+        Generate outline
+    </button>
+</form>

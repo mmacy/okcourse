@@ -1,0 +1,54 @@
+<div>
+    <h3>Lectures for: {{ course.outline.title }}</h3>
+    <p class="secondary">{{ course.lectures | length }} lectures generated</p>
+
+    {% for lecture in course.lectures %}
+    <details>
+        <summary><strong>Lecture {{ lecture.number }}:</strong> {{ lecture.title }}
+            <small class="secondary">({{ lecture.text | length }} chars)</small>
+        </summary>
+        <div class="lecture-text">
+            {% for paragraph in lecture.text.split('\n\n') %}
+            <p>{{ paragraph }}</p>
+            {% endfor %}
+        </div>
+    </details>
+    {% endfor %}
+
+    <div class="grid">
+        <button hx-post="/htmx/generate/lectures"
+                hx-target="#wizard-content"
+                hx-indicator="#regen-lect-ind"
+                class="secondary outline"
+                onclick="startProgress()">
+            <span id="regen-lect-ind" class="htmx-indicator" aria-busy="true"></span>
+            Regenerate lectures
+        </button>
+
+        {% if generate_image %}
+        <button hx-post="/htmx/generate/image"
+                hx-target="#wizard-content"
+                hx-indicator="#gen-img-ind"
+                onclick="startProgress()">
+            <span id="gen-img-ind" class="htmx-indicator" aria-busy="true"></span>
+            Accept and generate image
+        </button>
+        {% elif generate_audio %}
+        <button hx-post="/htmx/generate/audio"
+                hx-target="#wizard-content"
+                hx-indicator="#gen-audio-ind"
+                onclick="startProgress()">
+            <span id="gen-audio-ind" class="htmx-indicator" aria-busy="true"></span>
+            Accept and generate audio
+        </button>
+        {% else %}
+        <button hx-post="/htmx/summary"
+                hx-target="#wizard-content">
+            View summary
+        </button>
+        {% endif %}
+    </div>
+
+    <p><small class="secondary">Lectures generated in {{ "%.1f"|format(course.generation_info.lecture_gen_elapsed_seconds) }}s
+    ({{ course.generation_info.lecture_input_token_count + course.generation_info.lecture_output_token_count }} tokens)</small></p>
+</div>

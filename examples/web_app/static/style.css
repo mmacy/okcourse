@@ -1,0 +1,63 @@
+/* Layout tweaks on top of Pico CSS */
+
+.layout-grid {
+    grid-template-columns: 1fr 2fr;
+    align-items: start;
+    gap: 2rem;
+}
+
+@media (max-width: 768px) {
+    .layout-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.sidebar article {
+    position: sticky;
+    top: 1rem;
+}
+
+/* Progress panel */
+.progress-log {
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 0.85rem;
+}
+
+.progress-msg {
+    margin: 0.15rem 0;
+    padding: 0;
+    line-height: 1.3;
+}
+
+/* Lecture text formatting */
+.lecture-text p {
+    margin-bottom: 0.75rem;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+    padding: 0.25rem 0.5rem;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+/* Error card */
+.error-card {
+    border-left: 4px solid var(--pico-del-color);
+}
+
+/* HTMX busy indicators */
+.htmx-indicator {
+    display: none;
+}
+
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+    display: inline-block;
+}
+
+/* Hide elements with x-cloak until Alpine initializes */
+[x-cloak] {
+    display: none !important;
+}

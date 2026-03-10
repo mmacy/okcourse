@@ -28,8 +28,15 @@ dev = [
     "aiofiles>=24.1.0",
     "hatchling>=1.27.0",
     "pytest>=8.3.4",
+    "pytest-playwright>=0.7.2",
     "questionary>=2.0.1",
     "streamlit>=1.41.0",
+]
+web = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "jinja2>=3.1.0",
+    "python-multipart>=0.0.18",
 ]
 docs = [
     "black>=24.10.0",

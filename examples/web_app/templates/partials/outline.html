@@ -1,0 +1,36 @@
+<div>
+    <h3>{{ course.outline.title }}</h3>
+    <p class="secondary">{{ course.outline.topics | length }} lectures generated</p>
+
+    {% for topic in course.outline.topics %}
+    <details {% if loop.first %}open{% endif %}>
+        <summary><strong>Lecture {{ topic.number }}:</strong> {{ topic.title }}</summary>
+        <ul>
+            {% for subtopic in topic.subtopics %}
+            <li>{{ subtopic }}</li>
+            {% endfor %}
+        </ul>
+    </details>
+    {% endfor %}
+
+    <div class="grid">
+        <button hx-post="/htmx/generate/outline"
+                hx-target="#wizard-content"
+                hx-indicator="#regen-outline-ind"
+                class="secondary outline"
+                onclick="startProgress()">
+            <span id="regen-outline-ind" class="htmx-indicator" aria-busy="true"></span>
+            Regenerate outline
+        </button>
+        <button hx-post="/htmx/generate/lectures"
+                hx-target="#wizard-content"
+                hx-indicator="#gen-lectures-ind"
+                onclick="startProgress()">
+            <span id="gen-lectures-ind" class="htmx-indicator" aria-busy="true"></span>
+            Accept and generate lectures
+        </button>
+    </div>
+
+    <p><small class="secondary">Outline generated in {{ "%.1f"|format(course.generation_info.outline_gen_elapsed_seconds) }}s
+    ({{ course.generation_info.outline_input_token_count + course.generation_info.outline_output_token_count }} tokens)</small></p>
+</div>

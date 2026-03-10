@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>okcourse</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header class="container">
+        <nav>
+            <ul>
+                <li><strong>okcourse</strong></li>
+            </ul>
+            <ul>
+                <li>
+                    <button class="theme-toggle outline contrast" onclick="toggleTheme()" aria-label="Toggle theme">
+                        <span id="theme-icon">&#9790;</span>
+                    </button>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="container">
+        <p><small>Powered by <a href="https://github.com/mmacy/okcourse" target="_blank">okcourse</a> and OpenAI</small></p>
+    </footer>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
