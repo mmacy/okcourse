@@ -143,7 +143,7 @@ async def main():
             questionary.select,
             "Choose a TTS model",
             choices=tts_models,
-            default="tts-1",
+            default="gpt-4o-mini-tts",
         )
 
         available_voices = get_voices_for_model(course.settings.tts_model)

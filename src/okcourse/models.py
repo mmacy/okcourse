@@ -124,25 +124,25 @@ class CourseSettings(BaseModel):
         description="Directory for saving generated course content.",
     )
     text_model_outline: str = Field(
-        "gpt-4o",
+        "gpt-5.4",
         description="The ID of the text generation model to use for generating course outlines.",
     )
     text_model_lecture: str = Field(
-        "gpt-4o",
+        "gpt-5.4",
         description="The ID of the text generation model to use for generating course lectures.",
     )
     image_model: str = Field(
-        "dall-e-3",
+        "gpt-image-1.5",
         description="The ID of the image generation model to use. Available models include: "
         "dall-e-2, dall-e-3, gpt-image-1, gpt-image-1-mini, gpt-image-1.5.",
     )
     tts_model: str = Field(
-        "tts-1",
+        "gpt-4o-mini-tts",
         description="The ID of the text-to-speech model to use. Available models include: "
         "tts-1, tts-1-hd, gpt-4o-mini-tts, gpt-4o-mini-tts-2025-12-15.",
     )
     tts_voice: str = Field(
-        "alloy",
+        "marin",
         description="The voice to use for text-to-speech audio generation. "
         "For tts-1 and tts-1-hd: alloy, ash, coral, echo, fable, nova, onyx, sage, shimmer. "
         "For gpt-4o-mini-tts: all of the above plus ballad, cedar, marin, verse.",

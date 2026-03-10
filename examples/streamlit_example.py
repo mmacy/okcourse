@@ -88,7 +88,7 @@ async def main():
     generator = OpenAIAsyncGenerator(course)
 
     if generate_audio:
-        course.settings.tts_model = st.selectbox("TTS model", options=tts_models, index=tts_models.index("tts-1") if "tts-1" in tts_models else 0)
+        course.settings.tts_model = st.selectbox("TTS model", options=tts_models, index=tts_models.index("gpt-4o-mini-tts") if "gpt-4o-mini-tts" in tts_models else 0)
         available_voices = get_voices_for_model(course.settings.tts_model)
         course.settings.tts_voice = st.selectbox("Voice", options=available_voices)
         supports_instructions = course.settings.tts_model.startswith("gpt-4o-mini-tts")

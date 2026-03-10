@@ -27,8 +27,8 @@ TEST_URL = f"http://localhost:{TEST_PORT}"
 
 # Mock AI models so the server can start without an OpenAI API key
 _MOCK_MODELS = openai_utils.AIModels(
-    text_models=["gpt-4o", "gpt-4o-mini"],
-    image_models=["dall-e-3", "dall-e-2"],
+    text_models=["gpt-4o", "gpt-4o-mini", "gpt-5.4"],
+    image_models=["dall-e-3", "dall-e-2", "gpt-image-1.5"],
     speech_models=["tts-1", "tts-1-hd", "gpt-4o-mini-tts"],
     other_models=[],
 )
