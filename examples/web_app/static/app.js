@@ -38,59 +38,109 @@ async function updateVoices(model) {
     }
 }
 
+// Canonical tab order for sorting
+var TAB_ORDER = ["outline", "lectures", "image", "audio", "summary"];
+
 // Alpine.js component for course app state
 function courseApp() {
     return {
         showProgress: false,
         messages: [],
         eventSource: null,
+        tabs: [],
+        activeTab: "",
 
         init() {
-            // Clean up SSE on page unload
             window.addEventListener("beforeunload", () => {
                 if (this.eventSource) this.eventSource.close();
             });
         },
+
+        addTab(id, label) {
+            if (!this.tabs.find(function (t) { return t.id === id; })) {
+                this.tabs.push({ id: id, label: label });
+                // Keep tabs in canonical order
+                this.tabs.sort(function (a, b) {
+                    return TAB_ORDER.indexOf(a.id) - TAB_ORDER.indexOf(b.id);
+                });
+            }
+            this.activeTab = id;
+        },
+
+        startProgress() {
+            this.showProgress = true;
+            this.messages = [];
+
+            if (this.eventSource) {
+                this.eventSource.close();
+            }
+
+            this.eventSource = new EventSource("/api/progress");
+
+            this.eventSource.onmessage = (event) => {
+                this.messages.push(event.data);
+                var container = document.getElementById("progress-messages");
+                if (container) {
+                    setTimeout(function () { container.scrollTop = container.scrollHeight; }, 50);
+                }
+            };
+
+            this.eventSource.addEventListener("done", () => {
+                this.eventSource.close();
+                this.eventSource = null;
+            });
+
+            this.eventSource.onerror = () => {
+                this.eventSource.close();
+                this.eventSource = null;
+            };
+        },
     };
 }
 
-// Global functions called from onclick handlers in partials
+// Global helper so onclick handlers in HTMX-swapped partials can reach Alpine
 function startProgress() {
-    const app = document.querySelector("[x-data]").__x.$data;
-    app.showProgress = true;
-    app.messages = [];
-
-    // Close any existing SSE connection
-    if (app.eventSource) {
-        app.eventSource.close();
-    }
-
-    app.eventSource = new EventSource("/api/progress");
-
-    app.eventSource.onmessage = function (event) {
-        app.messages.push(event.data);
-        // Auto-scroll progress panel
-        const container = document.getElementById("progress-messages");
-        if (container) {
-            setTimeout(() => container.scrollTop = container.scrollHeight, 50);
-        }
-    };
-
-    app.eventSource.addEventListener("done", function () {
-        app.eventSource.close();
-        app.eventSource = null;
-    });
-
-    app.eventSource.onerror = function () {
-        app.eventSource.close();
-        app.eventSource = null;
-    };
-}
-
-function stopProgress() {
-    // SSE will close itself via the "done" event, but we stop if something goes wrong
-    const app = document.querySelector("[x-data]");
-    if (app && app.__x && app.__x.$data.eventSource) {
-        // Let SSE close naturally via done event
+    var el = document.querySelector("[x-data]");
+    if (el && el._x_dataStack) {
+        el._x_dataStack[0].startProgress();
     }
 }
+
+// After HTMX swaps content into a tab panel, detect data-tab-id and activate the tab
+document.addEventListener("htmx:afterSettle", function (event) {
+    var target = event.detail.target;
+    if (!target) return;
+
+    // Look for the data-tab-id marker in the swapped content
+    var tabContent = target.querySelector("[data-tab-id]");
+    if (!tabContent) return;
+
+    var tabId = tabContent.dataset.tabId;
+    var tabLabel = tabContent.dataset.tabLabel;
+
+    // Reach into Alpine to add/activate the tab
+    var el = document.querySelector("[x-data]");
+    if (el && el._x_dataStack) {
+        el._x_dataStack[0].addTab(tabId, tabLabel);
+    }
+});
+
+// Swap button text to loading label with spinner on HTMX request start
+document.addEventListener("htmx:beforeRequest", function (event) {
+    var trigger = event.detail.elt;
+    if (trigger && trigger.tagName === "BUTTON" && trigger.dataset.loadingText) {
+        trigger.dataset.originalText = trigger.textContent;
+        trigger.textContent = trigger.dataset.loadingText;
+        trigger.dataset.loadingActive = "";
+    }
+});
+
+// Restore button text and remove spinner when HTMX request completes
+document.addEventListener("htmx:afterRequest", function (event) {
+    var trigger = event.detail.elt;
+    if (trigger && trigger.tagName === "BUTTON" && trigger.dataset.originalText) {
+        trigger.textContent = trigger.dataset.originalText;
+        delete trigger.dataset.originalText;
+        delete trigger.dataset.loadingActive;
+    }
+});

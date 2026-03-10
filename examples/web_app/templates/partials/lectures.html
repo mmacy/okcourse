@@ -1,4 +1,4 @@
-<div>
+<div data-tab-id="lectures" data-tab-label="Lectures">
     <h3>Lectures for: {{ course.outline.title }}</h3>
     <p class="secondary">{{ course.lectures | length }} lectures generated</p>
 
@@ -17,33 +17,33 @@
 
     <div class="grid">
         <button hx-post="/htmx/generate/lectures"
-                hx-target="#wizard-content"
-                hx-indicator="#regen-lect-ind"
+                hx-target="#tab-lectures"
+                hx-disabled-elt="this"
                 class="secondary outline"
+                data-loading-text="Regenerating lectures..."
                 onclick="startProgress()">
-            <span id="regen-lect-ind" class="htmx-indicator" aria-busy="true"></span>
             Regenerate lectures
         </button>
 
         {% if generate_image %}
         <button hx-post="/htmx/generate/image"
-                hx-target="#wizard-content"
-                hx-indicator="#gen-img-ind"
+                hx-target="#tab-image"
+                hx-disabled-elt="this"
+                data-loading-text="Generating image..."
                 onclick="startProgress()">
-            <span id="gen-img-ind" class="htmx-indicator" aria-busy="true"></span>
             Accept and generate image
         </button>
         {% elif generate_audio %}
         <button hx-post="/htmx/generate/audio"
-                hx-target="#wizard-content"
-                hx-indicator="#gen-audio-ind"
+                hx-target="#tab-audio"
+                hx-disabled-elt="this"
+                data-loading-text="Generating audio..."
                 onclick="startProgress()">
-            <span id="gen-audio-ind" class="htmx-indicator" aria-busy="true"></span>
             Accept and generate audio
         </button>
         {% else %}
         <button hx-post="/htmx/summary"
-                hx-target="#wizard-content">
+                hx-target="#tab-summary">
             View summary
         </button>
         {% endif %}

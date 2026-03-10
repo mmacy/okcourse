@@ -1,4 +1,4 @@
-<div>
+<div data-tab-id="outline" data-tab-label="Outline">
     <h3>{{ course.outline.title }}</h3>
     <p class="secondary">{{ course.outline.topics | length }} lectures generated</p>
 
@@ -15,18 +15,18 @@
 
     <div class="grid">
         <button hx-post="/htmx/generate/outline"
-                hx-target="#wizard-content"
-                hx-indicator="#regen-outline-ind"
+                hx-target="#tab-outline"
+                hx-disabled-elt="this"
                 class="secondary outline"
+                data-loading-text="Regenerating outline..."
                 onclick="startProgress()">
-            <span id="regen-outline-ind" class="htmx-indicator" aria-busy="true"></span>
             Regenerate outline
         </button>
         <button hx-post="/htmx/generate/lectures"
-                hx-target="#wizard-content"
-                hx-indicator="#gen-lectures-ind"
+                hx-target="#tab-lectures"
+                hx-disabled-elt="this"
+                data-loading-text="Generating lectures..."
                 onclick="startProgress()">
-            <span id="gen-lectures-ind" class="htmx-indicator" aria-busy="true"></span>
             Accept and generate lectures
         </button>
     </div>

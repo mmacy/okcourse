@@ -221,14 +221,17 @@ class TestWizardFlow:
             page.locator("#course_title").fill("Test Course on Testing")
             page.locator("#generate-btn").click()
 
-            page.wait_for_selector("#wizard-content h3", timeout=10000)
+            page.wait_for_selector("#tab-outline h3", timeout=10000)
 
-            expect(page.locator("#wizard-content")).to_contain_text("Test Course on Testing")
-            expect(page.locator("#wizard-content")).to_contain_text("Introduction to Testing")
-            expect(page.locator("#wizard-content")).to_contain_text("Advanced Testing Techniques")
+            expect(page.locator("#tab-outline")).to_contain_text("Test Course on Testing")
+            expect(page.locator("#tab-outline")).to_contain_text("Introduction to Testing")
+            expect(page.locator("#tab-outline")).to_contain_text("Advanced Testing Techniques")
 
             expect(page.locator("text=Regenerate outline")).to_be_visible()
             expect(page.locator("text=Accept and generate lectures")).to_be_visible()
+
+            # Verify the Outline tab appeared in the tab bar
+            expect(page.locator(".tab-bar >> text=Outline")).to_be_visible()
         finally:
             OpenAIAsyncGenerator.generate_outline = original_outline
 
@@ -265,11 +268,20 @@ class TestWizardFlow:
             page.wait_for_selector("text=Accept and generate lectures", timeout=10000)
             page.locator("text=Accept and generate lectures").click()
 
-            page.wait_for_selector("#wizard-content >> text=Lectures for:", timeout=10000)
+            page.wait_for_selector("#tab-lectures >> text=Lectures for:", timeout=10000)
 
-            expect(page.locator("#wizard-content")).to_contain_text("Lectures for: Test Course on Testing")
-            expect(page.locator("#wizard-content")).to_contain_text("Introduction to Testing")
-            expect(page.locator("#wizard-content")).to_contain_text("Advanced Testing Techniques")
+            expect(page.locator("#tab-lectures")).to_contain_text("Lectures for: Test Course on Testing")
+            expect(page.locator("#tab-lectures")).to_contain_text("Introduction to Testing")
+            expect(page.locator("#tab-lectures")).to_contain_text("Advanced Testing Techniques")
+
+            # Verify both tabs appeared
+            expect(page.locator(".tab-bar >> text=Outline")).to_be_visible()
+            expect(page.locator(".tab-bar >> text=Lectures")).to_be_visible()
+
+            # Verify clicking Outline tab shows outline content
+            page.locator(".tab-bar >> text=Outline").click()
+            expect(page.locator("#tab-outline")).to_be_visible()
+            expect(page.locator("#tab-outline")).to_contain_text("Introduction to Testing")
         finally:
             OpenAIAsyncGenerator.generate_outline = original_outline
             OpenAIAsyncGenerator.generate_lectures = original_lectures
@@ -312,16 +324,20 @@ class TestWizardFlow:
             fresh_page.locator("text=Accept and generate lectures").click()
 
             # Wait for lectures partial to load before clicking summary
-            fresh_page.wait_for_selector("#wizard-content >> text=Lectures for:", timeout=10000)
+            fresh_page.wait_for_selector("#tab-lectures >> text=Lectures for:", timeout=10000)
 
             fresh_page.locator("text=View summary").click()
 
             fresh_page.wait_for_selector("text=Generation summary", timeout=10000)
 
-            expect(fresh_page.locator("#wizard-content")).to_contain_text("Generation summary")
-            expect(fresh_page.locator("#wizard-content")).to_contain_text("Test Course on Testing")
-            expect(fresh_page.locator("#wizard-content")).to_contain_text("Lectures")
-            expect(fresh_page.locator("#wizard-content")).to_contain_text("Start a new course")
+            expect(fresh_page.locator("#tab-summary")).to_contain_text("Generation summary")
+            expect(fresh_page.locator("#tab-summary")).to_contain_text("Test Course on Testing")
+            expect(fresh_page.locator("#tab-summary")).to_contain_text("Start a new course")
+
+            # Verify all tabs are present and clickable
+            expect(fresh_page.locator(".tab-bar >> text=Outline")).to_be_visible()
+            expect(fresh_page.locator(".tab-bar >> text=Lectures")).to_be_visible()
+            expect(fresh_page.locator(".tab-bar >> text=Summary")).to_be_visible()
 
             ctx.close()
         finally:

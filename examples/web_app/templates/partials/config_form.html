@@ -1,6 +1,5 @@
 <form hx-post="/htmx/session/configure"
-      hx-target="#wizard-content"
-      hx-indicator="#generate-indicator"
+      hx-target="#tab-outline"
       @htmx:before-request="startProgress()"
       @htmx:after-settle="stopProgress()">
 
@@ -82,8 +81,8 @@
         </label>
     </fieldset>
 
-    <button type="submit" id="generate-btn">
-        <span id="generate-indicator" class="htmx-indicator" aria-busy="true"></span>
+    <button type="submit" id="generate-btn"
+            data-loading-text="Generating outline...">
         Generate outline
     </button>
 </form>

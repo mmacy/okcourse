@@ -1,4 +1,4 @@
-<div>
+<div data-tab-id="audio" data-tab-label="Audio">
     <h3>Course audio</h3>
 
     {% if course.generation_info.audio_file_path %}
@@ -16,7 +16,7 @@
     {% endif %}
 
     <button hx-post="/htmx/summary"
-            hx-target="#wizard-content"
+            hx-target="#tab-summary"
             style="margin-top: 1rem;">
         View summary
     </button>
