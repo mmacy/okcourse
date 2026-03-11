@@ -15,6 +15,8 @@
     </details>
     {% endfor %}
 
+    <p><a href="/api/download/pdf" download role="button" class="outline" style="display: inline-block;">Download PDF</a></p>
+
     <div class="grid">
         <button hx-post="/htmx/generate/lectures"
                 hx-target="#tab-lectures"

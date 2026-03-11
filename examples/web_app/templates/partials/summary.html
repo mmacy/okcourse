@@ -33,6 +33,9 @@
     </table>
 
     <div class="grid">
+        {% if course.lectures %}
+        <a href="/api/download/pdf" download role="button" class="outline">Download PDF</a>
+        {% endif %}
         {% if course.generation_info.image_file_path %}
         <a href="/api/download/image" download role="button" class="outline">Download image</a>
         {% endif %}

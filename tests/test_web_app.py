@@ -57,7 +57,10 @@ def _make_mock_course() -> Course:
             number=1,
             title="Introduction to Testing",
             subtopics=["What is testing", "Why test", "Types of tests", "Test frameworks"],
-            text="This is the first lecture about testing. Testing is essential for software quality.",
+            text="This is the first lecture about testing \u2014 testing is essential for software quality.\n\n"
+            "As Dijkstra once said, \u201cProgram testing can be used to show the presence of bugs, "
+            "but never to show their absence.\u201d\n\n"
+            "We\u2019ll explore three key areas\u2026 unit tests, integration tests, and end-to-end tests.",
         ),
         CourseLecture(
             number=2,
@@ -385,9 +388,115 @@ class TestApiEndpoints:
         assert len(data) >= 1
         assert "description" in data[0]
 
+    def test_pdf_download_no_content(self, server, page: Page):
+        """PDF endpoint returns 404 when no course content exists."""
+        response = page.request.get(f"{TEST_URL}/api/download/pdf")
+        assert response.status == 404
+
+    def test_pdf_download_with_content(self, server, browser):
+        """PDF endpoint returns a PDF file when lectures have been generated."""
+        from okcourse.generators.openai.async_openai import OpenAIAsyncGenerator
+
+        mock_course = _make_mock_course()
+        original_outline = OpenAIAsyncGenerator.generate_outline
+        original_lectures = OpenAIAsyncGenerator.generate_lectures
+
+        async def mock_generate_outline(self, course):
+            course.outline = mock_course.outline
+            return course
+
+        async def mock_generate_lectures(self, course):
+            course.lectures = mock_course.lectures
+            return course
+
+        try:
+            OpenAIAsyncGenerator.generate_outline = mock_generate_outline
+            OpenAIAsyncGenerator.generate_lectures = mock_generate_lectures
+
+            ctx = browser.new_context()
+            fresh_page = ctx.new_page()
+            fresh_page.goto(TEST_URL)
+            fresh_page.locator("#course_title").fill("Test Course on Testing")
+            fresh_page.locator("#generate-btn").click()
+            fresh_page.wait_for_selector("text=Accept and generate lectures", timeout=10000)
+            fresh_page.locator("text=Accept and generate lectures").click()
+            fresh_page.wait_for_selector("#tab-lectures >> text=Lectures for:", timeout=10000)
+
+            response = fresh_page.request.get(f"{TEST_URL}/api/download/pdf")
+            assert response.ok
+            assert response.headers["content-type"] == "application/pdf"
+            body = response.body()
+            assert body[:5] == b"%PDF-"
+
+            ctx.close()
+        finally:
+            OpenAIAsyncGenerator.generate_outline = original_outline
+            OpenAIAsyncGenerator.generate_lectures = original_lectures
+
     def test_static_files_served(self, server, page: Page):
         response = page.request.get(f"{TEST_URL}/static/app.js")
         assert response.ok
 
         response = page.request.get(f"{TEST_URL}/static/style.css")
         assert response.ok
+
+
+class TestPdfBuilder:
+    """Unit tests for the PDF builder function and helpers."""
+
+    def test_build_pdf_basic(self):
+        """PDF builder produces valid PDF bytes from a course with lectures."""
+        from examples.web_app.routes.api import _build_course_pdf
+
+        course = _make_mock_course()
+        pdf_bytes = _build_course_pdf(course)
+        assert pdf_bytes[:5] == b"%PDF-"
+        assert len(pdf_bytes) > 100
+
+    def test_build_pdf_unicode_content(self):
+        """PDF builder handles em dashes, curly quotes, and ellipses without crashing."""
+        from examples.web_app.routes.api import _build_course_pdf
+
+        course = _make_mock_course()
+        # Mock lectures already contain Unicode (em dashes, curly quotes, ellipses)
+        pdf_bytes = _build_course_pdf(course)
+        assert pdf_bytes[:5] == b"%PDF-"
+
+    def test_build_pdf_none_title(self):
+        """PDF builder handles a None title gracefully."""
+        from examples.web_app.routes.api import _build_course_pdf
+
+        course = _make_mock_course()
+        course.title = None
+        pdf_bytes = _build_course_pdf(course)
+        assert pdf_bytes[:5] == b"%PDF-"
+
+    def test_build_pdf_no_outline(self):
+        """PDF builder works when course has lectures but no outline."""
+        from examples.web_app.routes.api import _build_course_pdf
+
+        course = _make_mock_course()
+        course.outline = None
+        pdf_bytes = _build_course_pdf(course)
+        assert pdf_bytes[:5] == b"%PDF-"
+
+    def test_sanitize_for_latin1(self):
+        """Unicode sanitizer replaces common LLM characters with ASCII equivalents."""
+        from examples.web_app.routes.api import _sanitize_for_latin1
+
+        assert _sanitize_for_latin1("hello \u2014 world") == "hello -- world"
+        assert _sanitize_for_latin1("\u201cquoted\u201d") == '"quoted"'
+        assert _sanitize_for_latin1("it\u2019s") == "it's"
+        assert _sanitize_for_latin1("wait\u2026") == "wait..."
+        # Characters with no mapping get replaced with '?'
+        assert "?" in _sanitize_for_latin1("\u4e16\u754c")  # Chinese characters
+
+    def test_ascii_safe_filename(self):
+        """Filename helper produces ASCII-only names with fallback."""
+        from examples.web_app.routes.api import _ascii_safe_filename
+
+        assert _ascii_safe_filename("My Course Title") == "my_course_title"
+        assert _ascii_safe_filename("Schr\u00f6dinger's Cat") == "schrdingers_cat"
+        assert _ascii_safe_filename("") == "course"
+        assert _ascii_safe_filename(None) == "course"
+        assert _ascii_safe_filename("   ") == "course"
