@@ -1,6 +1,8 @@
 <div data-tab-id="outline" data-tab-label="Outline">
-    <h3>{{ course.outline.title }}</h3>
-    <p class="secondary">{{ course.outline.topics | length }} lectures generated</p>
+    <div class="content-header">
+        <h3>{{ course.outline.title }}</h3>
+        <p class="content-meta">{{ course.outline.topics | length }} lectures</p>
+    </div>
 
     {% for topic in course.outline.topics %}
     <details {% if loop.first %}open{% endif %}>
@@ -13,12 +15,12 @@
     </details>
     {% endfor %}
 
-    <div class="grid">
+    <div class="tab-actions">
         <button hx-post="/htmx/generate/outline"
                 hx-target="#tab-outline"
                 hx-disabled-elt="this"
                 class="secondary outline"
-                data-loading-text="Regenerating outline..."
+                data-loading-text="Regenerating..."
                 onclick="startProgress()">
             Regenerate outline
         </button>
@@ -31,6 +33,6 @@
         </button>
     </div>
 
-    <p><small class="secondary">Outline generated in {{ "%.1f"|format(course.generation_info.outline_gen_elapsed_seconds) }}s
-    ({{ course.generation_info.outline_input_token_count + course.generation_info.outline_output_token_count }} tokens)</small></p>
+    <p class="stats-line">Outline generated in {{ "%.1f"|format(course.generation_info.outline_gen_elapsed_seconds) }}s
+    &middot; {{ course.generation_info.outline_input_token_count + course.generation_info.outline_output_token_count }} tokens</p>
 </div>

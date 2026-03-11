@@ -1,23 +1,27 @@
 <div data-tab-id="audio" data-tab-label="Audio">
-    <h3>Course audio</h3>
+    <div class="content-header">
+        <h3>Course audio</h3>
+    </div>
 
     {% if course.generation_info.audio_file_path %}
-    <figure>
-        <audio controls src="/api/download/audio" style="width: 100%;"></audio>
-        <figcaption>
-            Generated in {{ "%.1f"|format(course.generation_info.audio_gen_elapsed_seconds) }}s
-            ({{ course.generation_info.tts_character_count }} characters)
-        </figcaption>
-    </figure>
+    <div class="audio-wrapper">
+        <audio controls src="/api/download/audio"></audio>
+    </div>
+    <p class="stats-line">Generated in {{ "%.1f"|format(course.generation_info.audio_gen_elapsed_seconds) }}s
+    &middot; {{ course.generation_info.tts_character_count }} characters</p>
 
-    <a href="/api/download/audio" download role="button" class="outline">Download MP3</a>
+    <div class="download-group">
+        <a href="/api/download/audio" download role="button">Download MP3</a>
+    </div>
     {% else %}
-    <p class="secondary">No audio was generated.</p>
+    <p class="content-meta">No audio was generated.</p>
     {% endif %}
 
-    <button hx-post="/htmx/summary"
-            hx-target="#tab-summary"
-            style="margin-top: 1rem;">
-        View summary
-    </button>
+    <div class="tab-actions">
+        <span></span>
+        <button hx-post="/htmx/summary"
+                hx-target="#tab-summary">
+            View summary
+        </button>
+    </div>
 </div>

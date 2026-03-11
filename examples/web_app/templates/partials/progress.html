@@ -2,5 +2,5 @@
     <template x-for="msg in messages" :key="msg">
         <p class="progress-msg" x-text="msg"></p>
     </template>
-    <p x-show="messages.length === 0" class="secondary">Waiting for progress updates...</p>
+    <p x-show="messages.length === 0" class="progress-waiting">waiting for updates...</p>
 </div>

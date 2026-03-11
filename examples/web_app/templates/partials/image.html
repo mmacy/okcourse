@@ -1,21 +1,23 @@
 <div data-tab-id="image" data-tab-label="Image">
-    <h3>Cover image</h3>
+    <div class="content-header">
+        <h3>Cover image</h3>
+    </div>
 
     {% if course.generation_info.image_file_path %}
-    <figure>
-        <img src="/api/download/image" alt="Course cover image" style="max-width: 512px;">
-        <figcaption>Generated in {{ "%.1f"|format(course.generation_info.image_gen_elapsed_seconds) }}s</figcaption>
-    </figure>
+    <div class="cover-image-wrapper">
+        <img src="/api/download/image" alt="Course cover image">
+    </div>
+    <p class="stats-line">Generated in {{ "%.1f"|format(course.generation_info.image_gen_elapsed_seconds) }}s</p>
     {% else %}
-    <p class="secondary">No image was generated.</p>
+    <p class="content-meta">No image was generated.</p>
     {% endif %}
 
-    <div class="grid">
+    <div class="tab-actions">
         <button hx-post="/htmx/generate/image"
                 hx-target="#tab-image"
                 hx-disabled-elt="this"
                 class="secondary outline"
-                data-loading-text="Regenerating image..."
+                data-loading-text="Regenerating..."
                 onclick="startProgress()">
             Regenerate image
         </button>
