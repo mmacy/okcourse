@@ -1,0 +1,6 @@
+<div id="progress-messages" x-ref="progressContainer" class="progress-log">
+    <template x-for="msg in messages" :key="msg">
+        <p class="progress-msg" x-text="msg"></p>
+    </template>
+    <p x-show="messages.length === 0" class="progress-waiting">waiting for updates...</p>
+</div>

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="layout-grid" x-data="courseApp()">
+    <!-- Left column: config -->
+    <div class="sidebar-panel">
+        <article>
+            <header>Course settings</header>
+            <div class="form-body">
+                {% include "partials/config_form.html" %}
+            </div>
+        </article>
+    </div>
+
+    <!-- Drag handle -->
+    <div class="splitter"></div>
+
+    <!-- Right column: tabbed wizard + progress -->
+    <div class="content-panel">
+        <article>
+            <!-- Tab bar -->
+            <nav x-show="tabs.length > 0" x-cloak class="tab-bar">
+                <ul role="tablist">
+                    <template x-for="tab in tabs" :key="tab.id">
+                        <li>
+                            <a href="#" role="tab"
+                               :aria-selected="activeTab === tab.id"
+                               :class="{'active': activeTab === tab.id}"
+                               @click.prevent="activeTab = tab.id"
+                               x-text="tab.label"></a>
+                        </li>
+                    </template>
+                </ul>
+            </nav>
+
+            <!-- Placeholder before generation starts -->
+            <div class="wizard-placeholder" x-show="tabs.length === 0">
+                <span class="wizard-placeholder-icon" aria-hidden="true">◎</span>
+                <p>Configure your course settings and click <strong>Generate outline</strong> to begin.</p>
+            </div>
+
+            <!-- Tab panels -->
+            <div id="tab-outline"   class="tab-panel" x-show="activeTab === 'outline'"   x-cloak></div>
+            <div id="tab-lectures"  class="tab-panel" x-show="activeTab === 'lectures'"  x-cloak></div>
+            <div id="tab-image"     class="tab-panel" x-show="activeTab === 'image'"     x-cloak></div>
+            <div id="tab-audio"     class="tab-panel" x-show="activeTab === 'audio'"     x-cloak></div>
+            <div id="tab-summary"   class="tab-panel" x-show="activeTab === 'summary'"   x-cloak></div>
+        </article>
+
+        <!-- Terminal-style progress panel -->
+        <div id="progress-panel" class="progress-panel" x-show="showProgress" x-cloak>
+            <div class="progress-panel-titlebar">
+                <div class="terminal-dots" aria-hidden="true">
+                    <div class="terminal-dot"></div>
+                    <div class="terminal-dot"></div>
+                    <div class="terminal-dot"></div>
+                </div>
+                <span class="progress-panel-label">generation log</span>
+            </div>
+            {% include "partials/progress.html" %}
+        </div>
+    </div>
+</div>
+{% endblock %}

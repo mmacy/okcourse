@@ -1,0 +1,147 @@
+<form hx-post="/htmx/session/configure"
+      hx-target="#tab-outline"
+      @htmx:before-request="startProgress()"
+      @htmx:after-settle="stopProgress()"
+      x-data="{provider: 'openai'}">
+
+    <label for="course_title">Course title</label>
+    <input type="text" id="course_title" name="course_title"
+           placeholder="e.g. Introduction to Quantum Computing"
+           required value="">
+
+    <label for="prompt_style">Course style</label>
+    <select id="prompt_style" name="prompt_style">
+        {% for style in prompt_styles %}
+        <option value="{{ style.index }}" {% if style.index == 0 %}selected{% endif %}>{{ style.description }}</option>
+        {% endfor %}
+    </select>
+
+    <div class="grid">
+        <div>
+            <label for="num_lectures">Lectures</label>
+            <input type="number" id="num_lectures" name="num_lectures"
+                   value="{{ settings.num_lectures }}" min="1" max="20">
+        </div>
+        <div>
+            <label for="num_subtopics">Subtopics</label>
+            <input type="number" id="num_subtopics" name="num_subtopics"
+                   value="{{ settings.num_subtopics }}" min="1" max="10">
+        </div>
+    </div>
+
+    <details open>
+        <summary>Provider & models</summary>
+
+        <div>
+            <label for="provider">Provider</label>
+            <select id="provider" name="provider" x-model="provider">
+                <option value="openai">OpenAI</option>
+                <option value="azure_openai">Azure OpenAI</option>
+                <option value="anthropic">Anthropic</option>
+            </select>
+
+            <!-- OpenAI models -->
+            <div x-show="provider === 'openai'" x-cloak>
+                <label for="text_model">Text model</label>
+                <select id="text_model" name="text_model">
+                    {% for model in text_models %}
+                    <option value="{{ model }}" {% if model == settings.text_model_outline %}selected{% endif %}>{{ model }}</option>
+                    {% endfor %}
+                </select>
+
+                <label for="image_model">Image model</label>
+                <select id="image_model" name="image_model">
+                    {% for model in image_models %}
+                    <option value="{{ model }}" {% if model == settings.image_model %}selected{% endif %}>{{ model }}</option>
+                    {% endfor %}
+                </select>
+
+                <label for="tts_model">TTS model</label>
+                <select id="tts_model" name="tts_model"
+                        x-on:change="$dispatch('tts-model-changed', {model: $el.value}); updateVoices($el.value)">
+                    {% for model in tts_models %}
+                    <option value="{{ model }}" {% if model == settings.tts_model %}selected{% endif %}>{{ model }}</option>
+                    {% endfor %}
+                </select>
+
+                <label for="tts_voice">Voice</label>
+                <select id="tts_voice" name="tts_voice">
+                    {% for voice in voices %}
+                    <option value="{{ voice }}" {% if voice == settings.tts_voice %}selected{% endif %}>{{ voice }}</option>
+                    {% endfor %}
+                </select>
+
+                <div x-data="{showInstructions: '{{ settings.tts_model }}'.startsWith('gpt-4o-mini-tts')}"
+                     @tts-model-changed.window="showInstructions = $event.detail.model.startsWith('gpt-4o-mini-tts')">
+                    <div x-show="showInstructions" x-cloak>
+                        <label for="tts_instructions">TTS instructions</label>
+                        <textarea id="tts_instructions" name="tts_instructions"
+                                  rows="2">{{ settings.tts_instructions or '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Azure OpenAI models (deployment names) -->
+            <div x-show="provider === 'azure_openai'" x-cloak>
+                <label for="azure_endpoint">Azure endpoint</label>
+                <input type="url" id="azure_endpoint" name="azure_endpoint"
+                       placeholder="https://my-resource.openai.azure.com">
+
+                <label for="azure_text_deployment">Text deployment name</label>
+                <input type="text" id="azure_text_deployment" name="azure_text_deployment"
+                       placeholder="e.g. my-gpt4o-deployment">
+
+                <label for="azure_image_deployment">Image deployment name</label>
+                <input type="text" id="azure_image_deployment" name="azure_image_deployment"
+                       placeholder="e.g. my-dalle3-deployment">
+
+                <label for="azure_tts_deployment">TTS deployment name</label>
+                <input type="text" id="azure_tts_deployment" name="azure_tts_deployment"
+                       placeholder="e.g. my-tts-deployment">
+
+                <label for="azure_tts_voice">Voice</label>
+                <select id="azure_tts_voice" name="azure_tts_voice">
+                    {% for voice in voices %}
+                    <option value="{{ voice }}" {% if voice == settings.tts_voice %}selected{% endif %}>{{ voice }}</option>
+                    {% endfor %}
+                </select>
+
+                <small class="provider-note">
+                    Set <code>AZURE_OPENAI_API_KEY</code> env var for authentication.
+                    Deployment names are set in your Azure portal.
+                </small>
+            </div>
+
+            <!-- Anthropic models -->
+            <div x-show="provider === 'anthropic'" x-cloak>
+                <label for="anthropic_text_model">Text model</label>
+                <select id="anthropic_text_model" name="anthropic_text_model">
+                    {% for model in anthropic_text_models %}
+                    <option value="{{ model }}" {% if model == 'claude-sonnet-4-6' %}selected{% endif %}>{{ model }}</option>
+                    {% endfor %}
+                </select>
+                <small class="provider-note">Image and audio generation require OpenAI.</small>
+            </div>
+        </div>
+    </details>
+
+    <fieldset>
+        <label :class="{'disabled-option': provider === 'anthropic'}">
+            <input type="checkbox" name="generate_image" value="true"
+                   :disabled="provider === 'anthropic'"
+                   x-effect="if (provider === 'anthropic') $el.checked = false">
+            Generate cover image
+        </label>
+        <label :class="{'disabled-option': provider === 'anthropic'}">
+            <input type="checkbox" name="generate_audio" value="true"
+                   :disabled="provider === 'anthropic'"
+                   x-effect="if (provider === 'anthropic') $el.checked = false">
+            Generate audio
+        </label>
+    </fieldset>
+
+    <button type="submit" id="generate-btn"
+            data-loading-text="Generating outline...">
+        Generate outline
+    </button>
+</form>

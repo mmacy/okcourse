@@ -12,7 +12,7 @@ API:
 
 import logging
 
-from .generators import CourseGenerator, OpenAIAsyncGenerator
+from .generators import AnthropicAsyncGenerator, AzureOpenAIAsyncGenerator, CourseGenerator, OpenAIAsyncGenerator
 from .models import (
     Course,
     CourseGenerationInfo,
@@ -24,6 +24,8 @@ from .models import (
 )
 
 __all__ = [
+    "AnthropicAsyncGenerator",
+    "AzureOpenAIAsyncGenerator",
     "Course",
     "CourseGenerationInfo",
     "CourseGenerator",

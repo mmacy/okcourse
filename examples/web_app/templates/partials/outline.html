@@ -1,0 +1,38 @@
+<div data-tab-id="outline" data-tab-label="Outline">
+    <div class="content-header">
+        <h3>{{ course.outline.title }}</h3>
+        <p class="content-meta">{{ course.outline.topics | length }} lectures</p>
+    </div>
+
+    {% for topic in course.outline.topics %}
+    <details {% if loop.first %}open{% endif %}>
+        <summary><strong>Lecture {{ topic.number }}:</strong> {{ topic.title }}</summary>
+        <ul>
+            {% for subtopic in topic.subtopics %}
+            <li>{{ subtopic }}</li>
+            {% endfor %}
+        </ul>
+    </details>
+    {% endfor %}
+
+    <div class="tab-actions">
+        <button hx-post="/htmx/generate/outline"
+                hx-target="#tab-outline"
+                hx-disabled-elt="this"
+                class="secondary outline"
+                data-loading-text="Regenerating..."
+                onclick="startProgress()">
+            Regenerate outline
+        </button>
+        <button hx-post="/htmx/generate/lectures"
+                hx-target="#tab-lectures"
+                hx-disabled-elt="this"
+                data-loading-text="Generating lectures..."
+                onclick="startProgress()">
+            Accept and generate lectures
+        </button>
+    </div>
+
+    <p class="stats-line">Outline generated in {{ "%.1f"|format(course.generation_info.outline_gen_elapsed_seconds) }}s
+    &middot; {{ course.generation_info.outline_input_token_count + course.generation_info.outline_output_token_count }} tokens</p>
+</div>

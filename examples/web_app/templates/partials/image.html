@@ -1,0 +1,40 @@
+<div data-tab-id="image" data-tab-label="Image">
+    <div class="content-header">
+        <h3>Cover image</h3>
+    </div>
+
+    {% if course.generation_info.image_file_path %}
+    <div class="cover-image-wrapper">
+        <img src="/api/download/image" alt="Course cover image">
+    </div>
+    <p class="stats-line">Generated in {{ "%.1f"|format(course.generation_info.image_gen_elapsed_seconds) }}s</p>
+    {% else %}
+    <p class="content-meta">No image was generated.</p>
+    {% endif %}
+
+    <div class="tab-actions">
+        <button hx-post="/htmx/generate/image"
+                hx-target="#tab-image"
+                hx-disabled-elt="this"
+                class="secondary outline"
+                data-loading-text="Regenerating..."
+                onclick="startProgress()">
+            Regenerate image
+        </button>
+
+        {% if generate_audio %}
+        <button hx-post="/htmx/generate/audio"
+                hx-target="#tab-audio"
+                hx-disabled-elt="this"
+                data-loading-text="Generating audio..."
+                onclick="startProgress()">
+            Accept and generate audio
+        </button>
+        {% else %}
+        <button hx-post="/htmx/summary"
+                hx-target="#tab-summary">
+            View summary
+        </button>
+        {% endif %}
+    </div>
+</div>

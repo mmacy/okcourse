@@ -18,6 +18,47 @@ from okcourse.utils.misc_utils import extract_literal_values_from_member, extrac
 _log = get_logger(__name__)
 
 tts_voices: list[str] = extract_literal_values_from_member(SpeechCreateParams, "voice")
+tts_models: list[str] = extract_literal_values_from_type(SpeechModel)
+
+# Voice compatibility by model type
+# Classic tts-1 and tts-1-hd models support these voices
+TTS_CLASSIC_VOICES: list[str] = sorted(["alloy", "ash", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer"])
+
+# gpt-4o-mini-tts models support additional voices
+TTS_GPT4O_MINI_VOICES: list[str] = sorted(["alloy", "ash", "ballad", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer", "verse", "marin", "cedar"])
+
+
+def get_voices_for_model(model: str) -> list[str]:
+    """Returns the list of voices compatible with the given TTS model.
+
+    Args:
+        model: The TTS model ID (e.g., "tts-1", "gpt-4o-mini-tts").
+
+    Returns:
+        A sorted list of voice IDs compatible with the model.
+    """
+    if model.startswith("gpt-4o-mini-tts"):
+        return TTS_GPT4O_MINI_VOICES
+    return TTS_CLASSIC_VOICES
+
+
+def validate_tts_voice(model: str, voice: str) -> None:
+    """Validates that the voice is compatible with the TTS model.
+
+    Args:
+        model: The TTS model ID (e.g., "tts-1", "gpt-4o-mini-tts").
+        voice: The voice ID to validate.
+
+    Raises:
+        ValueError: If the voice is not compatible with the model.
+    """
+    valid_voices = get_voices_for_model(model)
+
+    if voice not in valid_voices:
+        raise ValueError(
+            f"Voice '{voice}' is not compatible with model '{model}'. "
+            f"Valid voices for this model: {', '.join(valid_voices)}"
+        )
 
 
 @dataclass
@@ -128,21 +169,32 @@ def get_usable_models_sync() -> AIModels:
 
 
 def _get_retry_after(error: RateLimitError) -> int | None:
-    """Extracts the `retry-after-ms` value from the response headers of the given RateLimitError.
+    """Extracts retry wait time from response headers of the given RateLimitError.
+
+    Checks both `retry-after-ms` (milliseconds) and `Retry-After` (seconds) headers,
+    mirroring the OpenAI SDK's behavior.
 
     Args:
         error: The exception containing the response and headers.
 
     Returns:
-        The retry-after value in seconds, or None if unavailable.
+        The retry-after value in milliseconds, or None if unavailable.
     """
     try:
-        # Access headers from the response embedded in the error
-        retry_after = error.response.headers.get("retry-after-ms")
+        headers = error.response.headers
+
+        # First try retry-after-ms (more precise, in milliseconds)
+        retry_after_ms = headers.get("retry-after-ms")
+        if retry_after_ms:
+            return int(retry_after_ms)
+
+        # Fall back to Retry-After header (in seconds, convert to ms)
+        retry_after = headers.get("retry-after")
         if retry_after:
-            return int(retry_after)
-    except (AttributeError, ValueError):
-        # Handle cases where headers are missing or value is not an integer
+            return int(float(retry_after) * 1000)
+
+    except (AttributeError, ValueError, TypeError):
+        # Handle cases where headers are missing or value is not parseable
         pass
     return None
 
@@ -194,13 +246,14 @@ async def execute_request_with_retry(
 
             # Parse recommended wait time from the error, fall back to existing delay if smaller
             retry_after_milliseconds = _get_retry_after(rle)
-            delay_ms = max(delay_ms, retry_after_milliseconds)
+            if retry_after_milliseconds:
+                delay_ms = max(delay_ms, retry_after_milliseconds)
             # Add exponential backoff
             if jitter:
                 # Multiply delay by random factor in [1, 2) to spread out bursts
-                delay_ms *= exponential_base * (1 + random.random()) / 1000
+                delay_ms *= exponential_base * (1 + random.random())
             else:
-                delay_ms *= exponential_base / 1000
+                delay_ms *= exponential_base
 
-            _log.warning(f"Will retry in {round(delay_ms, 2)} seconds (attempt {attempt}/{max_retries})...")
-            await asyncio.sleep(delay_ms)
+            _log.warning(f"Will retry in {round(delay_ms / 1000, 2)} seconds (attempt {attempt}/{max_retries})...")
+            await asyncio.sleep(delay_ms / 1000)

@@ -1,0 +1,50 @@
+<div data-tab-id="summary" data-tab-label="Summary">
+    <div class="content-header">
+        <h3>{{ course.title }}</h3>
+        <p class="content-meta">Generation complete</p>
+    </div>
+
+    <table class="summary-table">
+        <tbody>
+            <tr><td>Lectures</td><td>{{ course.lectures | length if course.lectures else 0 }}</td></tr>
+            <tr><td>Outline time</td><td>{{ "%.1f"|format(course.generation_info.outline_gen_elapsed_seconds) }}s</td></tr>
+            <tr><td>Lecture time</td><td>{{ "%.1f"|format(course.generation_info.lecture_gen_elapsed_seconds) }}s</td></tr>
+            {% if course.generation_info.image_gen_elapsed_seconds > 0 %}
+            <tr><td>Image time</td><td>{{ "%.1f"|format(course.generation_info.image_gen_elapsed_seconds) }}s</td></tr>
+            {% endif %}
+            {% if course.generation_info.audio_gen_elapsed_seconds > 0 %}
+            <tr><td>Audio time</td><td>{{ "%.1f"|format(course.generation_info.audio_gen_elapsed_seconds) }}s</td></tr>
+            {% endif %}
+            <tr><td>Outline tokens</td><td>{{ course.generation_info.outline_input_token_count }} in / {{ course.generation_info.outline_output_token_count }} out</td></tr>
+            <tr><td>Lecture tokens</td><td>{{ course.generation_info.lecture_input_token_count }} in / {{ course.generation_info.lecture_output_token_count }} out</td></tr>
+            {% if course.generation_info.tts_character_count > 0 %}
+            <tr><td>TTS characters</td><td>{{ course.generation_info.tts_character_count }}</td></tr>
+            {% endif %}
+            <tr><td>Text model</td><td>{{ course.settings.text_model_outline }}</td></tr>
+            {% if course.generation_info.num_images_generated > 0 %}
+            <tr><td>Image model</td><td>{{ course.settings.image_model }}</td></tr>
+            {% endif %}
+            {% if course.generation_info.audio_file_path %}
+            <tr><td>TTS model</td><td>{{ course.settings.tts_model }}</td></tr>
+            <tr><td>TTS voice</td><td>{{ course.settings.tts_voice }}</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    <div class="download-group">
+        {% if course.lectures %}
+        <a href="/api/download/pdf" download role="button">Download PDF</a>
+        {% endif %}
+        {% if course.generation_info.image_file_path %}
+        <a href="/api/download/image" download role="button">Download image</a>
+        {% endif %}
+        {% if course.generation_info.audio_file_path %}
+        <a href="/api/download/audio" download role="button">Download MP3</a>
+        {% endif %}
+    </div>
+
+    <div class="tab-actions">
+        <span></span>
+        <button onclick="window.location.reload()">Start a new course</button>
+    </div>
+</div>

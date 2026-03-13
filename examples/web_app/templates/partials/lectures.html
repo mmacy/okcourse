@@ -1,0 +1,60 @@
+<div data-tab-id="lectures" data-tab-label="Lectures">
+    <div class="content-header">
+        <h3>{{ course.outline.title }}</h3>
+        <p class="content-meta">{{ course.lectures | length }} lectures generated</p>
+    </div>
+
+    {% for lecture in course.lectures %}
+    <details>
+        <summary>
+            <strong>Lecture {{ lecture.number }}:</strong> {{ lecture.title }}
+        </summary>
+        <div class="lecture-text">
+            {% for paragraph in lecture.text.split('\n\n') %}
+            <p>{{ paragraph }}</p>
+            {% endfor %}
+        </div>
+    </details>
+    {% endfor %}
+
+    <div class="download-group">
+        <a href="/api/download/pdf" download role="button">Download PDF</a>
+    </div>
+
+    <div class="tab-actions">
+        <button hx-post="/htmx/generate/lectures"
+                hx-target="#tab-lectures"
+                hx-disabled-elt="this"
+                class="secondary outline"
+                data-loading-text="Regenerating..."
+                onclick="startProgress()">
+            Regenerate lectures
+        </button>
+
+        {% if generate_image %}
+        <button hx-post="/htmx/generate/image"
+                hx-target="#tab-image"
+                hx-disabled-elt="this"
+                data-loading-text="Generating image..."
+                onclick="startProgress()">
+            Accept and generate image
+        </button>
+        {% elif generate_audio %}
+        <button hx-post="/htmx/generate/audio"
+                hx-target="#tab-audio"
+                hx-disabled-elt="this"
+                data-loading-text="Generating audio..."
+                onclick="startProgress()">
+            Accept and generate audio
+        </button>
+        {% else %}
+        <button hx-post="/htmx/summary"
+                hx-target="#tab-summary">
+            View summary
+        </button>
+        {% endif %}
+    </div>
+
+    <p class="stats-line">Lectures generated in {{ "%.1f"|format(course.generation_info.lecture_gen_elapsed_seconds) }}s
+    &middot; {{ course.generation_info.lecture_input_token_count + course.generation_info.lecture_output_token_count }} tokens</p>
+</div>

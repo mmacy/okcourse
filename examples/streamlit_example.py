@@ -12,7 +12,7 @@ from pathlib import Path
 import streamlit as st
 
 from okcourse import Course, OpenAIAsyncGenerator
-from okcourse.generators.openai.openai_utils import AIModels, get_usable_models_async, tts_voices
+from okcourse.generators.openai.openai_utils import AIModels, get_usable_models_async, tts_models, get_voices_for_model
 from okcourse.constants import MAX_LECTURES
 from okcourse.prompt_library import PROMPT_COLLECTION
 from okcourse.utils.log_utils import get_logger
@@ -88,7 +88,21 @@ async def main():
     generator = OpenAIAsyncGenerator(course)
 
     if generate_audio:
-        course.settings.tts_voice = st.selectbox("Choose a voice for the course lecturer", options=tts_voices)
+        course.settings.tts_model = st.selectbox("TTS model", options=tts_models, index=tts_models.index("gpt-4o-mini-tts") if "gpt-4o-mini-tts" in tts_models else 0)
+        available_voices = get_voices_for_model(course.settings.tts_model)
+        course.settings.tts_voice = st.selectbox("Voice", options=available_voices)
+        supports_instructions = course.settings.tts_model.startswith("gpt-4o-mini-tts")
+        instructions_help = (
+            "Only gpt-4o-mini-tts models support custom voice instructions; leave blank to skip."
+        )
+        tts_instructions = st.text_input(
+            "Voice instructions (optional, gpt-4o-mini-tts only)",
+            value=course.settings.tts_instructions or "",
+            help=instructions_help,
+            disabled=not supports_instructions,
+            placeholder="e.g., Speak in a calm, measured tone with slight British cadence",
+        )
+        course.settings.tts_instructions = tts_instructions if supports_instructions and tts_instructions.strip() else None
 
     course.settings.output_directory = (
         Path(st.text_input("Output directory", value=course.settings.output_directory)).expanduser().resolve()
