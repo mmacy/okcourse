@@ -13,10 +13,12 @@ Examples:
 
 from .base import CourseGenerator
 from .anthropic import AnthropicAsyncGenerator
+from .azure_openai import AzureOpenAIAsyncGenerator
 from .openai import OpenAIAsyncGenerator
 
 __all__ = [
     "AnthropicAsyncGenerator",
+    "AzureOpenAIAsyncGenerator",
     "CourseGenerator",
     "OpenAIAsyncGenerator",
 ]

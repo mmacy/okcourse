@@ -5,7 +5,7 @@ import traceback
 
 from fastapi import APIRouter, Depends, Form, Request
 
-from okcourse import AnthropicAsyncGenerator, Course, CourseSettings, OpenAIAsyncGenerator
+from okcourse import AnthropicAsyncGenerator, AzureOpenAIAsyncGenerator, Course, CourseSettings, OpenAIAsyncGenerator
 from okcourse.prompt_library import PROMPT_COLLECTION
 
 from ..dependencies import get_session
@@ -26,10 +26,12 @@ def _render_error(request: Request, message: str):
     return _render(request, "partials/error.html", {"error_message": message})
 
 
-def _create_generator(course: Course, provider: str):
+def _create_generator(course: Course, provider: str, azure_endpoint: str | None = None):
     """Creates the appropriate generator for the given provider."""
     if provider == "anthropic":
         return AnthropicAsyncGenerator(course)
+    if provider == "azure_openai":
+        return AzureOpenAIAsyncGenerator(course, azure_endpoint=azure_endpoint)
     return OpenAIAsyncGenerator(course)
 
 
@@ -41,6 +43,11 @@ async def configure_session(
     provider: str = Form("openai"),
     text_model: str = Form("gpt-5.4"),
     anthropic_text_model: str = Form(""),
+    azure_endpoint: str = Form(""),
+    azure_text_deployment: str = Form(""),
+    azure_image_deployment: str = Form(""),
+    azure_tts_deployment: str = Form(""),
+    azure_tts_voice: str = Form("marin"),
     image_model: str = Form("gpt-image-1.5"),
     tts_model: str = Form("gpt-4o-mini-tts"),
     tts_voice: str = Form("marin"),
@@ -54,10 +61,21 @@ async def configure_session(
     """Creates or updates the session course from the config form, then starts outline generation."""
     prompts = PROMPT_COLLECTION[prompt_style] if 0 <= prompt_style < len(PROMPT_COLLECTION) else PROMPT_COLLECTION[0]
 
-    if provider == "anthropic" and anthropic_text_model:
+    if provider == "azure_openai":
+        selected_text_model = azure_text_deployment or text_model
+        selected_image_model = azure_image_deployment or image_model
+        selected_tts_model = azure_tts_deployment or tts_model
+        selected_tts_voice = azure_tts_voice
+    elif provider == "anthropic" and anthropic_text_model:
         selected_text_model = anthropic_text_model
+        selected_image_model = image_model
+        selected_tts_model = tts_model
+        selected_tts_voice = tts_voice
     else:
         selected_text_model = text_model
+        selected_image_model = image_model
+        selected_tts_model = tts_model
+        selected_tts_voice = tts_voice
 
     settings = CourseSettings(
         prompts=prompts,
@@ -65,9 +83,9 @@ async def configure_session(
         num_subtopics=num_subtopics,
         text_model_outline=selected_text_model,
         text_model_lecture=selected_text_model,
-        image_model=image_model,
-        tts_model=tts_model,
-        tts_voice=tts_voice,
+        image_model=selected_image_model,
+        tts_model=selected_tts_model,
+        tts_voice=selected_tts_voice,
         tts_instructions=tts_instructions if tts_instructions.strip() else None,
     )
 
@@ -78,6 +96,7 @@ async def configure_session(
         "generate_image": generate_image,
         "generate_audio": generate_audio,
         "provider": provider,
+        "azure_endpoint": azure_endpoint if provider == "azure_openai" else None,
     }
 
     session.current_step = "outline"
@@ -102,7 +121,7 @@ async def generate_outline(
     try:
         prefs = getattr(request.app.state, "session_prefs", {}).get(session.session_id, {})
         provider = prefs.get("provider", "openai")
-        generator = _create_generator(session.course, provider)
+        generator = _create_generator(session.course, provider, azure_endpoint=prefs.get("azure_endpoint"))
         session.generator = generator
         session.course = await generator.generate_outline(session.course)
         session.current_step = "outline"
@@ -131,7 +150,9 @@ async def generate_lectures(
     try:
         if not session.generator:
             prefs = getattr(request.app.state, "session_prefs", {}).get(session.session_id, {})
-            session.generator = _create_generator(session.course, prefs.get("provider", "openai"))
+            session.generator = _create_generator(
+                session.course, prefs.get("provider", "openai"), azure_endpoint=prefs.get("azure_endpoint")
+            )
         session.course = await session.generator.generate_lectures(session.course)
         session.current_step = "lectures"
     except Exception as e:
@@ -163,7 +184,10 @@ async def generate_image(
 
     try:
         if not session.generator:
-            session.generator = OpenAIAsyncGenerator(session.course)
+            prefs = getattr(request.app.state, "session_prefs", {}).get(session.session_id, {})
+            session.generator = _create_generator(
+                session.course, prefs.get("provider", "openai"), azure_endpoint=prefs.get("azure_endpoint")
+            )
         session.course = await session.generator.generate_image(session.course)
         session.current_step = "image"
     except Exception as e:
@@ -194,7 +218,10 @@ async def generate_audio(
 
     try:
         if not session.generator:
-            session.generator = OpenAIAsyncGenerator(session.course)
+            prefs = getattr(request.app.state, "session_prefs", {}).get(session.session_id, {})
+            session.generator = _create_generator(
+                session.course, prefs.get("provider", "openai"), azure_endpoint=prefs.get("azure_endpoint")
+            )
         session.course = await session.generator.generate_audio(session.course)
         session.current_step = "audio"
     except Exception as e:

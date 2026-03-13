@@ -36,6 +36,7 @@
             <label for="provider">Provider</label>
             <select id="provider" name="provider" x-model="provider">
                 <option value="openai">OpenAI</option>
+                <option value="azure_openai">Azure OpenAI</option>
                 <option value="anthropic">Anthropic</option>
             </select>
 
@@ -78,6 +79,37 @@
                                   rows="2">{{ settings.tts_instructions or '' }}</textarea>
                     </div>
                 </div>
+            </div>
+
+            <!-- Azure OpenAI models (deployment names) -->
+            <div x-show="provider === 'azure_openai'" x-cloak>
+                <label for="azure_endpoint">Azure endpoint</label>
+                <input type="url" id="azure_endpoint" name="azure_endpoint"
+                       placeholder="https://my-resource.openai.azure.com">
+
+                <label for="azure_text_deployment">Text deployment name</label>
+                <input type="text" id="azure_text_deployment" name="azure_text_deployment"
+                       placeholder="e.g. my-gpt4o-deployment">
+
+                <label for="azure_image_deployment">Image deployment name</label>
+                <input type="text" id="azure_image_deployment" name="azure_image_deployment"
+                       placeholder="e.g. my-dalle3-deployment">
+
+                <label for="azure_tts_deployment">TTS deployment name</label>
+                <input type="text" id="azure_tts_deployment" name="azure_tts_deployment"
+                       placeholder="e.g. my-tts-deployment">
+
+                <label for="azure_tts_voice">Voice</label>
+                <select id="azure_tts_voice" name="azure_tts_voice">
+                    {% for voice in voices %}
+                    <option value="{{ voice }}" {% if voice == settings.tts_voice %}selected{% endif %}>{{ voice }}</option>
+                    {% endfor %}
+                </select>
+
+                <small class="provider-note">
+                    Set <code>AZURE_OPENAI_API_KEY</code> env var for authentication.
+                    Deployment names are set in your Azure portal.
+                </small>
             </div>
 
             <!-- Anthropic models -->
