@@ -211,13 +211,57 @@ h1, h2, h3, h4, h5, h6 {
 
 .layout-grid {
     display: grid;
-    grid-template-columns: 288px 1fr;
-    gap: 1.75rem;
+    grid-template-columns: var(--sidebar-width, 288px) 6px 1fr;
+    gap: 0;
     align-items: start;
 }
 
 @media (max-width: 900px) {
-    .layout-grid { grid-template-columns: 1fr; }
+    .layout-grid {
+        grid-template-columns: 1fr;
+    }
+    .layout-grid .splitter { display: none; }
+}
+
+/* ============================================================
+   Splitter drag handle
+   ============================================================ */
+.splitter {
+    width: 6px;
+    margin: 0 -9px;
+    padding: 0 9px;
+    cursor: col-resize;
+    position: relative;
+    align-self: stretch;
+    z-index: 10;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.splitter::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    background: var(--border-muted);
+    transition: background 0.15s, width 0.15s;
+    border-radius: 1px;
+}
+
+.splitter:hover::before,
+.splitter.dragging::before {
+    width: 3px;
+    background: var(--accent);
+}
+
+body.splitter-dragging {
+    cursor: col-resize !important;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 /* ============================================================
@@ -226,6 +270,11 @@ h1, h2, h3, h4, h5, h6 {
 .sidebar-panel {
     position: sticky;
     top: calc(52px + 1rem);
+    margin-right: 0.875rem;
+}
+
+.content-panel {
+    margin-left: 0.875rem;
 }
 
 .sidebar-panel > article {
@@ -902,6 +951,24 @@ button[data-loading-active]::before {
 }
 
 /* ============================================================
+   Provider note
+   ============================================================ */
+.provider-note {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+/* ============================================================
    Alpine x-cloak
    ============================================================ */
 [x-cloak] { display: none !important; }
+
+/* ============================================================
+   Disabled option helper
+   ============================================================ */
+.disabled-option {
+    opacity: 0.45;
+    cursor: not-allowed;
+}

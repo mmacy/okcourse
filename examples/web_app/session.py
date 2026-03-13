@@ -5,7 +5,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 
-from okcourse import Course, OpenAIAsyncGenerator
+from okcourse import Course, CourseGenerator
 
 from .log_capture import SessionLogHandler
 
@@ -18,7 +18,7 @@ class SessionState:
 
     session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     course: Course = field(default_factory=Course)
-    generator: OpenAIAsyncGenerator | None = None
+    generator: CourseGenerator | None = None
     log_handler: SessionLogHandler = field(default_factory=SessionLogHandler)
     current_step: str = "configure"
     created_at: float = field(default_factory=time.time)

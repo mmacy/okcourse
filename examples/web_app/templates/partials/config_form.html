@@ -1,7 +1,8 @@
 <form hx-post="/htmx/session/configure"
       hx-target="#tab-outline"
       @htmx:before-request="startProgress()"
-      @htmx:after-settle="stopProgress()">
+      @htmx:after-settle="stopProgress()"
+      x-data="{provider: 'openai'}">
 
     <label for="course_title">Course title</label>
     <input type="text" id="course_title" name="course_title"
@@ -28,55 +29,81 @@
         </div>
     </div>
 
-    <details>
-        <summary>Model settings</summary>
+    <details open>
+        <summary>Provider & models</summary>
 
-        <label for="text_model">Text model</label>
-        <select id="text_model" name="text_model">
-            {% for model in text_models %}
-            <option value="{{ model }}" {% if model == settings.text_model_outline %}selected{% endif %}>{{ model }}</option>
-            {% endfor %}
-        </select>
+        <div>
+            <label for="provider">Provider</label>
+            <select id="provider" name="provider" x-model="provider">
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic</option>
+            </select>
 
-        <label for="image_model">Image model</label>
-        <select id="image_model" name="image_model">
-            {% for model in image_models %}
-            <option value="{{ model }}" {% if model == settings.image_model %}selected{% endif %}>{{ model }}</option>
-            {% endfor %}
-        </select>
+            <!-- OpenAI models -->
+            <div x-show="provider === 'openai'" x-cloak>
+                <label for="text_model">Text model</label>
+                <select id="text_model" name="text_model">
+                    {% for model in text_models %}
+                    <option value="{{ model }}" {% if model == settings.text_model_outline %}selected{% endif %}>{{ model }}</option>
+                    {% endfor %}
+                </select>
 
-        <label for="tts_model">TTS model</label>
-        <select id="tts_model" name="tts_model"
-                x-data x-on:change="$dispatch('tts-model-changed', {model: $el.value}); updateVoices($el.value)">
-            {% for model in tts_models %}
-            <option value="{{ model }}" {% if model == settings.tts_model %}selected{% endif %}>{{ model }}</option>
-            {% endfor %}
-        </select>
+                <label for="image_model">Image model</label>
+                <select id="image_model" name="image_model">
+                    {% for model in image_models %}
+                    <option value="{{ model }}" {% if model == settings.image_model %}selected{% endif %}>{{ model }}</option>
+                    {% endfor %}
+                </select>
 
-        <label for="tts_voice">Voice</label>
-        <select id="tts_voice" name="tts_voice">
-            {% for voice in voices %}
-            <option value="{{ voice }}" {% if voice == settings.tts_voice %}selected{% endif %}>{{ voice }}</option>
-            {% endfor %}
-        </select>
+                <label for="tts_model">TTS model</label>
+                <select id="tts_model" name="tts_model"
+                        x-on:change="$dispatch('tts-model-changed', {model: $el.value}); updateVoices($el.value)">
+                    {% for model in tts_models %}
+                    <option value="{{ model }}" {% if model == settings.tts_model %}selected{% endif %}>{{ model }}</option>
+                    {% endfor %}
+                </select>
 
-        <div x-data="{showInstructions: '{{ settings.tts_model }}'.startsWith('gpt-4o-mini-tts')}"
-             @tts-model-changed.window="showInstructions = $event.detail.model.startsWith('gpt-4o-mini-tts')">
-            <div x-show="showInstructions" x-cloak>
-                <label for="tts_instructions">TTS instructions</label>
-                <textarea id="tts_instructions" name="tts_instructions"
-                          rows="2">{{ settings.tts_instructions or '' }}</textarea>
+                <label for="tts_voice">Voice</label>
+                <select id="tts_voice" name="tts_voice">
+                    {% for voice in voices %}
+                    <option value="{{ voice }}" {% if voice == settings.tts_voice %}selected{% endif %}>{{ voice }}</option>
+                    {% endfor %}
+                </select>
+
+                <div x-data="{showInstructions: '{{ settings.tts_model }}'.startsWith('gpt-4o-mini-tts')}"
+                     @tts-model-changed.window="showInstructions = $event.detail.model.startsWith('gpt-4o-mini-tts')">
+                    <div x-show="showInstructions" x-cloak>
+                        <label for="tts_instructions">TTS instructions</label>
+                        <textarea id="tts_instructions" name="tts_instructions"
+                                  rows="2">{{ settings.tts_instructions or '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anthropic models -->
+            <div x-show="provider === 'anthropic'" x-cloak>
+                <label for="anthropic_text_model">Text model</label>
+                <select id="anthropic_text_model" name="anthropic_text_model">
+                    {% for model in anthropic_text_models %}
+                    <option value="{{ model }}" {% if model == 'claude-sonnet-4-6' %}selected{% endif %}>{{ model }}</option>
+                    {% endfor %}
+                </select>
+                <small class="provider-note">Image and audio generation require OpenAI.</small>
             </div>
         </div>
     </details>
 
     <fieldset>
-        <label>
-            <input type="checkbox" name="generate_image" value="true">
+        <label :class="{'disabled-option': provider === 'anthropic'}">
+            <input type="checkbox" name="generate_image" value="true"
+                   :disabled="provider === 'anthropic'"
+                   x-effect="if (provider === 'anthropic') $el.checked = false">
             Generate cover image
         </label>
-        <label>
-            <input type="checkbox" name="generate_audio" value="true">
+        <label :class="{'disabled-option': provider === 'anthropic'}">
+            <input type="checkbox" name="generate_audio" value="true"
+                   :disabled="provider === 'anthropic'"
+                   x-effect="if (provider === 'anthropic') $el.checked = false">
             Generate audio
         </label>
     </fieldset>

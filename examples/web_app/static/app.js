@@ -1,3 +1,54 @@
+// Resizable splitter between sidebar and content panel.
+// Uses delta from pointerdown to avoid Brave's getBoundingClientRect farbling.
+// Prevents native dragstart to stop pointercancel from aborting the drag.
+(function () {
+    function initSplitter() {
+        var splitter = document.querySelector(".splitter");
+        var grid = document.querySelector(".layout-grid");
+        var sidebar = document.querySelector(".sidebar-panel");
+        if (!splitter || !grid || !sidebar) return;
+
+        var MIN_WIDTH = 220;
+        var MAX_WIDTH = 520;
+        var dragging = false;
+        var startX, startWidth;
+
+        // Block native drag-and-drop from firing pointercancel
+        splitter.addEventListener("dragstart", function (e) { e.preventDefault(); });
+
+        splitter.addEventListener("pointerdown", function (e) {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            dragging = true;
+            startX = e.clientX;
+            startWidth = sidebar.offsetWidth;
+            splitter.classList.add("dragging");
+            document.body.classList.add("splitter-dragging");
+        });
+
+        document.addEventListener("pointermove", function (e) {
+            if (!dragging) return;
+            e.preventDefault();
+            var newWidth = startWidth + (e.clientX - startX);
+            newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, newWidth));
+            grid.style.setProperty("--sidebar-width", newWidth + "px");
+        });
+
+        document.addEventListener("pointerup", function () {
+            if (!dragging) return;
+            dragging = false;
+            splitter.classList.remove("dragging");
+            document.body.classList.remove("splitter-dragging");
+        });
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initSplitter);
+    } else {
+        initSplitter();
+    }
+})();
+
 // Theme toggle
 function toggleTheme() {
     const html = document.documentElement;

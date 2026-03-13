@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, Request
 
-from ..dependencies import get_cached_models, get_session
+from ..dependencies import get_cached_anthropic_models, get_cached_models, get_session
 from ..session import SessionState
 
 router = APIRouter()
@@ -13,6 +13,7 @@ async def index(
     request: Request,
     session: SessionState = Depends(get_session),
     models=Depends(get_cached_models),
+    anthropic_text_models: list[str] = Depends(get_cached_anthropic_models),
 ):
     """Serves the main page with the course configuration form."""
     from okcourse.generators.openai.openai_utils import get_voices_for_model, tts_models
@@ -32,6 +33,7 @@ async def index(
             "voices": voices,
             "prompt_styles": prompt_styles,
             "settings": session.course.settings,
+            "anthropic_text_models": anthropic_text_models,
         },
     )
     # Set session cookie on the actual response object

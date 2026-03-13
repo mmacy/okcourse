@@ -12,9 +12,11 @@ Examples:
 """
 
 from .base import CourseGenerator
+from .anthropic import AnthropicAsyncGenerator
 from .openai import OpenAIAsyncGenerator
 
 __all__ = [
+    "AnthropicAsyncGenerator",
     "CourseGenerator",
     "OpenAIAsyncGenerator",
 ]
